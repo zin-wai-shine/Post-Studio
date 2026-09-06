@@ -74,13 +74,11 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
   const { base: rawBaseName } = parseFilename(baseFilename);
   const cleanBaseName = rawBaseName.replace(/[-_]grid[-_]\d+.*$/i, ''); // Strip previous grid suffix if any
 
-  // Calculate master crop bounding box
-  const { cropX, cropY, cropWidth, cropHeight } = computeGridCropRect(
-    naturalWidth,
-    naturalHeight,
-    layout.aspect || 1,
-    focus
-  );
+  // Preserve 100% of original image dimensions - split the full image canvas directly
+  const cropX = 0;
+  const cropY = 0;
+  const cropWidth = naturalWidth;
+  const cropHeight = naturalHeight;
 
   const tileResults = [];
 

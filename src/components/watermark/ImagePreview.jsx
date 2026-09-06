@@ -41,10 +41,12 @@ export function ImagePreview({
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
-    // Use grid aspect, crop target aspect, or natural image aspect
+    // Use natural image aspect in grid mode to preserve 100% of original image dimensions
     let targetAspect = 16 / 9;
-    if (isGridMode && activeGridLayout) {
-      targetAspect = activeGridLayout.aspect || 1;
+    if (isGridMode) {
+      targetAspect = (activeImage.width && activeImage.height)
+        ? (activeImage.width / activeImage.height)
+        : (16 / 9);
     } else if (isCropActive && cropSettings.width && cropSettings.height) {
       targetAspect = cropSettings.width / cropSettings.height;
     } else if (activeImage.width && activeImage.height) {
@@ -344,10 +346,7 @@ export function ImagePreview({
             src={activeImage.previewUrl}
             alt={activeImage.name}
             className="preview-base-img"
-            style={isGridMode ? {
-              objectFit: 'cover',
-              objectPosition: `${(focusObj.x ?? 0.5) * 100}% ${(focusObj.y ?? 0.5) * 100}%`
-            } : isCropActive ? {
+            style={isGridMode ? undefined : isCropActive ? {
               objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
               objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
               backgroundColor: cropSettings.bgColor || '#000000'

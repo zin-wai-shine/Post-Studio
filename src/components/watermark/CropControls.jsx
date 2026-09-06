@@ -174,8 +174,6 @@ export function CropControls({
         <GridSplitControls
           activeLayout={gridCropSettings?.activeLayout || 'four-squares'}
           onSelectLayout={(layoutId) => onUpdateGridCropSetting && onUpdateGridCropSetting('activeLayout', layoutId)}
-          focus={gridCropSettings?.gridFocus || 'center'}
-          onSetFocus={(f) => onUpdateGridCropSetting && onUpdateGridCropSetting('gridFocus', f)}
           activeImage={activeImage}
           onSliceImage={onSliceImage}
           isSlicing={isSlicing}
