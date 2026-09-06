@@ -12,7 +12,8 @@
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 3px;
-  gap: 4px;
+  gap: 3px;
+  white-space: nowrap;
 }
 
 .crop-mode-tab-btn {
@@ -20,16 +21,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 7px 4px;
   background: none;
   border: none;
   border-radius: 7px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: -0.15px;
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.crop-mode-tab-btn span {
+  white-space: nowrap;
 }
 
 .crop-mode-tab-btn:hover {
@@ -76,17 +83,23 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .crop-toggle-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
+  white-space: nowrap;
 }
 
 .crop-toggle-desc {
   font-size: 11px;
   color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
 }
 
 /* Switch Toggle Button */
@@ -141,6 +154,7 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .dimension-input-wrap {
@@ -232,18 +246,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  white-space: nowrap;
 }
 
 .focus-selector-header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .focus-selector-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary);
+  white-space: nowrap;
 }
 
 .focus-selector-current {
@@ -254,6 +271,7 @@
   border: 1px solid var(--color-border);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .focus-grid-layout {
@@ -319,6 +337,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  white-space: nowrap;
 }
 
 /* Fit Mode Selector */
@@ -332,13 +351,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 9px 12px;
+  padding: 9px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-input-bg);
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: center;
+  white-space: nowrap;
 }
 
 .fit-mode-btn:hover:not(.active) {
@@ -352,9 +372,10 @@
 }
 
 .fit-mode-btn-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--color-text-primary);
+  white-space: nowrap;
 }
 
 /* Batch Standardization Summary Badge */
@@ -396,25 +417,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .crop-profiles-title-wrap {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .crop-profiles-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .crop-profiles-count {
   font-size: 11px;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .crop-profiles-grid {
@@ -599,6 +626,11 @@
   width: 100%;
   justify-content: center;
   transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.save-current-crop-btn span {
+  white-space: nowrap;
 }
 
 .save-current-crop-btn:hover {

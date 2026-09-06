@@ -194,8 +194,8 @@ export function CropControls({
               </div>
               <span className="crop-toggle-desc">
                 {isEnabled
-                  ? `Unified output: ${cropSettings.width} × ${cropSettings.height} px (${activePresetDisplayName})`
-                  : 'Keep each image at its original resolution'}
+                  ? `${cropSettings.width} × ${cropSettings.height} px • ${activePresetDisplayName}`
+                  : 'Keep each image at original resolution'}
               </span>
             </div>
             <button
@@ -222,22 +222,22 @@ export function CropControls({
                       position="bottom-right"
                     />
                   </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconLeft={<FiPlus size={12} />}
-                onClick={() => {
-                  setNewPresetName('');
-                  setNewWidth(cropSettings.width || 1440);
-                  setNewHeight(cropSettings.height || 1080);
-                  setNewFocus(activeFocus);
-                  setShowAddModal(true);
-                }}
-                title="Create and save a new crop size profile"
-              >
-                Add Crop Size
-              </Button>
-            </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconLeft={<FiPlus size={11} />}
+                    onClick={() => {
+                      setNewPresetName('');
+                      setNewWidth(cropSettings.width || 1440);
+                      setNewHeight(cropSettings.height || 1080);
+                      setNewFocus(activeFocus);
+                      setShowAddModal(true);
+                    }}
+                    title="Create and save a new crop size profile"
+                  >
+                    Add Size
+                  </Button>
+                </div>
 
             <div className="crop-profiles-grid" role="listbox" aria-label="Available Crop Sizes">
               {presets.map((preset) => {
@@ -409,7 +409,7 @@ export function CropControls({
               title="Save current dimensions as a reusable profile"
             >
               <FiBookmark size={12} />
-              <span>Save Current ({cropSettings.width}×{cropSettings.height}) as New Profile</span>
+              <span>Save Current ({cropSettings.width}×{cropSettings.height}) as Profile</span>
             </button>
           </div>
 
