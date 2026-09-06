@@ -119,18 +119,19 @@ export function useImageFiles() {
   }, []);
 
   // Set per-image crop focus (when cropSettings.syncFocus === false)
-  const setImageCropFocus = useCallback((id, focusKey, focusX, focusY) => {
+  const setImageCropFocus = useCallback((id, focusKey, focusX, focusY, baseCropSettings = {}) => {
     if (!id) return;
     setImages((prev) =>
       prev.map((img) => {
         if (img.id !== id) return img;
-        const currentCustomCrop = img.customCropSettings || {};
+        const currentCustomCrop = img.customCropSettings || baseCropSettings || {};
         return {
           ...img,
           cropFocus: focusKey,
           cropFocusX: focusX,
           cropFocusY: focusY,
           customCropSettings: {
+            ...baseCropSettings,
             ...currentCustomCrop,
             focus: focusKey,
             focusX,

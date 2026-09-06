@@ -129,11 +129,28 @@ export function Watermark() {
   const activeFocusObj = FOCUS_POSITIONS[activeCropFocus] || FOCUS_POSITIONS.center;
 
   const effectiveSettings = isCustomImageMode
-    ? (activeImage.customSettings || settings)
+    ? {
+        ...settings,
+        ...(activeImage.customSettings || {}),
+        position: {
+          ...settings.position,
+          ...(activeImage.customSettings?.position || {})
+        },
+        pattern: {
+          ...settings.pattern,
+          ...(activeImage.customSettings?.pattern || {})
+        }
+      }
     : settings;
 
   const effectiveCropSettings = isCustomImageMode
-    ? (activeImage.customCropSettings || cropSettings)
+    ? {
+        ...cropSettings,
+        ...(activeImage.customCropSettings || {}),
+        focus: activeImage.customCropSettings?.focus || activeCropFocus,
+        focusX: activeFocusObj.x,
+        focusY: activeFocusObj.y
+      }
     : {
         ...cropSettings,
         focus: activeCropFocus,
@@ -225,9 +242,9 @@ export function Watermark() {
       updateImageCropSetting(activeImage.id, 'focus', focusKey);
       updateImageCropSetting(activeImage.id, 'focusX', focus.x);
       updateImageCropSetting(activeImage.id, 'focusY', focus.y);
-      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y);
+      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y, cropSettings);
     } else if (cropSettings.syncFocus === false && activeImage) {
-      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y);
+      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y, cropSettings);
     } else {
       setCropFocus(focusKey);
     }

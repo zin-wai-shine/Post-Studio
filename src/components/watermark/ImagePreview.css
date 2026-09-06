@@ -253,3 +253,44 @@
   font-weight: 700;
   letter-spacing: -0.02em;
 }
+
+/* Focal Anchor Reticle / Indicator */
+.crop-focal-indicator {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 12;
+  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crop-focal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-main);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.crop-focal-ring {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--color-main);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  animation: focalPulse 2s infinite ease-in-out;
+}
+
+@keyframes focalPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.4;
+  }
+}

@@ -58,6 +58,7 @@ export const DEFAULT_CROP_SETTINGS = {
   focus: 'center',
   focusX: 0.5,
   focusY: 0.5,
+  zoom: 1, // 1 = 100%, up to 2.5 = 250%
   syncFocus: true, // true: apply focus to all batch images; false: customize per image
   fitMode: 'cover' // 'cover' (crop) | 'contain' (pad)
 };

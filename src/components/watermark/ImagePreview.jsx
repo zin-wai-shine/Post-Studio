@@ -349,10 +349,29 @@ export function ImagePreview({
             style={isGridMode ? undefined : isCropActive ? {
               objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
               objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
-              backgroundColor: cropSettings.bgColor || '#000000'
+              transform: (cropSettings.zoom && cropSettings.zoom > 1) ? `scale(${cropSettings.zoom})` : undefined,
+              transformOrigin: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
+              backgroundColor: cropSettings.bgColor || '#000000',
+              transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), object-position 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
             } : undefined}
             onLoad={updateRenderedDimensions}
           />
+
+          {/* Focal Anchor Indicator on Cropped Preview */}
+          {isCropActive && !isGridMode && (
+            <div
+              className="crop-focal-indicator"
+              style={{
+                left: `${(cropSettings.focusX ?? 0.5) * 100}%`,
+                top: `${(cropSettings.focusY ?? 0.5) * 100}%`
+              }}
+              aria-hidden="true"
+              title={`Focal Anchor (${cropSettings.focus || 'center'})`}
+            >
+              <div className="crop-focal-dot" />
+              <div className="crop-focal-ring" />
+            </div>
+          )}
 
           {/* Social Grid Cut Overlay on Source Image */}
           {isGridMode && activeGridLayout && (

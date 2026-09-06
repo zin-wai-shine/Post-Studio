@@ -158,30 +158,33 @@ function drawRepeatedWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkI
  * @param {number} focusY 0..1 (0 = top, 0.5 = center, 1 = bottom)
  * @returns {{ srcX: number, srcY: number, cropWidth: number, cropHeight: number }}
  */
-export function calculateCropRect(srcWidth, srcHeight, targetWidth, targetHeight, focusX = 0.5, focusY = 0.5) {
+export function calculateCropRect(srcWidth, srcHeight, targetWidth, targetHeight, focusX = 0.5, focusY = 0.5, zoom = 1) {
   const srcAspect = srcWidth / srcHeight;
   const targetAspect = targetWidth / targetHeight;
+  const safeZoom = Math.max(1, Math.min(3, zoom || 1));
 
-  let cropWidth = srcWidth;
-  let cropHeight = srcHeight;
-  let srcX = 0;
-  let srcY = 0;
+  let baseWidth = srcWidth;
+  let baseHeight = srcHeight;
 
   if (srcAspect > targetAspect) {
-    // Source is wider than target: crop left/right excess based on focusX
-    cropHeight = srcHeight;
-    cropWidth = Math.round(srcHeight * targetAspect);
-    const excessWidth = Math.max(0, srcWidth - cropWidth);
-    srcX = Math.round(excessWidth * Math.max(0, Math.min(1, focusX)));
-    srcY = 0;
-  } else if (srcAspect < targetAspect) {
-    // Source is taller than target: crop top/bottom excess based on focusY
-    cropWidth = srcWidth;
-    cropHeight = Math.round(srcWidth / targetAspect);
-    const excessHeight = Math.max(0, srcHeight - cropHeight);
-    srcX = 0;
-    srcY = Math.round(excessHeight * Math.max(0, Math.min(1, focusY)));
+    // Source is wider than target: fit height, compute proportional width
+    baseHeight = srcHeight;
+    baseWidth = Math.round(srcHeight * targetAspect);
+  } else {
+    // Source is taller or equal: fit width, compute proportional height
+    baseWidth = srcWidth;
+    baseHeight = Math.round(srcWidth / targetAspect);
   }
+
+  // Zoom scales the crop window down (zooming into the image)
+  const cropWidth = Math.max(10, Math.round(baseWidth / safeZoom));
+  const cropHeight = Math.max(10, Math.round(baseHeight / safeZoom));
+
+  const excessWidth = Math.max(0, srcWidth - cropWidth);
+  const excessHeight = Math.max(0, srcHeight - cropHeight);
+
+  let srcX = Math.round(excessWidth * Math.max(0, Math.min(1, focusX)));
+  let srcY = Math.round(excessHeight * Math.max(0, Math.min(1, focusY)));
 
   // Safety clamps
   srcX = Math.max(0, Math.min(srcWidth - cropWidth, srcX));
@@ -267,13 +270,14 @@ export async function renderWatermarkedImage({
     const fitMode = cropSettings.fitMode || 'cover';
     const focusX = cropSettings.focusX ?? 0.5;
     const focusY = cropSettings.focusY ?? 0.5;
+    const zoom = cropSettings.zoom || 1;
 
     if (fitMode === 'contain') {
       // Fit within bounds without cropping, pad excess with white/black
       ctx.fillStyle = cropSettings.bgColor || '#000000';
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-      const scale = Math.min(canvasWidth / naturalWidth, canvasHeight / naturalHeight);
+      const scale = Math.min(canvasWidth / naturalWidth, canvasHeight / naturalHeight) * zoom;
       const scaledW = Math.round(naturalWidth * scale);
       const scaledH = Math.round(naturalHeight * scale);
       const destX = Math.round((canvasWidth - scaledW) * focusX);
@@ -288,7 +292,8 @@ export async function renderWatermarkedImage({
         canvasWidth,
         canvasHeight,
         focusX,
-        focusY
+        focusY,
+        zoom
       );
 
       ctx.drawImage(img, srcX, srcY, cropWidth, cropHeight, 0, 0, canvasWidth, canvasHeight);

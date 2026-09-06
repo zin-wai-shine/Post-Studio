@@ -59,6 +59,16 @@ export function CropControls({
   const focusLabel = FOCUS_POSITIONS[effectiveFocus]?.label || 'Center';
   const fitMode = cropSettings?.fitMode || 'cover';
 
+  const imageAspect = (activeImage?.width && activeImage?.height)
+    ? (activeImage.width / activeImage.height)
+    : null;
+  const targetAspect = (cropSettings?.width && cropSettings?.height)
+    ? (cropSettings.width / cropSettings.height)
+    : null;
+  const isSameAspect = Boolean(imageAspect && targetAspect && Math.abs(imageAspect - targetAspect) < 0.02);
+  const currentZoom = cropSettings?.zoom || 1;
+  const isZoomed = currentZoom > 1.01;
+
   // Modal and inline edit state
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
@@ -478,6 +488,71 @@ export function CropControls({
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Aspect Match Notice */}
+            {isSameAspect && !isZoomed && activeImage && (
+              <div className="focus-aspect-hint">
+                <FiInfo size={13} className="focus-hint-icon" />
+                <span>
+                  Photo dimensions ({activeImage.width}×{activeImage.height}) match target {activePresetDisplayName || '4:5'} aspect. Use <strong>Crop Zoom</strong> below to crop and focus into specific details.
+                </span>
+              </div>
+            )}
+
+            {/* Crop Zoom Section */}
+            <div className="crop-zoom-section">
+              <div className="crop-zoom-header">
+                <div className="crop-zoom-title-wrap">
+                  <span className="crop-zoom-title">Crop Zoom</span>
+                  <InfoTooltip
+                    text="Zoom in to crop closer and shift focus across specific areas using the 3×3 grid above."
+                    position="top-right"
+                  />
+                </div>
+                <span className="crop-zoom-val">{Math.round(currentZoom * 100)}%</span>
+              </div>
+
+              <div className="crop-zoom-slider-row">
+                <input
+                  type="range"
+                  min="1"
+                  max="2.5"
+                  step="0.05"
+                  value={currentZoom}
+                  onChange={(e) => onUpdateCropSetting('zoom', parseFloat(e.target.value))}
+                  className="crop-zoom-slider"
+                  aria-label="Crop zoom level"
+                />
+                {isZoomed && (
+                  <button
+                    type="button"
+                    className="crop-zoom-reset-btn"
+                    onClick={() => onUpdateCropSetting('zoom', 1)}
+                    title="Reset zoom to 100%"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              <div className="crop-zoom-presets">
+                {[
+                  { label: '100% (Fit)', val: 1 },
+                  { label: '125%', val: 1.25 },
+                  { label: '150%', val: 1.5 },
+                  { label: '200%', val: 2 }
+                ].map((z) => (
+                  <button
+                    key={z.val}
+                    type="button"
+                    className={`crop-zoom-pill ${Math.abs(currentZoom - z.val) < 0.02 ? 'active' : ''}`}
+                    onClick={() => onUpdateCropSetting('zoom', z.val)}
+                  >
+                    {z.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
