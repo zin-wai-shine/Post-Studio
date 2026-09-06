@@ -19,7 +19,6 @@ export function InfoTooltip({
         type="button"
         className="info-tooltip-trigger"
         aria-label={ariaLabel || (typeof content === 'string' ? content : 'More information')}
-        title={typeof content === 'string' ? content : undefined}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
