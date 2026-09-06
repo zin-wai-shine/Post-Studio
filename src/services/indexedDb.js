@@ -121,6 +121,35 @@ export async function deleteWatermark(id) {
 }
 
 /**
+ * Renames an existing watermark record in IndexedDB
+ * @param {string} id
+ * @param {string} newName
+ * @returns {Promise<Object>}
+ */
+export async function renameWatermark(id, newName) {
+  if (!id || !newName) return null;
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const record = getRequest.result;
+      if (!record) {
+        reject(new Error(`Watermark ${id} not found.`));
+        return;
+      }
+      record.name = newName.trim();
+      const putRequest = store.put(record);
+      putRequest.onsuccess = () => resolve(record);
+      putRequest.onerror = () => reject(putRequest.error || new Error('Failed to update watermark name.'));
+    };
+    getRequest.onerror = () => reject(getRequest.error || new Error('Failed to fetch watermark for rename.'));
+  });
+}
+
+/**
  * Clear all watermarks from IndexedDB
  * @returns {Promise<boolean>}
  */

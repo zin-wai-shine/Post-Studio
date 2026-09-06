@@ -127,3 +127,35 @@
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
+
+.thumbnail-rename-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 1px 2px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.thumbnail-card:hover .thumbnail-rename-btn,
+.thumbnail-rename-btn:focus-visible {
+  opacity: 1;
+}
+
+.thumbnail-rename-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.thumbnail-rename-input {
+  width: 100%;
+  font-size: 11px;
+  padding: 1px 4px;
+  border: 1px solid var(--color-main);
+  border-radius: 2px;
+  outline: none;
+  background: #FFFFFF;
+}

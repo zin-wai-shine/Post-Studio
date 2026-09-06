@@ -37,6 +37,7 @@ export function WatermarkControls({
   onSaveAndSelectWatermark,
   onSelectSavedWatermark,
   onDeleteSavedWatermark,
+  onRenameSavedWatermark,
   onClearWatermark,
   onDownloadSingle,
   onDownloadAll,
@@ -104,12 +105,14 @@ export function WatermarkControls({
                   onSetTemporaryWatermark={onSetTemporaryWatermark}
                   onSaveAndSelectWatermark={onSaveAndSelectWatermark}
                   onClearWatermark={onClearWatermark}
+                  onRenameWatermark={onRenameSavedWatermark}
                 />
                 <SavedWatermarks
                   savedWatermarks={savedWatermarks}
                   activeWatermarkId={activeWatermark?.id}
                   onSelectWatermark={onSelectSavedWatermark}
                   onDeleteWatermark={onDeleteSavedWatermark}
+                  onRenameWatermark={onRenameSavedWatermark}
                   loading={isSavedLoading}
                 />
               </>

@@ -109,6 +109,15 @@ export function useImageFiles() {
     setActiveImageId(null);
   }, []);
 
+  const renameImage = useCallback((id, newName) => {
+    if (!id || !newName || !newName.trim()) return;
+    setImages((prev) =>
+      prev.map((img) =>
+        img.id === id ? { ...img, name: newName.trim() } : img
+      )
+    );
+  }, []);
+
   // Ensure activeImageId falls back to first available if active was cleared
   useEffect(() => {
     if (!activeImageId && images.length > 0) {
@@ -126,6 +135,7 @@ export function useImageFiles() {
     addImages,
     removeImage,
     clearAllImages,
+    renameImage,
     isProcessingUpload
   };
 }

@@ -42,12 +42,13 @@
 /* Inline pending decision state */
 .wm-pending-box {
   background-color: #FFFFFF;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-main);
   border-radius: var(--radius-sm);
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: var(--shadow-subtle);
 }
 
 .wm-pending-header {
@@ -63,6 +64,7 @@
   border: 1px solid var(--color-border);
   background-color: #F0F0F0;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .wm-pending-info {
@@ -73,7 +75,7 @@
 .wm-name-input {
   width: 100%;
   font-size: var(--font-size-sm);
-  padding: 4px 8px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   color: var(--color-text-primary);
@@ -91,14 +93,16 @@
   gap: 8px;
 }
 
+/* Active Watermark Card */
 .wm-active-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background-color: #FFFFFF;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-subtle);
 }
 
 .wm-active-details {
@@ -106,20 +110,35 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .wm-active-thumb {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 4px;
   background-color: #FAFAFA;
   border: 1px solid var(--color-border-light);
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.wm-active-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.wm-active-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .wm-active-name {
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -127,6 +146,14 @@
 }
 
 .wm-active-tag {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-muted);
+}
+
+.wm-inline-edit-input {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border: 1px solid var(--color-main);
+  border-radius: 4px;
+  width: 130px;
 }

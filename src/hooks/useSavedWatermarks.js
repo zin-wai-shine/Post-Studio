@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getWatermarks, saveWatermark, deleteWatermark } from '../services/indexedDb';
+import { getWatermarks, saveWatermark, deleteWatermark, renameWatermark } from '../services/indexedDb';
 
 export function useSavedWatermarks() {
   const [savedWatermarks, setSavedWatermarks] = useState([]);
@@ -73,12 +73,24 @@ export function useSavedWatermarks() {
     }
   }, [loadWatermarks]);
 
+  const editWatermarkName = useCallback(async (id, newName) => {
+    try {
+      const updated = await renameWatermark(id, newName);
+      await loadWatermarks();
+      return updated;
+    } catch (err) {
+      console.error('Failed to rename watermark:', err);
+      throw err;
+    }
+  }, [loadWatermarks]);
+
   return {
     savedWatermarks,
     loading,
     error,
     addWatermark,
     removeWatermark,
+    editWatermarkName,
     refresh: loadWatermarks
   };
 }

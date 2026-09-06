@@ -30,6 +30,7 @@ export function Watermark() {
     addImages,
     removeImage,
     clearAllImages,
+    renameImage,
     isProcessingUpload
   } = useImageFiles();
 
@@ -48,7 +49,8 @@ export function Watermark() {
     savedWatermarks,
     loading: isSavedLoading,
     addWatermark,
-    removeWatermark
+    removeWatermark,
+    editWatermarkName
   } = useSavedWatermarks();
 
   const {
@@ -159,6 +161,24 @@ export function Watermark() {
       setToast({
         type: 'error',
         message: 'Failed to delete watermark.'
+      });
+    }
+  };
+
+  const handleRenameSavedWatermark = async (id, newName) => {
+    try {
+      await editWatermarkName(id, newName);
+      if (activeWatermark?.id === id) {
+        setActiveWatermark((prev) => ({ ...prev, name: newName }));
+      }
+      setToast({
+        type: 'success',
+        message: 'Watermark renamed successfully.'
+      });
+    } catch (err) {
+      setToast({
+        type: 'error',
+        message: 'Failed to rename watermark.'
       });
     }
   };
@@ -369,6 +389,7 @@ export function Watermark() {
                 onRemoveImage={removeImage}
                 onClearAll={clearAllImages}
                 onAddMore={handleFilesSelected}
+                onRenameImage={renameImage}
               />
             </div>
           </>
@@ -392,6 +413,7 @@ export function Watermark() {
         onSaveAndSelectWatermark={handleSaveAndSelectWatermark}
         onSelectSavedWatermark={handleSelectSavedWatermark}
         onDeleteSavedWatermark={handleDeleteSavedWatermark}
+        onRenameSavedWatermark={handleRenameSavedWatermark}
         onClearWatermark={handleClearWatermark}
         onDownloadSingle={handleDownloadSingle}
         onDownloadAll={handleDownloadAll}
