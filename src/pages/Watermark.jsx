@@ -335,8 +335,8 @@ export function Watermark() {
     if (!setHeaderActions) return;
 
     setHeaderActions(
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ width: '135px' }}>
+      <div className="header-actions-group">
+        <div className="header-format-select-wrap">
           <Select
             size="sm"
             value={exportSettings.format}
@@ -349,6 +349,7 @@ export function Watermark() {
         <Button
           variant="secondary"
           size="sm"
+          className="header-btn-download-selected"
           iconLeft={<FiDownload size={13} />}
           disabled={!activeImage || isExportingSingle || isExportingBatch}
           loading={isExportingSingle}
@@ -361,6 +362,7 @@ export function Watermark() {
         <Button
           variant="primary"
           size="sm"
+          className="header-btn-download-all"
           iconLeft={<FiDownload size={13} />}
           disabled={images.length === 0 || isExportingBatch || isExportingSingle}
           loading={isExportingBatch}
@@ -375,6 +377,7 @@ export function Watermark() {
         <Button
           variant="ghost"
           size="sm"
+          className="header-btn-reset"
           iconLeft={<FiRotateCcw size={13} />}
           onClick={() => setShowResetConfirm(true)}
           title="Reset current workspace"

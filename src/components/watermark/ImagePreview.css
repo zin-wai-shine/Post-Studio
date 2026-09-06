@@ -159,29 +159,17 @@
   .preview-container {
     min-height: 140px;
     flex: 1;
+    border-radius: var(--radius-sm);
   }
 
+  /* Completely remove image header bar on mobile */
   .preview-topbar {
-    padding: 6px 10px;
-    gap: 8px;
-  }
-
-  .preview-filename {
-    max-width: 150px;
-    font-size: 11px;
-  }
-
-  .preview-meta {
-    gap: 6px;
-  }
-
-  .meta-badge {
-    padding: 1px 6px;
-    font-size: 10.5px;
+    display: none !important;
   }
 
   .preview-viewport {
-    padding: 8px;
+    padding: 6px;
   }
 }
+
 

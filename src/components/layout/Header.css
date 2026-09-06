@@ -95,6 +95,16 @@
   border-color: var(--color-border-dark);
 }
 
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-format-select-wrap {
+  width: 135px;
+}
+
 @media (max-width: 1024px) {
   .header-subtitle {
     display: none;
@@ -103,10 +113,63 @@
 
 @media (max-width: 900px) {
   .header {
-    padding: 0 var(--space-3);
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  /* On mobile: Hide redundant subtitle, title, and divider to avoid wrapping */
+  .header-brand-divider,
+  .header-titles {
+    display: none !important;
+  }
+
+  .brand-logo-text {
+    font-size: 14.5px;
+    letter-spacing: 0.8px;
   }
 
   .header-right {
-    gap: 4px;
+    gap: 6px;
+  }
+
+  .header-actions-group {
+    gap: 6px;
+  }
+
+  .header-format-select-wrap {
+    width: 125px;
+  }
+
+  /* On mobile: hide secondary buttons from navbar header, keep primary or dropdown */
+  .header-btn-download-selected,
+  .header-btn-reset,
+  .header-action-divider {
+    display: none !important;
+  }
+
+  .header-btn-download-all {
+    padding: 5px 10px;
+    font-size: 11px;
+    height: 30px;
   }
 }
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0 10px;
+  }
+
+  .brand-logo-text {
+    font-size: 13.5px;
+    letter-spacing: 0.6px;
+  }
+
+  .header-format-select-wrap {
+    width: 115px;
+  }
+}
+
