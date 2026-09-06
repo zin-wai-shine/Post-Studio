@@ -3,7 +3,7 @@
   flex: 1;
   gap: var(--space-4);
   padding: var(--space-4);
-  height: calc(100vh - var(--header-height));
+  height: 100%;
   overflow: hidden;
 }
 

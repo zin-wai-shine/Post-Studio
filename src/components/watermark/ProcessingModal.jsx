@@ -12,18 +12,18 @@ export function ProcessingModal({
     <Modal
       isOpen={isOpen}
       onClose={onCancel}
-      title="Exporting Processed Images"
+      title="Downloading Images Directly"
       maxWidth="420px"
       footer={
         <Button variant="secondary" size="sm" onClick={onCancel}>
-          Cancel Export
+          Cancel Download
         </Button>
       }
     >
       <div className="processing-wrap">
         <div className="processing-status-row">
           <span className="processing-count">
-            Processing {progress.current} of {progress.total}
+            Downloading {progress.current} of {progress.total}
           </span>
           <span className="processing-percent">{progress.percentage}%</span>
         </div>
@@ -37,7 +37,7 @@ export function ProcessingModal({
 
         <div className="processing-file-row">
           {progress.currentFilename
-            ? `Generating: ${progress.currentFilename}`
+            ? `Downloading: ${progress.currentFilename}`
             : 'Rendering high-resolution images...'}
         </div>
       </div>

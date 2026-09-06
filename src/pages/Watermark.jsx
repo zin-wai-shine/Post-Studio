@@ -258,13 +258,13 @@ export function Watermark() {
       });
       setToast({
         type: 'success',
-        message: `Successfully exported batch of ${images.length} images as ZIP.`
+        message: `Successfully downloaded batch of ${images.length} images directly.`
       });
     } catch (err) {
       if (!err.message?.includes('cancelled')) {
         setToast({
           type: 'error',
-          message: err.message || 'Batch export failed.'
+          message: err.message || 'Batch download failed.'
         });
       }
     }
@@ -314,13 +314,13 @@ export function Watermark() {
         <Button
           variant="primary"
           size="sm"
-          iconLeft={<FiArchive size={13} />}
+          iconLeft={<FiDownload size={13} />}
           disabled={images.length === 0 || isExportingBatch || isExportingSingle}
           loading={isExportingBatch}
           onClick={handleDownloadAll}
-          title="Download all watermarked images as a ZIP archive"
+          title="Download all watermarked images directly"
         >
-          {isExportingBatch ? 'Processing ZIP...' : `Download All (${images.length})`}
+          {isExportingBatch ? 'Downloading...' : `Download All (${images.length})`}
         </Button>
 
         <span className="header-action-divider" />

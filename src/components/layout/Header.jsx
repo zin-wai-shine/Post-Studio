@@ -7,7 +7,8 @@ import './Header.css';
 export function Header({
   title = 'Watermark Studio',
   subtitle = 'Apply and manage watermarks across multiple images.',
-  onOpenMobile,
+  sidebarCollapsed = false,
+  onToggleSidebar,
   onResetWorkspace,
   showReset = false,
   headerActions = null
@@ -15,13 +16,21 @@ export function Header({
   return (
     <header className="header">
       <div className="header-left">
+        {/* Sidebar Toggle Button */}
         <IconButton
           icon={<FiMenu size={18} />}
           size="md"
-          className="mobile-menu-btn"
-          onClick={onOpenMobile}
-          aria-label="Open sidebar menu"
+          className="sidebar-toggle-btn"
+          onClick={onToggleSidebar}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         />
+
+        {/* Brand Logo: Clean text "POFIX STUDIO" */}
+        <span className="brand-logo-text">POFIX STUDIO</span>
+
+        <span className="header-brand-divider" />
+
         <div className="header-titles">
           <h1 className="header-title">{title}</h1>
           {subtitle && <p className="header-subtitle">{subtitle}</p>}

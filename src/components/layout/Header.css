@@ -1,21 +1,52 @@
 .header {
   height: var(--header-height);
+  width: 100%;
   background-color: var(--color-header);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-5);
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 50;
   box-shadow: var(--shadow-subtle);
+  flex-shrink: 0;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 12px;
+}
+
+.sidebar-toggle-btn {
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-hover);
+}
+
+/* Brand Logo Text: Pure typography "POFIX STUDIO" */
+.brand-logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.header-brand-divider {
+  width: 1px;
+  height: 22px;
+  background-color: var(--color-border);
+  margin: 0 4px;
 }
 
 .header-titles {
@@ -64,10 +95,6 @@
   border-color: var(--color-border-dark);
 }
 
-.mobile-menu-btn {
-  display: none;
-}
-
 @media (max-width: 1024px) {
   .header-subtitle {
     display: none;
@@ -75,10 +102,6 @@
 }
 
 @media (max-width: 900px) {
-  .mobile-menu-btn {
-    display: inline-flex;
-  }
-
   .header {
     padding: 0 var(--space-3);
   }

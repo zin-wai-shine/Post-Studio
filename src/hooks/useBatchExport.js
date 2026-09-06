@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { renderWatermarkedImage } from '../utils/canvasUtils';
-import { triggerDownload, getExportFilename, batchExportImagesAsZip } from '../utils/downloadUtils';
+import { triggerDownload, generateUniqueImageName, batchDownloadImagesDirectly } from '../utils/downloadUtils';
 
 export function useBatchExport() {
   const [isExportingSingle, setIsExportingSingle] = useState(false);
@@ -34,7 +34,8 @@ export function useBatchExport() {
         exportOptions
       });
 
-      const filename = getExportFilename(image.name, exportOptions);
+      // Generate unique name following: 3words_5numbers_2words.[ext]
+      const filename = generateUniqueImageName(image.name, exportOptions);
       triggerDownload(blob, filename);
     } catch (err) {
       console.error('Failed to export image:', err);
@@ -64,7 +65,8 @@ export function useBatchExport() {
         currentFilename: ''
       });
 
-      await batchExportImagesAsZip({
+      // Direct sequential downloads (no zip archive)
+      await batchDownloadImagesDirectly({
         images,
         watermarkImage,
         settings,

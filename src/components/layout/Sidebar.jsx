@@ -1,27 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  FiGrid,
-  FiDroplet,
-  FiLayers,
-  FiLayout,
-  FiImage,
-  FiSettings,
-  FiX
-} from 'react-icons/fi';
+import { FiDroplet, FiX } from 'react-icons/fi';
 import { IconButton } from '../common/IconButton';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard', icon: <FiGrid /> },
-  { path: '/watermark', label: 'Watermark', icon: <FiDroplet />, activeTool: true },
-  { path: '/post-generator', label: 'Post Generator', icon: <FiLayers />, badge: 'Soon' },
-  { path: '/templates', label: 'Templates', icon: <FiLayout />, badge: 'Soon' },
-  { path: '/media', label: 'Media Library', icon: <FiImage />, badge: 'Soon' },
-  { path: '/settings', label: 'Settings', icon: <FiSettings />, badge: 'Soon' }
+  { path: '/watermark', label: 'Watermark', icon: <FiDroplet /> }
 ];
 
-export function Sidebar({ mobileOpen, onCloseMobile }) {
+export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }) {
   return (
     <>
       <div
@@ -29,41 +16,41 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
         onClick={onCloseMobile}
         aria-hidden="true"
       />
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`} aria-label="Sidebar navigation">
-        <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <span className="brand-badge">PS</span>
-            <span className="brand-text">POST STUDIO</span>
-          </div>
+      <aside
+        className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}
+        aria-label="Sidebar navigation"
+      >
+        <div className="sidebar-inner">
           {mobileOpen && (
-            <IconButton
-              icon={<FiX size={18} />}
-              size="sm"
-              onClick={onCloseMobile}
-              aria-label="Close menu"
-            />
+            <div className="sidebar-mobile-header">
+              <span className="sidebar-mobile-title">MENU</span>
+              <IconButton
+                icon={<FiX size={18} />}
+                size="sm"
+                onClick={onCloseMobile}
+                aria-label="Close menu"
+              />
+            </div>
           )}
-        </div>
 
-        <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={onCloseMobile}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-              {item.badge && <span className="nav-badge">{item.badge}</span>}
-            </NavLink>
-          ))}
-        </nav>
+          <nav className="sidebar-nav">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={onCloseMobile}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
 
-        <div className="sidebar-footer">
-          <span>v1.0.0 Production</span>
-          <span>Client-Only</span>
+          <div className="sidebar-footer">
+            <span className="sidebar-version">POFIX STUDIO</span>
+            <span className="sidebar-status">v1.0.0</span>
+          </div>
         </div>
       </aside>
     </>
