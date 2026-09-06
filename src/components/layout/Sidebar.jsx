@@ -1,12 +1,10 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { FiDroplet, FiGrid, FiX } from 'react-icons/fi';
+import { NavLink } from 'react-router-dom';
+import { FiDroplet, FiX } from 'react-icons/fi';
 import { IconButton } from '../common/IconButton';
 import './Sidebar.css';
 
 export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }) {
-  const location = useLocation();
-  const isGridModeActive = location.pathname === '/watermark' && location.search.includes('mode=grid');
 
   return (
     <>
@@ -35,20 +33,11 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
           <nav className="sidebar-nav">
             <NavLink
               to="/watermark"
-              end
-              className={({ isActive }) => `nav-link ${isActive && !isGridModeActive ? 'active' : ''}`}
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
               onClick={onCloseMobile}
             >
               <span className="nav-icon"><FiDroplet /></span>
               <span className="nav-label">Watermark</span>
-            </NavLink>
-            <NavLink
-              to="/watermark?mode=grid&tab=crop"
-              className={`nav-link ${isGridModeActive ? 'active' : ''}`}
-              onClick={onCloseMobile}
-            >
-              <span className="nav-icon"><FiGrid /></span>
-              <span className="nav-label">Social Grid Split</span>
             </NavLink>
           </nav>
 

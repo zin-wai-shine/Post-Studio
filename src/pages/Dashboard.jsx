@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiDroplet,
-  FiGrid,
   FiLayers,
   FiLayout,
   FiImage,
@@ -17,15 +16,6 @@ const TOOLS = [
     description: 'Batch watermark property and social media images with custom logos, patterns, and full-resolution export.',
     icon: <FiDroplet />,
     path: '/watermark',
-    active: true,
-    badge: 'Active'
-  },
-  {
-    id: 'grid-splitter',
-    title: 'Social Grid Splitter',
-    description: 'Upload 1 high-resolution photo and split it into 1, 2, 3, 4, 5, or 6 social media grid collage tiles.',
-    icon: <FiGrid />,
-    path: '/watermark?mode=grid&tab=crop',
     active: true,
     badge: 'Active'
   },
