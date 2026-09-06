@@ -4,7 +4,7 @@ import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
 import { calculateWatermarkDimensions } from '../../utils/canvasUtils';
 import { loadImage } from '../../utils/imageUtils';
-import { getLayoutConfig } from '../../utils/gridCropUtils';
+import { getLayoutConfig, getDefaultNormalizedCropBox } from '../../utils/gridCropUtils';
 import { FOCUS_POSITIONS } from '../../constants/watermark';
 import './ImagePreview.css';
 
@@ -17,6 +17,7 @@ export function ImagePreview({
   onCustomPosition,
   onUploadClick,
   gridCropSettings,
+  onUpdateGridCropSetting,
   onSliceImage,
   isSlicing = false
 }) {
@@ -27,11 +28,29 @@ export function ImagePreview({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
 
+  // Grid crop box interaction state
+  const [isBoxDragging, setIsBoxDragging] = useState(false);
+  const [resizingHandle, setResizingHandle] = useState(null);
+  const cropDragRef = useRef({
+    startX: 0,
+    startY: 0,
+    initialBox: { x: 0, y: 0, width: 1, height: 1 }
+  });
+
   const isCropActive = Boolean(cropSettings?.enabled && cropSettings.width && cropSettings.height);
   const isGridMode = Boolean(gridCropSettings?.mode === 'grid' && !activeImage?.isGridTile);
   const activeGridLayout = isGridMode ? getLayoutConfig(gridCropSettings?.activeLayout) : null;
 
-  // Update wrap dimensions when active image, crop settings, grid settings, or viewport size changes
+  // Compute current normalized crop box (user custom or default centered 1:1 box)
+  const defaultCropBox = (activeImage?.width && activeImage?.height)
+    ? getDefaultNormalizedCropBox(activeImage.width, activeImage.height, activeGridLayout?.aspect || 1)
+    : { x: 0, y: 0, width: 1, height: 1 };
+
+  const cropBox = (gridCropSettings?.cropBox && typeof gridCropSettings.cropBox.width === 'number')
+    ? gridCropSettings.cropBox
+    : defaultCropBox;
+
+  // Update wrap dimensions: in Grid Mode, show FULL original image first!
   const updateRenderedDimensions = useCallback(() => {
     if (!viewportRef.current || !activeImage) return;
 
@@ -41,11 +60,10 @@ export function ImagePreview({
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
-    // Target aspect calculation
+    // Target aspect calculation: show full original image in grid mode
     let targetAspect = 16 / 9;
-    if (isGridMode && activeGridLayout) {
-      // Use Facebook grid layout master container aspect ratio (1:1)
-      targetAspect = activeGridLayout.aspect || 1;
+    if (isGridMode && activeImage.width && activeImage.height) {
+      targetAspect = activeImage.width / activeImage.height;
     } else if (isCropActive && cropSettings.width && cropSettings.height) {
       targetAspect = cropSettings.width / cropSettings.height;
     } else if (activeImage.width && activeImage.height) {
@@ -73,8 +91,7 @@ export function ImagePreview({
     isCropActive,
     cropSettings?.width,
     cropSettings?.height,
-    isGridMode,
-    activeGridLayout?.aspect
+    isGridMode
   ]);
 
   useEffect(() => {
@@ -154,6 +171,135 @@ export function ImagePreview({
 
     const handlePointerUp = () => {
       setIsDragging(false);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  // Handle moving the crop box across the full original image
+  const handleBoxPointerDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('.crop-box-handle')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsBoxDragging(true);
+    cropDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialBox: { ...cropBox }
+    };
+
+    const handlePointerMove = (moveEvent) => {
+      if (!wrapDims.width || !wrapDims.height) return;
+      const deltaX = moveEvent.clientX - cropDragRef.current.startX;
+      const deltaY = moveEvent.clientY - cropDragRef.current.startY;
+
+      const deltaNormX = deltaX / wrapDims.width;
+      const deltaNormY = deltaY / wrapDims.height;
+
+      const init = cropDragRef.current.initialBox;
+      const maxNormX = Math.max(0, 1 - init.width);
+      const maxNormY = Math.max(0, 1 - init.height);
+
+      const nextX = Math.max(0, Math.min(maxNormX, init.x + deltaNormX));
+      const nextY = Math.max(0, Math.min(maxNormY, init.y + deltaNormY));
+
+      if (onUpdateGridCropSetting) {
+        onUpdateGridCropSetting('cropBox', {
+          ...init,
+          x: nextX,
+          y: nextY
+        });
+      }
+    };
+
+    const handlePointerUp = () => {
+      setIsBoxDragging(false);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  // Handle resizing the crop box from 4 corners while preserving aspect ratio
+  const handleResizePointerDown = (e, handle) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    setResizingHandle(handle);
+    cropDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialBox: { ...cropBox }
+    };
+
+    const imgAspect = (activeImage?.width && activeImage?.height)
+      ? activeImage.width / activeImage.height
+      : 1;
+    const targetAspect = activeGridLayout?.aspect || 1;
+    const aspectFactor = imgAspect / targetAspect;
+
+    const handlePointerMove = (moveEvent) => {
+      if (!wrapDims.width || !wrapDims.height) return;
+      const deltaX = moveEvent.clientX - cropDragRef.current.startX;
+      const deltaNormX = deltaX / wrapDims.width;
+
+      const init = cropDragRef.current.initialBox;
+      let nextBox = { ...init };
+
+      if (handle === 'se') {
+        let newW = Math.max(0.15, Math.min(1 - init.x, init.width + deltaNormX));
+        let newH = newW * aspectFactor;
+        if (init.y + newH > 1) {
+          newH = 1 - init.y;
+          newW = newH / aspectFactor;
+        }
+        nextBox = { x: init.x, y: init.y, width: newW, height: newH };
+      } else if (handle === 'sw') {
+        const rightEdge = init.x + init.width;
+        let newW = Math.max(0.15, Math.min(rightEdge, init.width - deltaNormX));
+        let newH = newW * aspectFactor;
+        if (init.y + newH > 1) {
+          newH = 1 - init.y;
+          newW = newH / aspectFactor;
+        }
+        nextBox = { x: rightEdge - newW, y: init.y, width: newW, height: newH };
+      } else if (handle === 'ne') {
+        const bottomEdge = init.y + init.height;
+        let newW = Math.max(0.15, Math.min(1 - init.x, init.width + deltaNormX));
+        let newH = newW * aspectFactor;
+        if (newH > bottomEdge) {
+          newH = bottomEdge;
+          newW = newH / aspectFactor;
+        }
+        nextBox = { x: init.x, y: bottomEdge - newH, width: newW, height: newH };
+      } else if (handle === 'nw') {
+        const rightEdge = init.x + init.width;
+        const bottomEdge = init.y + init.height;
+        let newW = Math.max(0.15, Math.min(rightEdge, init.width - deltaNormX));
+        let newH = newW * aspectFactor;
+        if (newH > bottomEdge) {
+          newH = bottomEdge;
+          newW = newH / aspectFactor;
+        }
+        nextBox = { x: rightEdge - newW, y: bottomEdge - newH, width: newW, height: newH };
+      }
+
+      if (onUpdateGridCropSetting) {
+        onUpdateGridCropSetting('cropBox', nextBox);
+      }
+    };
+
+    const handlePointerUp = () => {
+      setResizingHandle(null);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
@@ -346,8 +492,7 @@ export function ImagePreview({
             alt={activeImage.name}
             className="preview-base-img"
             style={isGridMode ? {
-              objectFit: 'cover',
-              objectPosition: 'center'
+              objectFit: 'contain'
             } : isCropActive ? {
               objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
               objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
@@ -356,30 +501,70 @@ export function ImagePreview({
             onLoad={updateRenderedDimensions}
           />
 
-          {/* Social Grid Cut Overlay on Source Image */}
+          {/* Interactive Social Grid Crop Box over Full Original Image */}
           {isGridMode && activeGridLayout && (
-            <div className="preview-grid-overlay" aria-hidden="true">
-              {activeGridLayout.tiles.map((tile) => (
+            <div className="preview-grid-frame-container">
+              <div
+                className={`preview-grid-interactive-box ${isBoxDragging ? 'is-moving' : ''} ${resizingHandle ? 'is-resizing' : ''}`}
+                style={{
+                  left: `${cropBox.x * 100}%`,
+                  top: `${cropBox.y * 100}%`,
+                  width: `${cropBox.width * 100}%`,
+                  height: `${cropBox.height * 100}%`
+                }}
+                onPointerDown={handleBoxPointerDown}
+                title="Drag to reposition crop area, or drag corners to resize"
+              >
+                {/* Facebook Grid Slices Inside Crop Box */}
+                {activeGridLayout.tiles.map((tile) => (
+                  <div
+                    key={tile.id}
+                    className="preview-grid-tile"
+                    style={{
+                      left: `${tile.x * 100}%`,
+                      top: `${tile.y * 100}%`,
+                      width: `${tile.w * 100}%`,
+                      height: `${tile.h * 100}%`
+                    }}
+                  >
+                    <span className="preview-grid-tag" title={tile.label}>
+                      {tile.id} • {tile.targetWidth ? `${tile.targetWidth}×${tile.targetHeight}` : tile.label}
+                    </span>
+                    {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
+                      <div className="preview-grid-plus-one">
+                        <span>+1</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* 4 Corner Resize Handles */}
                 <div
-                  key={tile.id}
-                  className="preview-grid-tile"
-                  style={{
-                    left: `${tile.x * 100}%`,
-                    top: `${tile.y * 100}%`,
-                    width: `${tile.w * 100}%`,
-                    height: `${tile.h * 100}%`
-                  }}
-                >
-                  <span className="preview-grid-tag" title={tile.label}>
-                    {tile.id} • {tile.targetWidth ? `${tile.targetWidth}×${tile.targetHeight}` : tile.label}
-                  </span>
-                  {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
-                    <div className="preview-grid-plus-one">
-                      <span>+1</span>
-                    </div>
-                  )}
+                  className="crop-box-handle handle-nw"
+                  onPointerDown={(e) => handleResizePointerDown(e, 'nw')}
+                  title="Drag to resize crop area"
+                />
+                <div
+                  className="crop-box-handle handle-ne"
+                  onPointerDown={(e) => handleResizePointerDown(e, 'ne')}
+                  title="Drag to resize crop area"
+                />
+                <div
+                  className="crop-box-handle handle-sw"
+                  onPointerDown={(e) => handleResizePointerDown(e, 'sw')}
+                  title="Drag to resize crop area"
+                />
+                <div
+                  className="crop-box-handle handle-se"
+                  onPointerDown={(e) => handleResizePointerDown(e, 'se')}
+                  title="Drag to resize crop area"
+                />
+
+                {/* Center Framed Dimensions Tag */}
+                <div className="crop-box-center-badge">
+                  <span>{Math.round(cropBox.width * (activeImage.width || 1080))} × {Math.round(cropBox.height * (activeImage.height || 1080))} px</span>
                 </div>
-              ))}
+              </div>
             </div>
           )}
 

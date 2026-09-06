@@ -207,7 +207,8 @@ export const SOCIAL_GRID_LAYOUTS = [
 export const DEFAULT_GRID_CROP_SETTINGS = {
   mode: 'standard', // 'standard' | 'grid'
   activeLayout: 'four-squares',
-  gridFocus: 'center'
+  gridFocus: 'center',
+  cropBox: null // { x, y, width, height } normalized 0 to 1
 };
 
 

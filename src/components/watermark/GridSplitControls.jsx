@@ -1,6 +1,7 @@
 import React from 'react';
-import { FiScissors, FiUploadCloud, FiImage, FiInfo } from 'react-icons/fi';
+import { FiScissors, FiUploadCloud, FiImage, FiInfo, FiRotateCcw, FiMaximize2 } from 'react-icons/fi';
 import { SOCIAL_GRID_LAYOUTS } from '../../constants/watermark';
+import { getDefaultNormalizedCropBox } from '../../utils/gridCropUtils';
 import { Button } from '../common/Button';
 import './GridSplitControls.css';
 
@@ -8,11 +9,20 @@ export function GridSplitControls({
   activeLayout = 'four-squares',
   onSelectLayout,
   activeImage = null,
+  cropBox = null,
+  onUpdateGridCropSetting,
   onSliceImage,
   isSlicing = false,
   onTriggerSingleUpload
 }) {
   const currentLayout = SOCIAL_GRID_LAYOUTS.find((l) => l.id === activeLayout) || SOCIAL_GRID_LAYOUTS[3];
+
+  const defaultBox = activeImage
+    ? getDefaultNormalizedCropBox(activeImage.width, activeImage.height, currentLayout.aspect || 1)
+    : { x: 0, y: 0, width: 1, height: 1 };
+  const activeBox = (cropBox && typeof cropBox.width === 'number') ? cropBox : defaultBox;
+  const framedW = Math.round(activeBox.width * (activeImage?.width || 1080));
+  const framedH = Math.round(activeBox.height * (activeImage?.height || 1080));
 
   return (
     <div className="grid-split-controls-pane">
@@ -112,9 +122,36 @@ export function GridSplitControls({
               <span className="meta-source-name" title={activeImage.name}>
                 {activeImage.name}
               </span>
-              <span className="meta-dim-badge">
-                {activeImage.width} × {activeImage.height} px
+              <span className="meta-dim-badge" title="Original Image Dimensions">
+                Orig: {activeImage.width} × {activeImage.height} px
               </span>
+            </div>
+
+            {/* Custom Framed Area Display & Quick Reset Buttons */}
+            <div className="grid-slice-target-row">
+              <span className="target-label">Framed Crop:</span>
+              <span className="target-val highlight-val">{framedW} × {framedH} px</span>
+            </div>
+
+            <div className="grid-crop-tools-row">
+              <button
+                type="button"
+                className="grid-crop-mini-btn"
+                onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('cropBox', defaultBox)}
+                title="Center the Facebook crop frame on the photo"
+              >
+                <FiRotateCcw size={11} />
+                <span>Center Frame</span>
+              </button>
+              <button
+                type="button"
+                className="grid-crop-mini-btn"
+                onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('cropBox', defaultBox)}
+                title="Reset crop frame to fit image"
+              >
+                <FiMaximize2 size={11} />
+                <span>Fit Image</span>
+              </button>
             </div>
 
             {/* Target Facebook Dimensions Display */}
@@ -130,7 +167,7 @@ export function GridSplitControls({
               iconLeft={<FiScissors size={14} />}
               loading={isSlicing}
               onClick={onSliceImage}
-              title={`Slice image into Facebook Grid ${currentLayout.fbSummary}`}
+              title={`Slice custom framed area into Facebook Grid (${currentLayout.fbSummary})`}
             >
               {isSlicing ? 'Slicing...' : `Slice to Facebook Grid (${currentLayout.tileCount} Tiles)`}
             </Button>
@@ -164,7 +201,7 @@ export function GridSplitControls({
       <div className="grid-hint-card">
         <FiInfo className="grid-hint-icon" />
         <span>
-          Outputs exact standard Facebook feed dimensions ({currentLayout.fbSummary}) for automatic collage arrangement.
+          Full original photo shown. Drag the frame on your photo to reposition, or drag corner handles to resize the crop area before slicing.
         </span>
       </div>
     </div>

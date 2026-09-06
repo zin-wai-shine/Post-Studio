@@ -191,6 +191,7 @@ export function Watermark() {
         layoutId,
         {
           focus,
+          cropBox: gridCropSettings?.cropBox || null,
           baseFilename: activeImage.name
         }
       );
@@ -547,6 +548,7 @@ const HEADER_FORMAT_OPTIONS = [
                     : uploaderTriggerRef.current?.click()
                 }
                 gridCropSettings={gridCropSettings}
+                onUpdateGridCropSetting={updateGridCropSetting}
                 onSliceImage={handleSliceImage}
                 isSlicing={isSlicing}
               />

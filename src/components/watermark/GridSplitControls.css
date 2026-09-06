@@ -234,6 +234,39 @@
   white-space: nowrap;
 }
 
+.target-val.highlight-val {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.grid-crop-tools-row {
+  display: flex;
+  gap: 6px;
+}
+
+.grid-crop-mini-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.grid-crop-mini-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-dark);
+}
+
 .slice-action-btn {
   width: 100%;
   justify-content: center;
