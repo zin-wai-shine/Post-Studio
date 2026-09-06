@@ -401,13 +401,15 @@ export function Watermark() {
 
   return (
     <div className="watermark-page">
-      {/* Toast Notification */}
+      {/* Toast Notification (Apple Notification style) */}
       {toast && (
         <div className="toast-container">
           <Toast
             type={toast.type}
+            title={toast.title}
             message={toast.message}
             onClose={() => setToast(null)}
+            duration={3500}
           />
         </div>
       )}
@@ -415,7 +417,7 @@ export function Watermark() {
       {/* Main Left Workspace (Preview & Thumbnails) */}
       <div className="workspace-left">
         {images.length === 0 ? (
-          <div className="preview-area">
+          <div className="preview-area empty-preview-area">
             <ImageUploader
               onFilesSelected={handleFilesSelected}
               onLoadSample={handleLoadDemoSamples}

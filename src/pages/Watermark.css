@@ -24,16 +24,28 @@
   flex-direction: column;
 }
 
+.empty-preview-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
 .thumbnails-area {
   flex-shrink: 0;
 }
 
 .toast-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 100;
-  max-width: 360px;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
 }
 
 @media (max-width: 1100px) {

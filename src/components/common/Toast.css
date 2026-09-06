@@ -1,50 +1,150 @@
-.toast {
+/* Apple Notification Toast Note */
+.apple-noti-toast {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  line-height: 1.4;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-card);
-  box-shadow: var(--shadow-modal);
-  animation: toast-slide-in 0.2s ease;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 320px;
+  max-width: 440px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(28, 28, 30, 0.88);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 0.5px 0.5px rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  user-select: none;
+  animation: apple-noti-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
 }
 
-.toast-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
+.apple-noti-toast.exiting {
+  animation: apple-noti-slide-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.toast-icon {
+/* App Icon Badge (Apple Squircle) */
+.apple-noti-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
-.toast-success {
-  background-color: var(--color-card);
-  border-color: var(--color-success-border);
-  color: var(--color-success);
+.apple-noti-toast.success .apple-noti-icon-badge {
+  background: linear-gradient(135deg, #34C759 0%, #28A745 100%);
+  color: #FFFFFF;
 }
 
-.toast-error {
-  background-color: var(--color-card);
-  border-color: var(--color-danger-border);
-  color: var(--color-danger);
+.apple-noti-toast.error .apple-noti-icon-badge {
+  background: linear-gradient(135deg, #FF453A 0%, #D93025 100%);
+  color: #FFFFFF;
 }
 
-.toast-info {
-  background-color: var(--color-card);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
+.apple-noti-toast.info .apple-noti-icon-badge {
+  background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+  color: #FFFFFF;
 }
 
-@keyframes toast-slide-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Notification Body */
+.apple-noti-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
+
+.apple-noti-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 1px;
+}
+
+.apple-noti-app {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+}
+
+.apple-noti-dot {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.apple-noti-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.apple-noti-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.apple-noti-message {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+/* Apple Dismiss Button */
+.apple-noti-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  margin-top: 1px;
+}
+
+.apple-noti-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+}
+
+/* Animations */
+@keyframes apple-noti-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes apple-noti-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.95);
+  }
+}
+
