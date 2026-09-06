@@ -117,89 +117,77 @@ export const SOCIAL_GRID_LAYOUTS = [
   {
     id: 'one-square',
     name: 'One Square',
-    subtitle: '1080 × 1080 px (1:1)',
-    fbBadge: '1080 × 1080 px',
-    fbSummary: '1× 1080 × 1080 px',
+    subtitle: '1 Single Square',
     tileCount: 1,
     aspect: 1,
     tiles: [
-      { id: 1, key: 'square', label: '1080 × 1080 px', targetWidth: 1080, targetHeight: 1080, x: 0, y: 0, w: 1, h: 1 }
+      { id: 1, key: 'square', label: 'Tile 1', x: 0, y: 0, w: 1, h: 1 }
     ]
   },
   {
     id: 'two-squares',
     name: 'Two Squares',
-    subtitle: '2× 1080 × 2160 px (Vertical Split)',
-    fbBadge: '2× 1080 × 2160 px',
-    fbSummary: '2× 1080 × 2160 px',
+    subtitle: 'Half Split (2 Tiles)',
     tileCount: 2,
     aspect: 1,
     tiles: [
-      { id: 1, key: 'left', label: 'Left (1080 × 2160)', targetWidth: 1080, targetHeight: 2160, x: 0, y: 0, w: 0.5, h: 1 },
-      { id: 2, key: 'right', label: 'Right (1080 × 2160)', targetWidth: 1080, targetHeight: 2160, x: 0.5, y: 0, w: 0.5, h: 1 }
+      { id: 1, key: 'left', label: 'Left Half (1/2)', x: 0, y: 0, w: 0.5, h: 1 },
+      { id: 2, key: 'right', label: 'Right Half (2/2)', x: 0.5, y: 0, w: 0.5, h: 1 }
     ]
   },
   {
     id: 'three-squares',
     name: 'Three Squares',
-    subtitle: 'Top 1200 × 600 • Bottom 1080 × 1080',
-    fbBadge: 'Top 1200×600 • Bottom 1080×1080',
-    fbSummary: 'Top 1200 × 600 px • Bottom 2× 1080 × 1080 px',
+    subtitle: 'Top Banner + 2 Squares',
     tileCount: 3,
     aspect: 1,
     tiles: [
-      { id: 1, key: 'top', label: 'Top Banner (1200 × 600)', targetWidth: 1200, targetHeight: 600, x: 0, y: 0, w: 1, h: 0.5 },
-      { id: 2, key: 'bottom-left', label: 'Bottom Left (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0, y: 0.5, w: 0.5, h: 0.5 },
-      { id: 3, key: 'bottom-right', label: 'Bottom Right (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0.5, y: 0.5, w: 0.5, h: 0.5 }
+      { id: 1, key: 'top', label: 'Top Banner (1/3)', x: 0, y: 0, w: 1, h: 0.52 },
+      { id: 2, key: 'bottom-left', label: 'Bottom Left (2/3)', x: 0, y: 0.52, w: 0.5, h: 0.48 },
+      { id: 3, key: 'bottom-right', label: 'Bottom Right (3/3)', x: 0.5, y: 0.52, w: 0.5, h: 0.48 }
     ]
   },
   {
     id: 'four-squares',
     name: 'Four Squares',
-    subtitle: '4× 1080 × 1080 px (2×2 Grid)',
-    fbBadge: '4× 1080 × 1080 px',
-    fbSummary: '4× 1080 × 1080 px',
+    subtitle: '2×2 Cross Grid (4 Tiles)',
     tileCount: 4,
     aspect: 1,
     tiles: [
-      { id: 1, key: 'top-left', label: 'Top Left (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0, y: 0, w: 0.5, h: 0.5 },
-      { id: 2, key: 'top-right', label: 'Top Right (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0.5, y: 0, w: 0.5, h: 0.5 },
-      { id: 3, key: 'bottom-left', label: 'Bottom Left (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0, y: 0.5, w: 0.5, h: 0.5 },
-      { id: 4, key: 'bottom-right', label: 'Bottom Right (1080 × 1080)', targetWidth: 1080, targetHeight: 1080, x: 0.5, y: 0.5, w: 0.5, h: 0.5 }
+      { id: 1, key: 'top-left', label: 'Top Left (1/4)', x: 0, y: 0, w: 0.5, h: 0.5 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/4)', x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { id: 3, key: 'bottom-left', label: 'Bottom Left (3/4)', x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { id: 4, key: 'bottom-right', label: 'Bottom Right (4/4)', x: 0.5, y: 0.5, w: 0.5, h: 0.5 }
     ]
   },
   {
     id: 'five-squares',
     name: 'Five Squares',
-    subtitle: '2× 1080 × 1188 • 3× 720 × 972',
-    fbBadge: 'Top 1080×1188 • Bottom 720×972',
-    fbSummary: 'Top 2× 1080 × 1188 px • Bottom 3× 720 × 972 px',
+    subtitle: '2 Top + 3 Bottom (5 Tiles)',
     tileCount: 5,
     aspect: 1,
     tiles: [
-      { id: 1, key: 'top-left', label: 'Top Left (1080 × 1188)', targetWidth: 1080, targetHeight: 1188, x: 0, y: 0, w: 0.5, h: 0.55 },
-      { id: 2, key: 'top-right', label: 'Top Right (1080 × 1188)', targetWidth: 1080, targetHeight: 1188, x: 0.5, y: 0, w: 0.5, h: 0.55 },
-      { id: 3, key: 'bottom-left', label: 'Bottom Left (720 × 972)', targetWidth: 720, targetHeight: 972, x: 0, y: 0.55, w: 1 / 3, h: 0.45 },
-      { id: 4, key: 'bottom-mid', label: 'Bottom Mid (720 × 972)', targetWidth: 720, targetHeight: 972, x: 1 / 3, y: 0.55, w: 1 / 3, h: 0.45 },
-      { id: 5, key: 'bottom-right', label: 'Bottom Right (720 × 972)', targetWidth: 720, targetHeight: 972, x: 2 / 3, y: 0.55, w: 1 / 3, h: 0.45 }
+      { id: 1, key: 'top-left', label: 'Top Left (1/5)', x: 0, y: 0, w: 0.5, h: 0.55 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/5)', x: 0.5, y: 0, w: 0.5, h: 0.55 },
+      { id: 3, key: 'bottom-left', label: 'Bottom Left (3/5)', x: 0, y: 0.55, w: 1 / 3, h: 0.45 },
+      { id: 4, key: 'bottom-mid', label: 'Bottom Center (4/5)', x: 1 / 3, y: 0.55, w: 1 / 3, h: 0.45 },
+      { id: 5, key: 'bottom-right', label: 'Bottom Right (5/5)', x: 2 / 3, y: 0.55, w: 1 / 3, h: 0.45 }
     ]
   },
   {
     id: 'six-squares',
     name: 'Six Squares',
-    subtitle: '2× 1080 × 1188 • 4× 540 × 972 (+1 FB Grid)',
-    fbBadge: 'Top 1080×1188 • Bottom 540×972',
-    fbSummary: 'Top 2× 1080 × 1188 px • Bottom 4× 540 × 972 px',
+    subtitle: '2 Top + 4 Bottom (+1 Facebook Grid)',
     tileCount: 6,
     aspect: 1,
     hasPlusOneBadge: true,
     tiles: [
-      { id: 1, key: 'top-left', label: 'Top Left (1080 × 1188)', targetWidth: 1080, targetHeight: 1188, x: 0, y: 0, w: 0.5, h: 0.55 },
-      { id: 2, key: 'top-right', label: 'Top Right (1080 × 1188)', targetWidth: 1080, targetHeight: 1188, x: 0.5, y: 0, w: 0.5, h: 0.55 },
-      { id: 3, key: 'bottom-1', label: 'Bottom 1 (540 × 972)', targetWidth: 540, targetHeight: 972, x: 0, y: 0.55, w: 0.25, h: 0.45 },
-      { id: 4, key: 'bottom-2', label: 'Bottom 2 (540 × 972)', targetWidth: 540, targetHeight: 972, x: 0.25, y: 0.55, w: 0.25, h: 0.45 },
-      { id: 5, key: 'bottom-3', label: 'Bottom 3 (540 × 972)', targetWidth: 540, targetHeight: 972, x: 0.50, y: 0.55, w: 0.25, h: 0.45 },
-      { id: 6, key: 'bottom-4', label: 'Bottom 4 (540 × 972)', targetWidth: 540, targetHeight: 972, x: 0.75, y: 0.55, w: 0.25, h: 0.45 }
+      { id: 1, key: 'top-left', label: 'Top Left (1/6)', x: 0, y: 0, w: 0.5, h: 0.55 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/6)', x: 0.5, y: 0, w: 0.5, h: 0.55 },
+      { id: 3, key: 'bottom-1', label: 'Bottom 1 (3/6)', x: 0, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 4, key: 'bottom-2', label: 'Bottom 2 (4/6)', x: 0.25, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 5, key: 'bottom-3', label: 'Bottom 3 (5/6)', x: 0.50, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 6, key: 'bottom-4', label: 'Bottom 4 (6/6)', x: 0.75, y: 0.55, w: 0.25, h: 0.45 }
     ]
   }
 ];
@@ -207,8 +195,7 @@ export const SOCIAL_GRID_LAYOUTS = [
 export const DEFAULT_GRID_CROP_SETTINGS = {
   mode: 'standard', // 'standard' | 'grid'
   activeLayout: 'four-squares',
-  gridFocus: 'center',
-  cropBox: null // { x, y, width, height } normalized 0 to 1
+  gridFocus: 'center'
 };
 
 

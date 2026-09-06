@@ -50,46 +50,6 @@ export function computeGridCropRect(naturalWidth, naturalHeight, targetAspect = 
 }
 
 /**
- * Calculates default centered normalized crop box fitting layout aspect on the image
- * @param {number} naturalWidth 
- * @param {number} naturalHeight 
- * @param {number} layoutAspect 
- * @returns {{ x: number, y: number, width: number, height: number }}
- */
-export function getDefaultNormalizedCropBox(naturalWidth, naturalHeight, layoutAspect = 1) {
-  if (!naturalWidth || !naturalHeight) {
-    return { x: 0, y: 0, width: 1, height: 1 };
-  }
-
-  const imageAspect = naturalWidth / naturalHeight;
-  let width = 1;
-  let height = 1;
-  let x = 0;
-  let y = 0;
-
-  if (imageAspect > layoutAspect) {
-    // Image is wider than layout aspect: height is 1, width is scaled
-    height = 1;
-    width = (naturalHeight * layoutAspect) / naturalWidth;
-    x = (1 - width) / 2;
-    y = 0;
-  } else {
-    // Image is taller than layout aspect: width is 1, height is scaled
-    width = 1;
-    height = (naturalWidth / layoutAspect) / naturalHeight;
-    x = 0;
-    y = (1 - height) / 2;
-  }
-
-  return {
-    x: Math.max(0, Math.min(1, x)),
-    y: Math.max(0, Math.min(1, y)),
-    width: Math.max(0.05, Math.min(1, width)),
-    height: Math.max(0.05, Math.min(1, height))
-  };
-}
-
-/**
  * Slices a source image into discrete image files based on selected grid layout
  * @param {HTMLImageElement|File|Blob|string} sourceImage 
  * @param {string} layoutId 
@@ -97,7 +57,7 @@ export function getDefaultNormalizedCropBox(naturalWidth, naturalHeight, layoutA
  * @returns {Promise<Array<Object>>} Sliced tile objects ready for useImageFiles
  */
 export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squares', options = {}) {
-  const { focus = 'center', baseFilename = 'grid-post.jpg', quality = 0.95, cropBox = null } = options;
+  const { focus = 'center', baseFilename = 'grid-post.jpg', quality = 0.95 } = options;
   const layout = getLayoutConfig(layoutId);
 
   const img = (sourceImage instanceof HTMLImageElement)
@@ -114,34 +74,11 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
   const { base: rawBaseName } = parseFilename(baseFilename);
   const cleanBaseName = rawBaseName.replace(/[-_]grid[-_]\d+.*$/i, ''); // Strip previous grid suffix if any
 
-  // Calculate bounding crop rect on source image (user customized cropBox or default centered rect)
-  let cropX = 0;
-  let cropY = 0;
-  let cropWidth = naturalWidth;
-  let cropHeight = naturalHeight;
-
-  if (cropBox && typeof cropBox.width === 'number' && typeof cropBox.height === 'number') {
-    const normX = Math.max(0, Math.min(1, cropBox.x || 0));
-    const normY = Math.max(0, Math.min(1, cropBox.y || 0));
-    const normW = Math.max(0.01, Math.min(1 - normX, cropBox.width));
-    const normH = Math.max(0.01, Math.min(1 - normY, cropBox.height));
-
-    cropX = Math.round(normX * naturalWidth);
-    cropY = Math.round(normY * naturalHeight);
-    cropWidth = Math.round(normW * naturalWidth);
-    cropHeight = Math.round(normH * naturalHeight);
-  } else {
-    const rect = computeGridCropRect(
-      naturalWidth,
-      naturalHeight,
-      layout.aspect || 1,
-      focus
-    );
-    cropX = rect.cropX;
-    cropY = rect.cropY;
-    cropWidth = rect.cropWidth;
-    cropHeight = rect.cropHeight;
-  }
+  // Preserve 100% of original image dimensions - split the full image canvas directly
+  const cropX = 0;
+  const cropY = 0;
+  const cropWidth = naturalWidth;
+  const cropHeight = naturalHeight;
 
   const tileResults = [];
 
@@ -156,14 +93,10 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
 
     if (sw <= 0 || sh <= 0) continue;
 
-    // Target Facebook grid dimensions
-    const targetW = tile.targetWidth || sw;
-    const targetH = tile.targetHeight || sh;
-
-    // Create slice canvas matching exact Facebook dimensions
+    // Create slice canvas
     const canvas = document.createElement('canvas');
-    canvas.width = targetW;
-    canvas.height = targetH;
+    canvas.width = sw;
+    canvas.height = sh;
     const ctx = canvas.getContext('2d', { willReadFrequently: false });
 
     if (!ctx) {
@@ -174,12 +107,12 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Background fill for safety
+    // White background for safety
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, targetW, targetH);
+    ctx.fillRect(0, 0, sw, sh);
 
-    // Draw slice scaled to Facebook target dimensions
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+    // Draw slice
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
 
     // Convert to Blob
     const mimeType = 'image/jpeg';
@@ -203,10 +136,9 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       file: tileFile,
       name: tileFileName,
       size: tileFile.size,
-      width: targetW,
-      height: targetH,
-      aspectRatio: targetW / (targetH || 1),
-      facebookSize: `${targetW} × ${targetH} px`,
+      width: sw,
+      height: sh,
+      aspectRatio: sw / (sh || 1),
       previewUrl,
       isGridTile: true,
       tileIndex: i + 1,

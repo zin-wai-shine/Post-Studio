@@ -175,8 +175,6 @@ export function CropControls({
           activeLayout={gridCropSettings?.activeLayout || 'four-squares'}
           onSelectLayout={(layoutId) => onUpdateGridCropSetting && onUpdateGridCropSetting('activeLayout', layoutId)}
           activeImage={activeImage}
-          cropBox={gridCropSettings?.cropBox}
-          onUpdateGridCropSetting={onUpdateGridCropSetting}
           onSliceImage={onSliceImage}
           isSlicing={isSlicing}
           onTriggerSingleUpload={onTriggerSingleUpload}

@@ -191,7 +191,6 @@ export function Watermark() {
         layoutId,
         {
           focus,
-          cropBox: gridCropSettings?.cropBox || null,
           baseFilename: activeImage.name
         }
       );
@@ -209,7 +208,7 @@ export function Watermark() {
 
       setToast({
         type: 'success',
-        message: `Successfully sliced into ${tiles.length} Facebook Grid tiles! Added to workspace.`
+        message: `Successfully sliced into ${tiles.length} tiles! Added to workspace.`
       });
     } catch (err) {
       console.error('Failed to slice image:', err);
@@ -548,7 +547,6 @@ const HEADER_FORMAT_OPTIONS = [
                     : uploaderTriggerRef.current?.click()
                 }
                 gridCropSettings={gridCropSettings}
-                onUpdateGridCropSetting={updateGridCropSetting}
                 onSliceImage={handleSliceImage}
                 isSlicing={isSlicing}
               />
