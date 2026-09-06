@@ -14,8 +14,17 @@ export function ProcessingModal({
       onClose={onCancel}
       title="Downloading Images Directly"
       maxWidth="420px"
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
+      showCloseButton={false}
+      backdropClassName="processing-modal-backdrop"
       footer={
-        <Button variant="secondary" size="sm" onClick={onCancel}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onCancel}
+          className="processing-cancel-btn"
+        >
           Cancel Download
         </Button>
       }

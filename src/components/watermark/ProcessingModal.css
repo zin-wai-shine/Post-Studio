@@ -1,3 +1,32 @@
+.processing-modal-backdrop {
+  z-index: 99999 !important;
+  background-color: rgba(0, 0, 0, 0.72) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  cursor: not-allowed;
+  user-select: none;
+  pointer-events: auto !important;
+}
+
+.processing-modal-backdrop .modal-content {
+  cursor: default;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.processing-cancel-btn {
+  cursor: pointer !important;
+  padding: 8px 18px !important;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.processing-cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+
 .processing-wrap {
   display: flex;
   flex-direction: column;

@@ -1,12 +1,13 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 15, 15, 0.45);
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 15, 15, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 99999;
   padding: var(--space-4);
   animation: modal-fade-in 0.15s ease;
 }
