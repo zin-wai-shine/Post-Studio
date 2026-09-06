@@ -8,8 +8,8 @@
   font-size: var(--font-size-sm);
   line-height: 1.4;
   border: 1px solid var(--color-border);
-  background-color: #FFFFFF;
-  box-shadow: var(--shadow-subtle);
+  background-color: var(--color-card);
+  box-shadow: var(--shadow-modal);
   animation: toast-slide-in 0.2s ease;
 }
 
@@ -27,19 +27,19 @@
 }
 
 .toast-success {
-  background-color: var(--color-success-bg);
+  background-color: var(--color-card);
   border-color: var(--color-success-border);
-  color: #15803D;
+  color: var(--color-success);
 }
 
 .toast-error {
-  background-color: var(--color-danger-bg);
+  background-color: var(--color-card);
   border-color: var(--color-danger-border);
   color: var(--color-danger);
 }
 
 .toast-info {
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }

@@ -21,7 +21,7 @@
 }
 
 .uploader-dropzone.dragging {
-  background-color: #F0F0F0;
+  background-color: var(--color-active);
 }
 
 .uploader-icon-wrap {

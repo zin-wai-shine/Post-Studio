@@ -2,7 +2,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-subtle);
@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border);
   background-color: var(--color-card-subtle);
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
@@ -40,16 +40,17 @@
 .meta-badge {
   padding: 2px 8px;
   border-radius: 4px;
-  background-color: #FFFFFF;
+  background-color: var(--color-input-bg);
   border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
 }
 
 .meta-badge.crop-active-badge {
-  background-color: #F0FDF4;
-  border-color: #86EFAC;
-  color: #166534;
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
   font-weight: 600;
 }
 
@@ -59,12 +60,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #ECECEC;
+  background-color: #121212;
   background-image: 
-    linear-gradient(45deg, #E2E2E2 25%, transparent 25%), 
-    linear-gradient(-45deg, #E2E2E2 25%, transparent 25%), 
-    linear-gradient(45deg, transparent 75%, #E2E2E2 75%), 
-    linear-gradient(-45deg, transparent 75%, #E2E2E2 75%);
+    linear-gradient(45deg, #181817 25%, transparent 25%), 
+    linear-gradient(-45deg, #181817 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #181817 75%), 
+    linear-gradient(-45deg, transparent 75%, #181817 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   overflow: hidden;
@@ -76,8 +77,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  background-color: #FFFFFF;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  background-color: #181817;
   overflow: hidden;
 }
 

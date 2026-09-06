@@ -22,11 +22,13 @@
 
 .icon-btn-bordered {
   border-color: var(--color-border);
-  background-color: #FFFFFF;
+  background-color: var(--color-card-subtle);
+  color: var(--color-text-primary);
 }
 
 .icon-btn-bordered:hover:not(:disabled) {
   border-color: var(--color-border-dark);
+  background-color: var(--color-hover);
 }
 
 .icon-btn-danger:hover:not(:disabled) {

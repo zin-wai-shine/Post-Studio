@@ -12,7 +12,7 @@
 }
 
 .modal-content {
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-modal);
@@ -27,7 +27,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal-title {
@@ -50,7 +50,7 @@
   gap: var(--space-3);
   padding: 14px 20px;
   background-color: var(--color-card-subtle);
-  border-top: 1px solid var(--color-border-light);
+  border-top: 1px solid var(--color-border);
 }
 
 @keyframes modal-fade-in {

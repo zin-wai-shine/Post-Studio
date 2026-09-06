@@ -37,7 +37,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
           </div>
           {mobileOpen && (
             <IconButton
-              icon={<FiX size={18} color="#FFFFFF" />}
+              icon={<FiX size={18} />}
               size="sm"
               onClick={onCloseMobile}
               aria-label="Close menu"

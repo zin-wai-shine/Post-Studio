@@ -26,7 +26,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  background-color: var(--color-hover);
+  background-color: var(--color-input-bg);
   padding: 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
@@ -35,7 +35,7 @@
 
 .grid-cell-btn {
   height: 32px;
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   display: flex;
@@ -46,7 +46,7 @@
 }
 
 .grid-cell-btn:hover {
-  background-color: #F8F8F8;
+  background-color: var(--color-hover);
   border-color: var(--color-border-dark);
 }
 
@@ -59,14 +59,15 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: var(--color-text-muted);
-  transition: background-color 0.15s ease;
+  background-color: var(--color-border-dark);
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .grid-cell-btn:hover .cell-dot {
-  background-color: var(--color-text-primary);
+  background-color: var(--color-text-secondary);
 }
 
 .grid-cell-btn.active .cell-dot {
-  background-color: #FFFFFF;
+  background-color: var(--color-main-contrast);
+  transform: scale(1.25);
 }

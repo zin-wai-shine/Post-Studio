@@ -7,7 +7,7 @@
 }
 
 .dashboard-hero {
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 28px 32px;
@@ -50,7 +50,7 @@
 }
 
 .tool-card {
-  background-color: #FFFFFF;
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 22px;
@@ -66,7 +66,7 @@
 
 .tool-card.active:hover {
   border-color: var(--color-main);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   transform: translateY(-2px);
 }
 

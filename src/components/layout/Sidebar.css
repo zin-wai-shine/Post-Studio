@@ -9,7 +9,7 @@
   top: 0;
   left: 0;
   z-index: 50;
-  border-right: 1px solid #2B2B2B;
+  border-right: 1px solid var(--color-border);
   transition: width 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
 }
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #282828;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sidebar-brand {
@@ -31,8 +31,8 @@
 .brand-badge {
   width: 28px;
   height: 28px;
-  background: #FFFFFF;
-  color: #1E1E1E;
+  background: var(--color-main);
+  color: var(--color-main-contrast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,7 +46,7 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.8px;
-  color: #FFFFFF;
+  color: var(--color-text-primary);
 }
 
 .sidebar-nav {
@@ -73,12 +73,12 @@
 
 .nav-link:hover:not(.active) {
   background-color: var(--color-sidebar-hover);
-  color: #FFFFFF;
+  color: var(--color-text-primary);
 }
 
 .nav-link.active {
-  background-color: #2F2F2F;
-  color: #FFFFFF;
+  background-color: var(--color-sidebar-active);
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
@@ -95,20 +95,21 @@
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 4px;
-  background-color: #2D2D2D;
-  color: #8E8E8E;
+  background-color: var(--color-card-subtle);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   letter-spacing: 0.2px;
   text-transform: uppercase;
 }
 
 .sidebar-footer {
   padding: 16px 20px;
-  border-top: 1px solid #282828;
+  border-top: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: var(--font-size-xs);
-  color: #707070;
+  color: var(--color-text-muted);
 }
 
 /* Mobile drawer backdrop */

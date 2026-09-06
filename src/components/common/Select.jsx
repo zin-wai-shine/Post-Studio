@@ -65,7 +65,7 @@ export function Select({
   const customStyles = {
     control: (base, state) => ({
       ...base,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: 'var(--color-input-bg, #1f1f1f)',
       minHeight: isSmall ? '30px' : '36px',
       height: isSmall ? '30px' : '36px',
       borderColor: state.isFocused ? 'var(--color-main)' : 'var(--color-border)',
@@ -109,7 +109,7 @@ export function Select({
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: 'var(--color-card, #181817)',
       border: '1px solid var(--color-border)',
       borderRadius: 'var(--radius-sm)',
       boxShadow: 'var(--shadow-modal)',
@@ -128,7 +128,7 @@ export function Select({
       borderRadius: '4px',
       cursor: 'pointer',
       backgroundColor: state.isSelected
-        ? 'var(--color-main)'
+        ? '#2E2E2D'
         : state.isFocused
         ? 'var(--color-hover)'
         : 'transparent',
@@ -136,7 +136,7 @@ export function Select({
       fontSize: isSmall ? '12px' : '13px',
       transition: 'background-color 0.1s ease',
       '&:active': {
-        backgroundColor: state.isSelected ? 'var(--color-main)' : 'var(--color-active)'
+        backgroundColor: state.isSelected ? '#2E2E2D' : 'var(--color-active)'
       }
     }),
     placeholder: (base) => ({

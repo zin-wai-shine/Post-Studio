@@ -27,47 +27,49 @@
   font-size: var(--font-size-base);
 }
 
-/* Primary: Solid #222222 */
+/* Primary Button: Solid Contrast */
 .btn-primary {
   background-color: var(--color-main);
-  color: #FFFFFF;
+  color: var(--color-main-contrast);
   border: 1px solid var(--color-main);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #383838;
-  border-color: #383838;
+  background-color: #FFFFFF;
+  border-color: #FFFFFF;
+  color: #000000;
 }
 
 .btn-primary:active:not(:disabled) {
-  background-color: #111111;
+  background-color: #D4D4D4;
 }
 
-/* Secondary: White with subtle border */
+/* Secondary Button: Elevated #1f1f1f with subtle border */
 .btn-secondary {
-  background-color: #FFFFFF;
+  background-color: var(--color-card-subtle);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-hover);
+  background-color: #272726;
   border-color: var(--color-border-dark);
+  color: var(--color-text-primary);
 }
 
 .btn-secondary:active:not(:disabled) {
   background-color: var(--color-active);
 }
 
-/* Danger: Minimal red */
+/* Danger Button: Subtle red tint */
 .btn-danger {
-  background-color: #FFFFFF;
+  background-color: var(--color-danger-bg);
   color: var(--color-danger);
   border: 1px solid var(--color-danger-border);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--color-danger-bg);
+  background-color: rgba(239, 68, 68, 0.22);
 }
 
 /* Ghost */
