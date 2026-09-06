@@ -266,3 +266,60 @@
   background: var(--color-input-bg);
   color: var(--color-text-primary);
 }
+
+.thumbnail-title-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .thumbnail-strip {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .thumbnail-header {
+    gap: 6px;
+  }
+
+  .thumbnail-count {
+    font-size: 12px;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .thumbnail-header-nav-btn {
+    width: 20px;
+    height: 20px;
+  }
+
+  .thumbnail-actions {
+    gap: 4px;
+  }
+
+  .thumbnail-actions button {
+    padding: 4px 8px;
+    font-size: 11px;
+    height: 26px;
+  }
+
+  .thumbnail-card {
+    width: 105px;
+    height: 76px;
+  }
+
+  .thumbnail-name {
+    font-size: 10px;
+  }
+
+  .thumbnail-dims {
+    font-size: 9px;
+  }
+
+  .thumbnail-track-arrow {
+    width: 28px;
+    height: 28px;
+  }
+}
+

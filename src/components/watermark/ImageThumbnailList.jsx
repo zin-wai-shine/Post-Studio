@@ -102,7 +102,7 @@ export function ImageThumbnailList({
     <div className="thumbnail-strip">
       <div className="thumbnail-header">
         <div className="thumbnail-count">
-          <span>Batch Images</span>
+          <span className="thumbnail-title-text">Batch Images</span>
           <span className="text-muted text-sm">({images.length})</span>
 
           {hasScroll && (

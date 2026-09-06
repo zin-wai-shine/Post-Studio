@@ -8,7 +8,7 @@
   box-shadow: var(--shadow-subtle);
   overflow: hidden;
   position: relative;
-  min-height: 480px;
+  min-height: 180px;
 }
 
 .preview-topbar {
@@ -154,3 +154,34 @@
   align-items: center;
   justify-content: center;
 }
+
+@media (max-width: 1024px) {
+  .preview-container {
+    min-height: 140px;
+    flex: 1;
+  }
+
+  .preview-topbar {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .preview-filename {
+    max-width: 150px;
+    font-size: 11px;
+  }
+
+  .preview-meta {
+    gap: 6px;
+  }
+
+  .meta-badge {
+    padding: 1px 6px;
+    font-size: 10.5px;
+  }
+
+  .preview-viewport {
+    padding: 8px;
+  }
+}
+

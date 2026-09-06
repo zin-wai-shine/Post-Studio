@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiImage, FiCrop, FiMove, FiSliders, FiDownload } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiImage, FiCrop, FiMove, FiSliders, FiDownload, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { Slider } from '../common/Slider';
 import { Select } from '../common/Select';
 import { PositionGrid } from './PositionGrid';
@@ -18,11 +18,11 @@ const FONT_WEIGHT_OPTIONS = [
 ];
 
 const SECTIONS = [
-  { id: 'watermark', label: 'Watermark', icon: <FiImage className="tab-nav-icon" /> },
-  { id: 'crop', label: 'Crop & Size', icon: <FiCrop className="tab-nav-icon" /> },
-  { id: 'position', label: 'Position', icon: <FiMove className="tab-nav-icon" /> },
-  { id: 'appearance', label: 'Appearance', icon: <FiSliders className="tab-nav-icon" /> },
-  { id: 'export', label: 'Export', icon: <FiDownload className="tab-nav-icon" /> }
+  { id: 'watermark', label: 'Watermark', shortLabel: 'Logo/Text', icon: <FiImage className="tab-nav-icon" /> },
+  { id: 'crop', label: 'Crop & Size', shortLabel: 'Crop', icon: <FiCrop className="tab-nav-icon" /> },
+  { id: 'position', label: 'Position', shortLabel: 'Position', icon: <FiMove className="tab-nav-icon" /> },
+  { id: 'appearance', label: 'Appearance', shortLabel: 'Style', icon: <FiSliders className="tab-nav-icon" /> },
+  { id: 'export', label: 'Export', shortLabel: 'Export', icon: <FiDownload className="tab-nav-icon" /> }
 ];
 
 export function WatermarkControls({
@@ -58,15 +58,65 @@ export function WatermarkControls({
   onToggleAutoClear
 }) {
   const [activeSection, setActiveSection] = useState('watermark');
+  const [isMobileCollapsed, setIsMobileCollapsed] = useState(() => {
+    return typeof window !== 'undefined' && window.innerWidth <= 1024 && totalImagesCount === 0;
+  });
+
+  useEffect(() => {
+    if (totalImagesCount > 0 && typeof window !== 'undefined' && window.innerWidth <= 1024) {
+      setIsMobileCollapsed(false);
+    }
+  }, [totalImagesCount]);
+
   const isSingle = settings.style === 'single';
 
   return (
-    <div className="controls-panel">
-      <div className="controls-header">
-        <h2 className="controls-title">Controls</h2>
-        <span className="text-muted text-xs">
-          {SECTIONS.find((s) => s.id === activeSection)?.label}
-        </span>
+    <div className={`controls-panel ${isMobileCollapsed ? 'mobile-collapsed' : 'mobile-open'}`}>
+      {/* Mobile Drawer Grab Handle */}
+      <div
+        className="mobile-sheet-handle-bar"
+        onClick={() => setIsMobileCollapsed((prev) => !prev)}
+        aria-label="Toggle adjustment panel"
+        role="button"
+        tabIndex={0}
+      >
+        <div className="mobile-sheet-handle" />
+      </div>
+
+      <div
+        className="controls-header"
+        onClick={() => {
+          if (isMobileCollapsed) setIsMobileCollapsed(false);
+        }}
+      >
+        <div className="controls-header-left">
+          <h2 className="controls-title">Controls</h2>
+          <span className="controls-active-badge text-xs">
+            {SECTIONS.find((s) => s.id === activeSection)?.label}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className="mobile-collapse-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMobileCollapsed((prev) => !prev);
+          }}
+          aria-label={isMobileCollapsed ? "Open adjust settings" : "Close adjust settings"}
+        >
+          {isMobileCollapsed ? (
+            <>
+              <FiChevronUp size={15} />
+              <span>Adjust</span>
+            </>
+          ) : (
+            <>
+              <FiChevronDown size={15} />
+              <span>Close</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Section Navigation Menu */}
@@ -78,15 +128,19 @@ export function WatermarkControls({
             role="tab"
             aria-selected={activeSection === sec.id}
             className={`tab-nav-btn ${activeSection === sec.id ? 'active' : ''}`}
-            onClick={() => setActiveSection(sec.id)}
+            onClick={() => {
+              setActiveSection(sec.id);
+              if (isMobileCollapsed) setIsMobileCollapsed(false);
+            }}
           >
             {sec.icon}
-            <span>{sec.label}</span>
+            <span className="tab-label-full">{sec.label}</span>
+            <span className="tab-label-short">{sec.shortLabel}</span>
           </button>
         ))}
       </div>
 
-      {/* Tab Content - Zero Scrolling */}
+      {/* Tab Content - Zero Scrolling on desktop, independent internal scrolling on mobile */}
       <div className="controls-tab-content">
         {/* 1. Watermark Section (Logo / Text) */}
         {activeSection === 'watermark' && (

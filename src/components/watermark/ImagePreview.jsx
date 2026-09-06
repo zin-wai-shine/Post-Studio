@@ -61,8 +61,19 @@ export function ImagePreview({
 
   useEffect(() => {
     updateRenderedDimensions();
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(() => {
+      updateRenderedDimensions();
+    });
+    ro.observe(el);
+
     window.addEventListener('resize', updateRenderedDimensions);
-    return () => window.removeEventListener('resize', updateRenderedDimensions);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateRenderedDimensions);
+    };
   }, [updateRenderedDimensions]);
 
   // Compute watermark display dimensions inside preview wrap
