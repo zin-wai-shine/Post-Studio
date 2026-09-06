@@ -1,7 +1,18 @@
-import React from 'react';
-import { FiCheckCircle, FiInfo, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
-import { Select } from '../common/Select';
-import { CROP_PRESETS, FOCUS_POSITIONS } from '../../constants/watermark';
+import React, { useState } from 'react';
+import {
+  FiCheckCircle,
+  FiInfo,
+  FiPlus,
+  FiCheck,
+  FiTrash2,
+  FiEdit2,
+  FiBookmark
+} from 'react-icons/fi';
+import { Button } from '../common/Button';
+import { IconButton } from '../common/IconButton';
+import { Modal } from '../common/Modal';
+import { useSavedCropPresets } from '../../hooks/useSavedCropPresets';
+import { FOCUS_POSITIONS } from '../../constants/watermark';
 import './CropControls.css';
 
 const FOCUS_CELLS = [
@@ -16,14 +27,6 @@ const FOCUS_CELLS = [
   { key: 'bottom-right', label: 'Bottom Right' }
 ];
 
-const QUICK_RATIOS = [
-  { id: '1:1', label: '1:1', width: 1080, height: 1080 },
-  { id: '4:5', label: '4:5', width: 1080, height: 1350 },
-  { id: '9:16', label: '9:16', width: 1080, height: 1920 },
-  { id: '16:9', label: '16:9', width: 1920, height: 1080 },
-  { id: '4:3', label: '4:3', width: 1440, height: 1080 }
-];
-
 export function CropControls({
   cropSettings,
   onUpdateCropSetting,
@@ -32,17 +35,44 @@ export function CropControls({
   totalImagesCount = 0,
   activeImage = null
 }) {
+  const {
+    presets,
+    addCropPreset,
+    removeCropPreset,
+    renameCropPreset
+  } = useSavedCropPresets();
+
   const isEnabled = Boolean(cropSettings?.enabled);
   const activeFocus = cropSettings?.focus || 'center';
   const focusLabel = FOCUS_POSITIONS[activeFocus]?.label || 'Center';
   const fitMode = cropSettings?.fitMode || 'cover';
 
+  // Modal and inline edit state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+  const [newWidth, setNewWidth] = useState(1440);
+  const [newHeight, setNewHeight] = useState(1080);
+  const [newFocus, setNewFocus] = useState('center');
+  const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+
   const handleToggle = () => {
     const nextState = !isEnabled;
     onUpdateCropSetting('enabled', nextState);
     if (nextState && cropSettings?.preset === 'original') {
-      // Default to 4:5 Portrait or 1:1 if enabling from original
-      onSetCropPreset('4:5');
+      onSetCropPreset('4:3');
+    }
+  };
+
+  const handleSelectPreset = (preset) => {
+    onUpdateCropSetting('enabled', true);
+    onUpdateCropSetting('preset', preset.id);
+    onUpdateCropSetting('width', preset.width);
+    onUpdateCropSetting('height', preset.height);
+    onUpdateCropSetting('aspect', preset.aspect);
+    if (preset.focus) {
+      onSetCropFocus(preset.focus);
     }
   };
 
@@ -64,6 +94,46 @@ export function CropControls({
     }
   };
 
+  const handleStartRename = (e, preset) => {
+    e.stopPropagation();
+    setEditingId(preset.id);
+    setEditingName(preset.name);
+  };
+
+  const handleSaveRename = (id) => {
+    if (editingName.trim()) {
+      renameCropPreset(id, editingName.trim());
+    }
+    setEditingId(null);
+  };
+
+  const handleCreatePreset = () => {
+    if (!newPresetName.trim() || !newWidth || !newHeight) return;
+    const created = addCropPreset({
+      name: newPresetName.trim(),
+      width: newWidth,
+      height: newHeight,
+      focus: newFocus
+    });
+    handleSelectPreset(created);
+    setShowAddModal(false);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      removeCropPreset(deletingId);
+      setDeletingId(null);
+    }
+  };
+
+  // Find active preset name for summary banner
+  const currentActivePreset = presets.find(
+    (p) =>
+      cropSettings?.preset === p.id ||
+      (cropSettings?.width === p.width && cropSettings?.height === p.height)
+  );
+  const activePresetDisplayName = currentActivePreset?.name || 'Custom Dimensions';
+
   return (
     <div className="crop-controls-pane">
       {/* Enable Crop & Standardization Switch */}
@@ -72,7 +142,7 @@ export function CropControls({
           <span className="crop-toggle-title">Crop & Standardize Resolution</span>
           <span className="crop-toggle-desc">
             {isEnabled
-              ? `Unified output: ${cropSettings.width} × ${cropSettings.height} px`
+              ? `Unified output: ${cropSettings.width} × ${cropSettings.height} px (${activePresetDisplayName})`
               : 'Keep each image at its original resolution'}
           </span>
         </div>
@@ -89,15 +159,133 @@ export function CropControls({
 
       {isEnabled && (
         <>
-          {/* Preset Selector */}
-          <div className="control-group">
-            <Select
-              label="Aspect Ratio & Size Preset"
-              value={cropSettings.preset}
-              onChange={(val) => onSetCropPreset(val)}
-              options={CROP_PRESETS}
-              size="md"
-            />
+          {/* Multiple Crop Size Profiles / Library */}
+          <div className="crop-profiles-section">
+            <div className="crop-profiles-header">
+              <div className="crop-profiles-title-wrap">
+                <span className="crop-profiles-title">Session Crop Sizes</span>
+                <span className="crop-profiles-count">({presets.length})</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconLeft={<FiPlus size={12} />}
+                onClick={() => {
+                  setNewPresetName('');
+                  setNewWidth(cropSettings.width || 1440);
+                  setNewHeight(cropSettings.height || 1080);
+                  setNewFocus(activeFocus);
+                  setShowAddModal(true);
+                }}
+                title="Create and save a new crop size profile"
+              >
+                Add Crop Size
+              </Button>
+            </div>
+
+            <div className="crop-profiles-grid" role="listbox" aria-label="Available Crop Sizes">
+              {presets.map((preset) => {
+                const isSelected =
+                  cropSettings.preset === preset.id ||
+                  (cropSettings.width === preset.width && cropSettings.height === preset.height);
+                const isEditing = editingId === preset.id;
+
+                return (
+                  <div
+                    key={preset.id}
+                    className={`crop-profile-card ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      if (!isEditing) handleSelectPreset(preset);
+                    }}
+                    role="option"
+                    aria-selected={isSelected}
+                    tabIndex={0}
+                  >
+                    <div className="crop-profile-radio">
+                      <div className={`crop-radio-circle ${isSelected ? 'checked' : ''}`}>
+                        {isSelected && <FiCheck size={11} strokeWidth={3} />}
+                      </div>
+                    </div>
+
+                    <div className="crop-profile-details">
+                      {isEditing ? (
+                        <div
+                          className="crop-profile-rename-row"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            className="crop-profile-rename-input"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveRename(preset.id);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                          />
+                          <IconButton
+                            icon={<FiCheck size={11} />}
+                            size="sm"
+                            onClick={() => handleSaveRename(preset.id)}
+                            aria-label="Save name"
+                          />
+                        </div>
+                      ) : (
+                        <div className="crop-profile-name-row">
+                          <span className="crop-profile-name" title={preset.name}>
+                            {preset.name}
+                          </span>
+                          {preset.isCustom && (
+                            <span className="crop-custom-tag">Custom</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="crop-profile-meta">
+                        <span className="crop-profile-dim">
+                          {preset.width} × {preset.height} px
+                        </span>
+                        {preset.ratioLabel && (
+                          <span className="crop-profile-ratio">
+                            {preset.ratioLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {preset.isCustom && !isEditing && (
+                      <div
+                        className="crop-profile-actions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="crop-action-btn edit"
+                          onClick={(e) => handleStartRename(e, preset)}
+                          title="Rename this crop size"
+                          aria-label={`Rename ${preset.name}`}
+                        >
+                          <FiEdit2 size={11} />
+                        </button>
+                        <button
+                          type="button"
+                          className="crop-action-btn delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingId(preset.id);
+                          }}
+                          title="Delete this crop size"
+                          aria-label={`Delete ${preset.name}`}
+                        >
+                          <FiTrash2 size={11} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Direct Width & Height Pixel Inputs */}
@@ -144,19 +332,22 @@ export function CropControls({
               </div>
             </div>
 
-            {/* Quick Presets */}
-            <div className="quick-presets-list">
-              {QUICK_RATIOS.map((q) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  className={`quick-preset-chip ${cropSettings.preset === q.id ? 'active' : ''}`}
-                  onClick={() => onSetCropPreset(q.id)}
-                >
-                  {q.label} ({q.width}×{q.height})
-                </button>
-              ))}
-            </div>
+            {/* Quick Save Current Dimensions Button */}
+            <button
+              type="button"
+              className="save-current-crop-btn"
+              onClick={() => {
+                setNewPresetName(`Preset ${cropSettings.width}×${cropSettings.height}`);
+                setNewWidth(cropSettings.width || 1080);
+                setNewHeight(cropSettings.height || 1080);
+                setNewFocus(activeFocus);
+                setShowAddModal(true);
+              }}
+              title="Save current dimensions as a reusable profile"
+            >
+              <FiBookmark size={12} />
+              <span>Save Current ({cropSettings.width}×{cropSettings.height}) as New Profile</span>
+            </button>
           </div>
 
           {/* 9-Point Focus Position Selector */}
@@ -220,7 +411,7 @@ export function CropControls({
           <div className="crop-summary-badge is-active">
             <FiCheckCircle className="crop-summary-icon" />
             <span>
-              All {totalImagesCount > 0 ? `${totalImagesCount} images` : 'batch images'} will export with unified <strong>{cropSettings.width} × {cropSettings.height} px</strong>
+              All {totalImagesCount > 0 ? `${totalImagesCount} images` : 'batch images'} will export with unified <strong>{cropSettings.width} × {cropSettings.height} px ({activePresetDisplayName})</strong>
             </span>
           </div>
         </>
@@ -236,6 +427,110 @@ export function CropControls({
           </span>
         </div>
       )}
+
+      {/* Add New Crop Preset Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New Crop Size Profile"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!newPresetName.trim() || !newWidth || !newHeight}
+              onClick={handleCreatePreset}
+            >
+              Save & Select
+            </Button>
+          </>
+        }
+      >
+        <div className="add-crop-modal-content">
+          <div className="control-group">
+            <label className="text-sm font-medium" htmlFor="modal-preset-name">
+              Profile Name
+            </label>
+            <input
+              id="modal-preset-name"
+              type="text"
+              className="text-field-input"
+              placeholder="e.g. Condo Hero, Instagram Square, Banner"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div className="dimension-inputs-row" style={{ marginTop: '10px' }}>
+            <div className="dimension-field">
+              <label className="dimension-field-label" htmlFor="modal-crop-width">
+                Width (px)
+              </label>
+              <div className="dimension-input-wrap">
+                <input
+                  id="modal-crop-width"
+                  type="number"
+                  min="100"
+                  max="8000"
+                  step="10"
+                  className="dimension-input"
+                  value={newWidth}
+                  onChange={(e) => setNewWidth(parseInt(e.target.value, 10) || '')}
+                />
+                <span className="dimension-unit">px</span>
+              </div>
+            </div>
+
+            <span className="dimension-divider">×</span>
+
+            <div className="dimension-field">
+              <label className="dimension-field-label" htmlFor="modal-crop-height">
+                Height (px)
+              </label>
+              <div className="dimension-input-wrap">
+                <input
+                  id="modal-crop-height"
+                  type="number"
+                  min="100"
+                  max="8000"
+                  step="10"
+                  className="dimension-input"
+                  value={newHeight}
+                  onChange={(e) => setNewHeight(parseInt(e.target.value, 10) || '')}
+                />
+                <span className="dimension-unit">px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(deletingId)}
+        onClose={() => setDeletingId(null)}
+        title="Delete Crop Size Profile"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeletingId(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDelete}>
+              Delete Profile
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-secondary">
+          Are you sure you want to delete this saved crop size profile? This action cannot be undone.
+        </p>
+      </Modal>
     </div>
   );
 }
+

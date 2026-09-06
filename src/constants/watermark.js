@@ -94,10 +94,21 @@ export const DEFAULT_EXPORT_SETTINGS = {
   suffix: '-watermarked'
 };
 
+export const BUILT_IN_CROP_PRESETS = [
+  { id: '4:3', name: '4:3 Property Listing', label: '4:3 Property Listing (1440 × 1080)', width: 1440, height: 1080, aspect: 4 / 3, ratioLabel: '4:3', isCustom: false },
+  { id: '4:5', name: '4:5 Portrait / IG Post', label: '4:5 Portrait / IG (1080 × 1350)', width: 1080, height: 1350, aspect: 4 / 5, ratioLabel: '4:5', isCustom: false },
+  { id: '1:1', name: '1:1 Square Post', label: '1:1 Square (1080 × 1080)', width: 1080, height: 1080, aspect: 1, ratioLabel: '1:1', isCustom: false },
+  { id: '16:9', name: '16:9 Landscape Web', label: '16:9 Landscape (1920 × 1080)', width: 1920, height: 1080, aspect: 16 / 9, ratioLabel: '16:9', isCustom: false },
+  { id: '9:16', name: '9:16 Story / Reel', label: '9:16 Story / Reel (1080 × 1920)', width: 1080, height: 1920, aspect: 9 / 16, ratioLabel: '9:16', isCustom: false },
+  { id: '3:2', name: '3:2 Classic Photo', label: '3:2 Classic Photo (1620 × 1080)', width: 1620, height: 1080, aspect: 3 / 2, ratioLabel: '3:2', isCustom: false }
+];
+
 export const STORAGE_KEYS = {
   SETTINGS: 'post_studio_watermark_settings',
   CROP_SETTINGS: 'post_studio_crop_settings',
   EXPORT_SETTINGS: 'post_studio_export_settings',
   LAST_WATERMARK_ID: 'post_studio_last_watermark_id',
-  SIDEBAR_COLLAPSED: 'post_studio_sidebar_collapsed'
+  SIDEBAR_COLLAPSED: 'post_studio_sidebar_collapsed',
+  SAVED_CROP_PRESETS: 'post_studio_saved_crop_presets'
 };
+
