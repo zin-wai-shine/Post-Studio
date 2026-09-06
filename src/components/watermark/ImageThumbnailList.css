@@ -182,32 +182,218 @@
   object-fit: cover;
 }
 
-.thumbnail-remove-btn {
+/* Custom Indicator Badge on Thumbnail */
+.thumbnail-custom-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: rgba(24, 24, 23, 0.88);
+  border: 1px solid rgba(74, 222, 128, 0.6);
+  padding: 1px 5px;
+  border-radius: 3px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.thumbnail-custom-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #4ADE80;
+}
+
+.thumbnail-card.is-customized {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.thumbnail-card.active.is-customized {
+  border-color: #4ADE80;
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.3);
+}
+
+/* Card Top-Right Action Buttons: More Options (...) and Remove (X) */
+.thumbnail-card-actions {
   position: absolute;
   top: 4px;
   right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 4;
+}
+
+.thumbnail-card:hover .thumbnail-card-actions,
+.thumbnail-card-actions:focus-within {
+  opacity: 1;
+}
+
+.thumbnail-more-btn,
+.thumbnail-remove-btn {
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  background-color: rgba(18, 18, 18, 0.85);
+  background-color: rgba(18, 18, 18, 0.88);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  padding: 0;
+  backdrop-filter: blur(4px);
 }
 
-.thumbnail-card:hover .thumbnail-remove-btn,
-.thumbnail-remove-btn:focus-visible {
-  opacity: 1;
+.thumbnail-more-btn:hover,
+.thumbnail-more-btn.active {
+  background-color: #272726;
+  border-color: var(--color-border-dark);
+  color: var(--color-text-primary);
 }
 
 .thumbnail-remove-btn:hover {
   background-color: var(--color-danger);
+  border-color: var(--color-danger);
 }
+
+/* Floating Popover / Dropdown "Title Box" */
+.thumbnail-popover-menu {
+  width: 230px;
+  background-color: #181817;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  padding: 8px 0;
+  z-index: 99999;
+  animation: popover-fade-in 0.12s ease-out;
+  overflow: hidden;
+}
+
+.thumbnail-popover-header {
+  padding: 6px 12px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thumbnail-popover-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thumbnail-popover-meta {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.thumbnail-popover-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 4px 0 6px;
+}
+
+.thumbnail-popover-items {
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+.popover-action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.popover-action-item:hover {
+  background-color: var(--color-hover);
+}
+
+.popover-action-item.active-custom {
+  background-color: rgba(74, 222, 128, 0.1);
+  color: #4ADE80;
+}
+
+.popover-action-item.danger:hover {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.popover-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.popover-action-item.active-custom .popover-action-icon {
+  color: #4ADE80;
+}
+
+.popover-action-item.danger .popover-action-icon {
+  color: var(--color-text-muted);
+}
+
+.popover-action-item.danger:hover .popover-action-icon {
+  color: var(--color-danger);
+}
+
+.popover-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.popover-action-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.popover-action-sub {
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+@keyframes popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 .thumbnail-info {
   padding: 4px 6px;

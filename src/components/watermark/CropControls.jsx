@@ -52,8 +52,11 @@ export function CropControls({
   } = useSavedCropPresets();
 
   const isEnabled = Boolean(cropSettings?.enabled);
-  const activeFocus = cropSettings?.focus || 'center';
-  const focusLabel = FOCUS_POSITIONS[activeFocus]?.label || 'Center';
+  const syncFocus = cropSettings?.syncFocus !== false;
+  const effectiveFocus = (!syncFocus && activeImage?.cropFocus)
+    ? activeImage.cropFocus
+    : (cropSettings?.focus || 'center');
+  const focusLabel = FOCUS_POSITIONS[effectiveFocus]?.label || 'Center';
   const fitMode = cropSettings?.fitMode || 'cover';
 
   // Modal and inline edit state
@@ -418,18 +421,49 @@ export function CropControls({
             <div className="focus-selector-header">
               <span className="focus-selector-title">Crop Focus Position</span>
               <div className="focus-selector-header-actions">
-                <span className="focus-selector-current">{focusLabel}</span>
+                <span className="focus-selector-current">
+                  {!syncFocus && activeImage
+                    ? `${activeImage.name.length > 12 ? activeImage.name.slice(0, 10) + '…' : activeImage.name}: ${focusLabel}`
+                    : focusLabel}
+                </span>
                 <InfoTooltip
-                  text="Select where the crop anchors when trimming excess width or height. The chosen focus region is preserved across all batch images."
+                  text={syncFocus
+                    ? "Select where the crop anchors when trimming excess width or height. Currently applying across all batch images."
+                    : "Individual mode: focus position is customized specifically for this image. Turn ON 'Apply to all images' to sync."
+                  }
                   position="top-right"
                 />
               </div>
             </div>
 
+            {/* Sync Switch Row */}
+            <div className="focus-sync-toggle-row">
+              <div className="focus-sync-info">
+                <span className="focus-sync-label">Apply to all images</span>
+                <span className="focus-sync-sub">
+                  {syncFocus
+                    ? 'Syncing focus across all images'
+                    : `Customizing for ${activeImage?.name || 'this image'}`}
+                </span>
+              </div>
+              <label
+                className="focus-sync-switch"
+                title={syncFocus ? 'Turn OFF to customize focus per image' : 'Turn ON to sync focus across all images'}
+              >
+                <input
+                  type="checkbox"
+                  className="focus-sync-input"
+                  checked={syncFocus}
+                  onChange={(e) => onUpdateCropSetting('syncFocus', e.target.checked)}
+                />
+                <span className="focus-sync-slider" />
+              </label>
+            </div>
+
             <div className="focus-grid-layout">
               <div className="focus-3x3-grid" role="group" aria-label="9-Point Crop Focus Grid">
                 {FOCUS_CELLS.map((cell) => {
-                  const isActive = activeFocus === cell.key;
+                  const isActive = effectiveFocus === cell.key;
                   return (
                     <button
                       key={cell.key}
@@ -447,6 +481,7 @@ export function CropControls({
               </div>
             </div>
           </div>
+
 
           {/* Fit Mode Selector */}
           <div className="control-group">

@@ -1,6 +1,8 @@
 import { saveAs } from 'file-saver';
 import { renderWatermarkedImage } from './canvasUtils';
 import { parseFilename } from './imageUtils';
+import { FOCUS_POSITIONS } from '../constants/watermark';
+
 
 /**
  * Triggers a direct browser download for a Blob
@@ -177,14 +179,37 @@ export async function batchDownloadImagesDirectly({
       });
     }
 
+    // Resolve item's specific settings or fallback to batch settings
+    const itemSettings = (item.hasCustomOverrides && item.customSettings)
+      ? item.customSettings
+      : settings;
+
+    let itemCropSettings = (item.hasCustomOverrides && item.customCropSettings)
+      ? item.customCropSettings
+      : cropSettings;
+
+    // Check if per-image focus was set
+    if (!cropSettings?.syncFocus && item.cropFocus) {
+      const f = FOCUS_POSITIONS[item.cropFocus];
+      if (f) {
+        itemCropSettings = {
+          ...itemCropSettings,
+          focus: item.cropFocus,
+          focusX: f.x,
+          focusY: f.y
+        };
+      }
+    }
+
     // Render image at standardized resolution with watermark
     const blob = await renderWatermarkedImage({
       sourceImage: item.file || item.previewUrl,
       watermarkImage,
-      settings,
-      cropSettings,
+      settings: itemSettings,
+      cropSettings: itemCropSettings,
       exportOptions
     });
+
 
     if (isCancelledRef?.current) {
       throw new Error('Export cancelled by user.');

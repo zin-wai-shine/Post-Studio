@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { createPortal } from 'react-dom';
+import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck, FiChevronLeft, FiChevronRight, FiMoreHorizontal, FiSliders } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { Modal } from '../common/Modal';
@@ -12,7 +13,9 @@ export function ImageThumbnailList({
   onRemoveImage,
   onClearAll,
   onAddMore,
-  onRenameImage
+  onRenameImage,
+  onToggleCustomOverrides,
+  onResetImageCustom
 }) {
   const fileInputRef = useRef(null);
   const trackRef = useRef(null);
@@ -20,6 +23,8 @@ export function ImageThumbnailList({
   const [tempName, setTempName] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [deletingImage, setDeletingImage] = useState(null);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+
 
   const [hasScroll, setHasScroll] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -193,97 +198,130 @@ export function ImageThumbnailList({
           {images.map((item) => {
             const isActive = item.id === activeImageId;
             const isEditing = editingId === item.id;
+            const isMenuOpen = menuOpenId === item.id;
+            const isCustomized = Boolean(item.hasCustomOverrides);
 
             return (
               <div
                 key={item.id}
                 data-id={item.id}
-                className={`thumbnail-card ${isActive ? 'active' : ''}`}
-              onClick={() => {
-                if (!isEditing) onSelectImage(item.id);
-              }}
-              role="option"
-              aria-selected={isActive}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !isEditing) {
-                  e.preventDefault();
-                  onSelectImage(item.id);
-                }
-              }}
-            >
-              <div className="thumbnail-img-wrap">
-                <img
-                  src={item.previewUrl}
-                  alt={item.name}
-                  className="thumbnail-img"
-                  loading="lazy"
-                />
-                <button
-                  type="button"
-                  className="thumbnail-remove-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingImage(item);
-                  }}
-                  title="Remove this image"
-                  aria-label={`Remove ${item.name}`}
-                >
-                  <FiX size={13} />
-                </button>
-              </div>
+                className={`thumbnail-card ${isActive ? 'active' : ''} ${isMenuOpen ? 'menu-active' : ''} ${isCustomized ? 'is-customized' : ''}`}
+                onClick={() => {
+                  if (!isEditing) onSelectImage(item.id);
+                }}
+                role="option"
+                aria-selected={isActive}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !isEditing) {
+                    e.preventDefault();
+                    onSelectImage(item.id);
+                  }
+                }}
+              >
+                <div className="thumbnail-img-wrap">
+                  <img
+                    src={item.previewUrl}
+                    alt={item.name}
+                    className="thumbnail-img"
+                    loading="lazy"
+                  />
 
-              <div className="thumbnail-info">
-                {isEditing ? (
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="text"
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      className="thumbnail-rename-input"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveRename(e, item.id);
-                        if (e.key === 'Escape') handleCancelRename(e);
-                      }}
-                    />
-                    <IconButton
-                      icon={<FiCheck size={10} />}
-                      size="sm"
-                      onClick={(e) => handleSaveRename(e, item.id)}
-                      aria-label="Save image name"
-                    />
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                    <span
-                      className="thumbnail-name"
-                      title={`${item.name} (Click to rename)`}
-                      onDoubleClick={(e) => handleStartRename(e, item)}
-                    >
-                      {item.name}
+                  {isCustomized && (
+                    <span className="thumbnail-custom-badge" title="This image has custom watermark/crop settings">
+                      Custom
                     </span>
+                  )}
+
+                  <div className="thumbnail-card-actions" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
-                      className="thumbnail-rename-btn"
-                      onClick={(e) => handleStartRename(e, item)}
-                      title="Rename file"
-                      aria-label={`Rename ${item.name}`}
+                      className={`thumbnail-more-btn ${menuAnchor?.item?.id === item.id ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (menuAnchor?.item?.id === item.id) {
+                          setMenuAnchor(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setMenuAnchor({
+                            top: rect.top,
+                            left: rect.left,
+                            item
+                          });
+                        }
+                      }}
+                      title="Image options"
+                      aria-label={`Options for ${item.name}`}
+                      aria-expanded={menuAnchor?.item?.id === item.id}
                     >
-                      <FiEdit2 size={10} />
+                      <FiMoreHorizontal size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="thumbnail-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingImage(item);
+                      }}
+                      title="Remove this image"
+                      aria-label={`Remove ${item.name}`}
+                    >
+                      <FiX size={13} />
                     </button>
                   </div>
-                )}
-                <span className="thumbnail-dims">
-                  {item.width && item.height ? `${item.width}×${item.height}` : 'Loading...'}
-                </span>
+                </div>
+
+                <div className="thumbnail-info">
+                  {isEditing ? (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        className="thumbnail-rename-input"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveRename(e, item.id);
+                          if (e.key === 'Escape') handleCancelRename(e);
+                        }}
+                      />
+                      <IconButton
+                        icon={<FiCheck size={10} />}
+                        size="sm"
+                        onClick={(e) => handleSaveRename(e, item.id)}
+                        aria-label="Save image name"
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                      <span
+                        className="thumbnail-name"
+                        title={`${item.name} (Click to rename)`}
+                        onDoubleClick={(e) => handleStartRename(e, item)}
+                      >
+                        {item.name}
+                      </span>
+                      <button
+                        type="button"
+                        className="thumbnail-rename-btn"
+                        onClick={(e) => handleStartRename(e, item)}
+                        title="Rename file"
+                        aria-label={`Rename ${item.name}`}
+                      >
+                        <FiEdit2 size={10} />
+                      </button>
+                    </div>
+                  )}
+                  <span className="thumbnail-dims">
+                    {item.width && item.height ? `${item.width}×${item.height}` : 'Loading...'}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
 
         {hasScroll && canScrollRight && (
@@ -301,6 +339,102 @@ export function ImageThumbnailList({
           </>
         )}
       </div>
+
+      {/* Floating Popover / Dropdown "Title Box" */}
+      {menuAnchor && typeof document !== 'undefined' && createPortal(
+        <div
+          className="thumbnail-popover-menu"
+          style={{
+            position: 'fixed',
+            bottom: `${Math.max(16, window.innerHeight - menuAnchor.top + 8)}px`,
+            left: `${Math.max(12, Math.min(window.innerWidth - 240, menuAnchor.left - 130))}px`
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="thumbnail-popover-header">
+            <span className="thumbnail-popover-title" title={menuAnchor.item.name}>
+              {menuAnchor.item.name}
+            </span>
+            {menuAnchor.item.width && menuAnchor.item.height && (
+              <span className="thumbnail-popover-meta">
+                {menuAnchor.item.width} × {menuAnchor.item.height} px
+              </span>
+            )}
+          </div>
+
+          <div className="thumbnail-popover-divider" />
+
+          <div className="thumbnail-popover-items">
+            {/* Customize / Edit this image toggle or button */}
+            <button
+              type="button"
+              className={`popover-action-item ${menuAnchor.item.hasCustomOverrides ? 'active-custom' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectImage(menuAnchor.item.id);
+                if (menuAnchor.item.hasCustomOverrides) {
+                  onResetImageCustom?.(menuAnchor.item.id);
+                } else {
+                  onToggleCustomOverrides?.(menuAnchor.item.id);
+                }
+                setMenuAnchor(null);
+              }}
+            >
+              <span className="popover-action-icon">
+                <FiSliders size={13} />
+              </span>
+              <div className="popover-action-text">
+                <span className="popover-action-label">
+                  {menuAnchor.item.hasCustomOverrides ? 'Single Image Edit (ON)' : 'Customize This Image'}
+                </span>
+                <span className="popover-action-sub">
+                  {menuAnchor.item.hasCustomOverrides
+                    ? 'Click to revert to batch settings'
+                    : 'Edit settings only for this image'}
+                </span>
+              </div>
+            </button>
+
+            {/* Rename action */}
+            <button
+              type="button"
+              className="popover-action-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingId(menuAnchor.item.id);
+                setTempName(menuAnchor.item.name);
+                setMenuAnchor(null);
+              }}
+            >
+              <span className="popover-action-icon">
+                <FiEdit2 size={13} />
+              </span>
+              <div className="popover-action-text">
+                <span className="popover-action-label">Rename Image</span>
+              </div>
+            </button>
+
+            {/* Remove action */}
+            <button
+              type="button"
+              className="popover-action-item danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeletingImage(menuAnchor.item);
+                setMenuAnchor(null);
+              }}
+            >
+              <span className="popover-action-icon">
+                <FiTrash2 size={13} />
+              </span>
+              <div className="popover-action-text">
+                <span className="popover-action-label">Remove from Batch</span>
+              </div>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Clear All Batch Images Confirmation Modal */}
       <Modal

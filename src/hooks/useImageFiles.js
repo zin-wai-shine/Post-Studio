@@ -118,6 +118,124 @@ export function useImageFiles() {
     );
   }, []);
 
+  // Set per-image crop focus (when cropSettings.syncFocus === false)
+  const setImageCropFocus = useCallback((id, focusKey, focusX, focusY) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        const currentCustomCrop = img.customCropSettings || {};
+        return {
+          ...img,
+          cropFocus: focusKey,
+          cropFocusX: focusX,
+          cropFocusY: focusY,
+          customCropSettings: {
+            ...currentCustomCrop,
+            focus: focusKey,
+            focusX,
+            focusY
+          }
+        };
+      })
+    );
+  }, []);
+
+  // Enable individual custom overrides for a single image
+  const enableImageCustomOverrides = useCallback((id, baseSettings, baseCropSettings) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        return {
+          ...img,
+          hasCustomOverrides: true,
+          customSettings: img.customSettings || JSON.parse(JSON.stringify(baseSettings || {})),
+          customCropSettings: img.customCropSettings || JSON.parse(JSON.stringify(baseCropSettings || {}))
+        };
+      })
+    );
+  }, []);
+
+  // Update a watermark setting for an individual customized image
+  const updateImageCustomSetting = useCallback((id, key, value) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        const currentSettings = img.customSettings || {};
+        return {
+          ...img,
+          hasCustomOverrides: true,
+          customSettings: {
+            ...currentSettings,
+            [key]: value
+          }
+        };
+      })
+    );
+  }, []);
+
+  // Update a pattern setting for an individual customized image
+  const updateImagePatternSetting = useCallback((id, key, value) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        const currentSettings = img.customSettings || {};
+        return {
+          ...img,
+          hasCustomOverrides: true,
+          customSettings: {
+            ...currentSettings,
+            pattern: {
+              ...(currentSettings.pattern || {}),
+              [key]: value
+            }
+          }
+        };
+      })
+    );
+  }, []);
+
+  // Update a crop setting for an individual customized image
+  const updateImageCropSetting = useCallback((id, key, value) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        const currentCrop = img.customCropSettings || {};
+        return {
+          ...img,
+          hasCustomOverrides: true,
+          customCropSettings: {
+            ...currentCrop,
+            [key]: value
+          }
+        };
+      })
+    );
+  }, []);
+
+  // Clear overrides: revert this image back to the batch defaults
+  const clearImageCustomOverrides = useCallback((id) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        return {
+          ...img,
+          hasCustomOverrides: false,
+          customSettings: null,
+          customCropSettings: null,
+          cropFocus: null,
+          cropFocusX: null,
+          cropFocusY: null
+        };
+      })
+    );
+  }, []);
+
   // Ensure activeImageId falls back to first available if active was cleared
   useEffect(() => {
     if (!activeImageId && images.length > 0) {
@@ -136,6 +254,13 @@ export function useImageFiles() {
     removeImage,
     clearAllImages,
     renameImage,
+    setImageCropFocus,
+    enableImageCustomOverrides,
+    updateImageCustomSetting,
+    updateImagePatternSetting,
+    updateImageCropSetting,
+    clearImageCustomOverrides,
     isProcessingUpload
   };
 }
+

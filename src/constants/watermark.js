@@ -58,8 +58,10 @@ export const DEFAULT_CROP_SETTINGS = {
   focus: 'center',
   focusX: 0.5,
   focusY: 0.5,
+  syncFocus: true, // true: apply focus to all batch images; false: customize per image
   fitMode: 'cover' // 'cover' (crop) | 'contain' (pad)
 };
+
 
 export const DEFAULT_WATERMARK_SETTINGS = {
   type: 'image', // 'image' | 'text'

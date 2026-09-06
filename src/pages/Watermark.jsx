@@ -17,7 +17,7 @@ import { sliceImageIntoGridTiles } from '../utils/gridCropUtils';
 import { generateRandomBatchPrefix } from '../utils/downloadUtils';
 import { FiDownload, FiArchive, FiRotateCcw } from 'react-icons/fi';
 import { Select } from '../components/common/Select';
-import { EXPORT_FORMATS } from '../constants/watermark';
+import { EXPORT_FORMATS, FOCUS_POSITIONS, POSITION_PRESETS, CROP_PRESETS } from '../constants/watermark';
 import './Watermark.css';
 
 export function Watermark() {
@@ -34,8 +34,15 @@ export function Watermark() {
     removeImage,
     clearAllImages,
     renameImage,
+    setImageCropFocus,
+    enableImageCustomOverrides,
+    updateImageCustomSetting,
+    updateImagePatternSetting,
+    updateImageCropSetting,
+    clearImageCustomOverrides,
     isProcessingUpload
   } = useImageFiles();
+
 
   const {
     settings,
@@ -111,6 +118,166 @@ export function Watermark() {
       console.warn('Failed to save auto clear setting:', e);
     }
   };
+
+  // Per-image customization mode vs batch mode
+  const isCustomImageMode = Boolean(activeImage?.hasCustomOverrides);
+
+  // Focus resolution: per-image if syncFocus is false and activeImage has cropFocus
+  const activeCropFocus = (!cropSettings.syncFocus && activeImage?.cropFocus)
+    ? activeImage.cropFocus
+    : (cropSettings.focus || 'center');
+  const activeFocusObj = FOCUS_POSITIONS[activeCropFocus] || FOCUS_POSITIONS.center;
+
+  const effectiveSettings = isCustomImageMode
+    ? (activeImage.customSettings || settings)
+    : settings;
+
+  const effectiveCropSettings = isCustomImageMode
+    ? (activeImage.customCropSettings || cropSettings)
+    : {
+        ...cropSettings,
+        focus: activeCropFocus,
+        focusX: activeFocusObj.x,
+        focusY: activeFocusObj.y
+      };
+
+  const handleUpdateSetting = (key, val) => {
+    if (activeImage?.hasCustomOverrides) {
+      updateImageCustomSetting(activeImage.id, key, val);
+    } else {
+      updateSetting(key, val);
+    }
+  };
+
+  const handleUpdatePatternSetting = (key, val) => {
+    if (activeImage?.hasCustomOverrides) {
+      updateImagePatternSetting(activeImage.id, key, val);
+    } else {
+      updatePatternSetting(key, val);
+    }
+  };
+
+  const handleSetPositionPreset = (presetKey) => {
+    if (activeImage?.hasCustomOverrides) {
+      const preset = POSITION_PRESETS[presetKey];
+      if (preset) {
+        updateImageCustomSetting(activeImage.id, 'position', {
+          preset: presetKey,
+          x: preset.x,
+          y: preset.y
+        });
+      }
+    } else {
+      setPositionPreset(presetKey);
+    }
+  };
+
+  const handleCustomPosition = (xPercent, yPercent) => {
+    if (activeImage?.hasCustomOverrides) {
+      const clampedX = Math.max(0, Math.min(1, xPercent));
+      const clampedY = Math.max(0, Math.min(1, yPercent));
+      updateImageCustomSetting(activeImage.id, 'position', {
+        preset: 'custom',
+        x: clampedX,
+        y: clampedY
+      });
+    } else {
+      setCustomPosition(xPercent, yPercent);
+    }
+  };
+
+  const handleUpdateCropSetting = (key, val) => {
+    if (key === 'syncFocus') {
+      updateCropSetting('syncFocus', val);
+      return;
+    }
+    if (activeImage?.hasCustomOverrides) {
+      updateImageCropSetting(activeImage.id, key, val);
+    } else {
+      updateCropSetting(key, val);
+    }
+  };
+
+  const handleSetCropPreset = (presetId) => {
+    if (activeImage?.hasCustomOverrides) {
+      const preset = CROP_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return;
+      if (presetId === 'original') {
+        updateImageCropSetting(activeImage.id, 'enabled', false);
+        updateImageCropSetting(activeImage.id, 'preset', 'original');
+      } else {
+        updateImageCropSetting(activeImage.id, 'enabled', true);
+        updateImageCropSetting(activeImage.id, 'preset', presetId);
+        updateImageCropSetting(activeImage.id, 'width', preset.width);
+        updateImageCropSetting(activeImage.id, 'height', preset.height);
+        updateImageCropSetting(activeImage.id, 'aspect', preset.aspect);
+      }
+    } else {
+      setCropPreset(presetId);
+    }
+  };
+
+  const handleSetCropFocus = (focusKey) => {
+    const focus = FOCUS_POSITIONS[focusKey];
+    if (!focus) return;
+
+    if (activeImage?.hasCustomOverrides) {
+      updateImageCropSetting(activeImage.id, 'focus', focusKey);
+      updateImageCropSetting(activeImage.id, 'focusX', focus.x);
+      updateImageCropSetting(activeImage.id, 'focusY', focus.y);
+      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y);
+    } else if (cropSettings.syncFocus === false && activeImage) {
+      setImageCropFocus(activeImage.id, focusKey, focus.x, focus.y);
+    } else {
+      setCropFocus(focusKey);
+    }
+  };
+
+  const handleToggleCustomOverrides = (imageId) => {
+    const target = images.find((img) => img.id === imageId);
+    if (!target) return;
+    if (target.hasCustomOverrides) {
+      clearImageCustomOverrides(imageId);
+      setToast({ type: 'info', message: `Reverted ${target.name} to batch defaults.` });
+    } else {
+      enableImageCustomOverrides(imageId, settings, cropSettings);
+      setToast({ type: 'success', message: `Custom editing enabled for ${target.name}.` });
+    }
+  };
+
+  const handleResetImageCustom = (imageId) => {
+    clearImageCustomOverrides(imageId);
+    const target = images.find((img) => img.id === imageId);
+    setToast({ type: 'info', message: `Reverted ${target?.name || 'image'} to batch defaults.` });
+  };
+
+  const handleApplyImageCustomToAll = (imageId) => {
+    const target = images.find((img) => img.id === imageId);
+    if (!target || !target.hasCustomOverrides) return;
+
+    if (target.customSettings) {
+      Object.entries(target.customSettings).forEach(([k, v]) => {
+        if (k === 'pattern') {
+          Object.entries(v).forEach(([pk, pv]) => updatePatternSetting(pk, pv));
+        } else {
+          updateSetting(k, v);
+        }
+      });
+    }
+
+    if (target.customCropSettings) {
+      Object.entries(target.customCropSettings).forEach(([k, v]) => {
+        updateCropSetting(k, v);
+      });
+    }
+
+    clearImageCustomOverrides(imageId);
+    setToast({
+      type: 'success',
+      message: `Applied settings from ${target.name} across all batch images.`
+    });
+  };
+
 
   // Automatically select the first saved watermark if none is active
   useEffect(() => {
@@ -330,8 +497,8 @@ export function Watermark() {
       await exportSingleImage({
         image: activeImage,
         watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
-        settings,
-        cropSettings,
+        settings: effectiveSettings,
+        cropSettings: effectiveCropSettings,
         exportOptions: exportSettings,
         batchPrefix
       });
@@ -538,9 +705,9 @@ const HEADER_FORMAT_OPTIONS = [
                 activeImage={activeImage}
                 watermarkSource={activeWatermark?.previewUrl}
                 watermarkImgEl={watermarkImgEl}
-                settings={settings}
-                cropSettings={cropSettings}
-                onCustomPosition={setCustomPosition}
+                settings={effectiveSettings}
+                cropSettings={effectiveCropSettings}
+                onCustomPosition={handleCustomPosition}
                 onUploadClick={() =>
                   gridCropSettings?.mode === 'grid'
                     ? singleUploaderRef.current?.click()
@@ -560,6 +727,8 @@ const HEADER_FORMAT_OPTIONS = [
                 onClearAll={clearAllImages}
                 onAddMore={handleFilesSelected}
                 onRenameImage={renameImage}
+                onToggleCustomOverrides={handleToggleCustomOverrides}
+                onResetImageCustom={handleResetImageCustom}
               />
             </div>
           </>
@@ -568,21 +737,23 @@ const HEADER_FORMAT_OPTIONS = [
 
       {/* Right Controls Panel */}
       <WatermarkControls
-        settings={settings}
-        cropSettings={cropSettings}
+        settings={effectiveSettings}
+        cropSettings={effectiveCropSettings}
         gridCropSettings={gridCropSettings}
         exportSettings={exportSettings}
         activeWatermark={activeWatermark}
         savedWatermarks={savedWatermarks}
         isSavedLoading={isSavedLoading}
         activeImage={activeImage}
-        onUpdateSetting={updateSetting}
-        onUpdatePatternSetting={updatePatternSetting}
-        onSetPositionPreset={setPositionPreset}
-        onUpdateCropSetting={updateCropSetting}
+        onUpdateSetting={handleUpdateSetting}
+        onUpdatePatternSetting={handleUpdatePatternSetting}
+        onSetPositionPreset={handleSetPositionPreset}
+        onUpdateCropSetting={handleUpdateCropSetting}
         onUpdateGridCropSetting={updateGridCropSetting}
-        onSetCropPreset={setCropPreset}
-        onSetCropFocus={setCropFocus}
+        onSetCropPreset={handleSetCropPreset}
+        onSetCropFocus={handleSetCropFocus}
+        onResetImageCustom={handleResetImageCustom}
+        onApplyImageCustomToAll={handleApplyImageCustomToAll}
         onSliceImage={handleSliceImage}
         isSlicing={isSlicing}
         onTriggerSingleUpload={() => singleUploaderRef.current?.click()}

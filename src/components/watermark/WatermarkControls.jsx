@@ -63,13 +63,18 @@ export function WatermarkControls({
   batchPrefix = 'XEA',
   onRegeneratePrefix,
   autoClearAfterDownload = false,
-  onToggleAutoClear
+  onToggleAutoClear,
+  onResetImageCustom,
+  onApplyImageCustomToAll
 }) {
   const [internalActiveSection, setInternalActiveSection] = useState('watermark');
   const activeSection = externalActiveSection || internalActiveSection;
   const setActiveSection = (sec) => {
-    setInternalActiveSection(sec);
-    if (onSectionChange) onSectionChange(sec);
+    if (onSectionChange) {
+      onSectionChange(sec);
+    } else {
+      setInternalActiveSection(sec);
+    }
   };
   // Putup box is OPEN by default on mobile so user sees the controls clearly
   const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
@@ -124,6 +129,36 @@ export function WatermarkControls({
           )}
         </button>
       </div>
+
+      {/* Single-Image Customization Mode Banner */}
+      {activeImage?.hasCustomOverrides && (
+        <div className="single-image-edit-banner">
+          <div className="single-image-banner-left">
+            <span className="single-image-banner-badge">Single Image Edit</span>
+            <span className="single-image-banner-name" title={activeImage.name}>
+              {activeImage.name}
+            </span>
+          </div>
+          <div className="single-image-banner-actions">
+            <button
+              type="button"
+              className="single-image-banner-btn revert"
+              onClick={() => onResetImageCustom?.(activeImage.id)}
+              title="Revert this image to batch settings"
+            >
+              Reset to Batch
+            </button>
+            <button
+              type="button"
+              className="single-image-banner-btn apply"
+              onClick={() => onApplyImageCustomToAll?.(activeImage.id)}
+              title="Apply these settings to all batch images"
+            >
+              Apply to All
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Section Navigation Menu */}
       <div className="controls-tab-menu" role="tablist" aria-label="Control Sections">
