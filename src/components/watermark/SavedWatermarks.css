@@ -69,6 +69,44 @@
   flex: 1;
 }
 
+/* Radio button in front */
+.saved-wm-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  background-color: var(--color-input-bg);
+}
+
+.saved-wm-card:hover .saved-wm-radio {
+  border-color: var(--color-text-secondary);
+}
+
+.saved-wm-radio.checked {
+  border-color: var(--color-main);
+  background-color: var(--color-main);
+}
+
+.saved-wm-radio-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-main-contrast);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: all 0.15s ease;
+}
+
+.saved-wm-radio.checked .saved-wm-radio-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .saved-wm-thumb {
   width: 32px;
   height: 32px;
@@ -87,7 +125,7 @@
 }
 
 .saved-wm-name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -95,21 +133,21 @@
   text-overflow: ellipsis;
 }
 
-.saved-wm-active-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-success);
-  margin-top: 1px;
-}
-
+/* Actions only show when hovering each item */
 .saved-wm-actions {
   display: flex;
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.saved-wm-card:hover .saved-wm-actions,
+.saved-wm-card:focus-within .saved-wm-actions {
+  opacity: 1;
+  visibility: visible;
 }
 
 .saved-wm-edit-input {

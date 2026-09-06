@@ -112,11 +112,8 @@ export function WatermarkControls({
             {settings.type === 'image' ? (
               <>
                 <WatermarkUploader
-                  activeWatermark={activeWatermark}
                   onSetTemporaryWatermark={onSetTemporaryWatermark}
                   onSaveAndSelectWatermark={onSaveAndSelectWatermark}
-                  onClearWatermark={onClearWatermark}
-                  onRenameWatermark={onRenameSavedWatermark}
                 />
                 <SavedWatermarks
                   savedWatermarks={savedWatermarks}

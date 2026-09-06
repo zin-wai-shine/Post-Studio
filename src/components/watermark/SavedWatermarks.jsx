@@ -100,6 +100,15 @@ export function SavedWatermarks({
                 }}
               >
                 <div className="saved-wm-left">
+                  {/* Radio Selector in front */}
+                  <div
+                    className={`saved-wm-radio ${isActive ? 'checked' : ''}`}
+                    aria-checked={isActive}
+                    role="radio"
+                  >
+                    <div className="saved-wm-radio-dot" />
+                  </div>
+
                   <img
                     src={item.previewUrl}
                     alt={item.name}
@@ -137,16 +146,9 @@ export function SavedWatermarks({
                         />
                       </div>
                     ) : (
-                      <>
-                        <span className="saved-wm-name" title={item.name}>
-                          {item.name}
-                        </span>
-                        {isActive && (
-                          <span className="saved-wm-active-badge">
-                            <FiCheck size={11} /> Selected
-                          </span>
-                        )}
-                      </>
+                      <span className="saved-wm-name" title={item.name}>
+                        {item.name}
+                      </span>
                     )}
                   </div>
                 </div>

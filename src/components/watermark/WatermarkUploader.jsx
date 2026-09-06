@@ -1,32 +1,19 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { FiUpload, FiCheck, FiX, FiSave, FiClock, FiEdit2, FiPlus } from 'react-icons/fi';
+import React, { useRef, useState } from 'react';
+import { FiUpload, FiX, FiSave, FiClock } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { isValidImageFile } from '../../utils/imageUtils';
 import './WatermarkUploader.css';
 
 export function WatermarkUploader({
-  activeWatermark, // { id, name, previewUrl, isTemporary }
   onSetTemporaryWatermark,
-  onSaveAndSelectWatermark,
-  onClearWatermark,
-  onRenameWatermark
+  onSaveAndSelectWatermark
 }) {
   const fileInputRef = useRef(null);
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingPreview, setPendingPreview] = useState(null);
   const [watermarkName, setWatermarkName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  // Inline rename state for active watermark
-  const [isEditingActive, setIsEditingActive] = useState(false);
-  const [activeNameInput, setActiveNameInput] = useState('');
-
-  useEffect(() => {
-    if (activeWatermark) {
-      setActiveNameInput(activeWatermark.name || '');
-    }
-  }, [activeWatermark]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -82,13 +69,6 @@ export function WatermarkUploader({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleSaveActiveRename = () => {
-    if (activeWatermark && activeNameInput.trim() && onRenameWatermark) {
-      onRenameWatermark(activeWatermark.id, activeNameInput.trim());
-    }
-    setIsEditingActive(false);
   };
 
   return (
@@ -154,97 +134,19 @@ export function WatermarkUploader({
             </Button>
           </div>
         </div>
-      ) : activeWatermark ? (
-        /* 2. Currently active watermark card with inline rename & add more */
-        <div className="wm-active-card">
-          <div className="wm-active-details">
-            <img
-              src={activeWatermark.previewUrl}
-              alt={activeWatermark.name}
-              className="wm-active-thumb"
-            />
-            <div className="wm-active-meta">
-              {isEditingActive ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <input
-                    type="text"
-                    value={activeNameInput}
-                    onChange={(e) => setActiveNameInput(e.target.value)}
-                    className="wm-inline-edit-input"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveActiveRename();
-                      if (e.key === 'Escape') setIsEditingActive(false);
-                    }}
-                  />
-                  <IconButton
-                    icon={<FiCheck size={12} />}
-                    size="sm"
-                    onClick={handleSaveActiveRename}
-                    aria-label="Save name"
-                  />
-                  <IconButton
-                    icon={<FiX size={12} />}
-                    size="sm"
-                    onClick={() => setIsEditingActive(false)}
-                    aria-label="Cancel rename"
-                  />
-                </div>
-              ) : (
-                <div className="wm-active-name-row">
-                  <span className="wm-active-name" title={activeWatermark.name}>
-                    {activeWatermark.name}
-                  </span>
-                  <IconButton
-                    icon={<FiEdit2 size={11} />}
-                    size="sm"
-                    onClick={() => setIsEditingActive(true)}
-                    title="Rename watermark"
-                    aria-label="Rename active watermark"
-                  />
-                </div>
-              )}
-              <span className="wm-active-tag">
-                {activeWatermark.isTemporary ? 'Temporary logo' : 'Active from library'}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Button
-              variant="secondary"
-              size="sm"
-              iconLeft={<FiPlus size={12} />}
-              onClick={() => fileInputRef.current?.click()}
-              title="Upload another watermark to your library"
-            >
-              Upload More
-            </Button>
-            <IconButton
-              icon={<FiX size={14} />}
-              size="sm"
-              onClick={onClearWatermark}
-              title="Deselect watermark"
-              aria-label="Deselect watermark"
-            />
-          </div>
-        </div>
       ) : (
-        /* 3. Empty drop/click zone */
-        <div
-          className="wm-drop-zone"
-          onClick={() => fileInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              fileInputRef.current?.click();
-            }
-          }}
-        >
-          <FiUpload size={18} className="wm-drop-icon" />
-          <span className="wm-drop-title">Upload Watermark Logo</span>
-          <span className="wm-drop-hint">PNG (transparent recommended), JPG, WEBP</span>
+        /* Only have the upload button */
+        <div className="wm-upload-btn-wrap">
+          <Button
+            variant="secondary"
+            size="md"
+            iconLeft={<FiUpload size={14} />}
+            fullWidth
+            onClick={() => fileInputRef.current?.click()}
+            title="Upload watermark image"
+          >
+            Upload Watermark Logo
+          </Button>
         </div>
       )}
     </div>
