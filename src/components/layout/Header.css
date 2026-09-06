@@ -113,48 +113,63 @@
 
 @media (max-width: 900px) {
   .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 50px;
     padding: 0 12px;
-    height: 52px;
+    position: relative;
   }
 
   .header-left {
-    gap: 8px;
+    display: flex;
+    align-items: center;
+    z-index: 2;
   }
 
-  /* On mobile: Hide redundant subtitle, title, and divider to avoid wrapping */
+  /* Hide redundant divider and titles on mobile */
   .header-brand-divider,
   .header-titles {
     display: none !important;
   }
 
+  /* Perfectly Centered Brand Logo */
   .brand-logo-text {
-    font-size: 14.5px;
-    letter-spacing: 0.8px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    color: #FFFFFF;
+    white-space: nowrap;
+    text-align: center;
+    z-index: 1;
+    pointer-events: none;
   }
 
   .header-right {
-    gap: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 2;
   }
 
   .header-actions-group {
-    gap: 6px;
+    gap: 0;
   }
 
   .header-format-select-wrap {
-    width: 125px;
+    width: 96px;
   }
 
-  /* On mobile: hide secondary buttons from navbar header, keep primary or dropdown */
+  /* On mobile: Hide all buttons from navbar so only compact format select is on right */
   .header-btn-download-selected,
+  .header-btn-download-all,
   .header-btn-reset,
   .header-action-divider {
     display: none !important;
-  }
-
-  .header-btn-download-all {
-    padding: 5px 10px;
-    font-size: 11px;
-    height: 30px;
   }
 }
 
@@ -164,12 +179,13 @@
   }
 
   .brand-logo-text {
-    font-size: 13.5px;
-    letter-spacing: 0.6px;
+    font-size: 14px;
+    letter-spacing: 0.8px;
   }
 
   .header-format-select-wrap {
-    width: 115px;
+    width: 92px;
   }
 }
+
 

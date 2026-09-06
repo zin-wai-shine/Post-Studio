@@ -58,15 +58,8 @@ export function WatermarkControls({
   onToggleAutoClear
 }) {
   const [activeSection, setActiveSection] = useState('watermark');
-  const [isMobileCollapsed, setIsMobileCollapsed] = useState(() => {
-    return typeof window !== 'undefined' && window.innerWidth <= 1024 && totalImagesCount === 0;
-  });
-
-  useEffect(() => {
-    if (totalImagesCount > 0 && typeof window !== 'undefined' && window.innerWidth <= 1024) {
-      setIsMobileCollapsed(false);
-    }
-  }, [totalImagesCount]);
+  // Putup box is OPEN by default on mobile so user sees the controls clearly
+  const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
   const isSingle = settings.style === 'single';
 
@@ -90,8 +83,8 @@ export function WatermarkControls({
         }}
       >
         <div className="controls-header-left">
-          <h2 className="controls-title">Controls</h2>
-          <span className="controls-active-badge text-xs">
+          <h2 className="controls-title">CONTROLS</h2>
+          <span className="controls-active-badge">
             {SECTIONS.find((s) => s.id === activeSection)?.label}
           </span>
         </div>
@@ -103,17 +96,17 @@ export function WatermarkControls({
             e.stopPropagation();
             setIsMobileCollapsed((prev) => !prev);
           }}
-          aria-label={isMobileCollapsed ? "Open adjust settings" : "Close adjust settings"}
+          aria-label={isMobileCollapsed ? "Show controls" : "Hide controls"}
         >
           {isMobileCollapsed ? (
             <>
               <FiChevronUp size={15} />
-              <span>Adjust</span>
+              <span>Show Controls</span>
             </>
           ) : (
             <>
               <FiChevronDown size={15} />
-              <span>Close</span>
+              <span>Hide Controls</span>
             </>
           )}
         </button>

@@ -330,6 +330,13 @@ export function Watermark() {
     });
   };
 
+const HEADER_FORMAT_OPTIONS = [
+  { id: 'original', label: 'Original' },
+  { id: 'jpeg', label: 'JPEG' },
+  { id: 'png', label: 'PNG' },
+  { id: 'webp', label: 'WEBP' }
+];
+
   // Register persistent Top Header Actions (Format, Download Selected, Download All, Reset)
   useEffect(() => {
     if (!setHeaderActions) return;
@@ -341,7 +348,7 @@ export function Watermark() {
             size="sm"
             value={exportSettings.format}
             onChange={(val) => setExportSettings((prev) => ({ ...prev, format: val }))}
-            options={EXPORT_FORMATS}
+            options={HEADER_FORMAT_OPTIONS}
             menuPlacement="bottom"
           />
         </div>
