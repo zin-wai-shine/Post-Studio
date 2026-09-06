@@ -44,6 +44,7 @@ export async function batchExportImagesAsZip({
   images, // Array<{ id, file, previewUrl, name }>
   watermarkImage,
   settings,
+  cropSettings,
   exportOptions,
   onProgress, // ({ current, total, percentage, currentFilename }) => void
   isCancelledRef // { current: boolean }
@@ -72,11 +73,12 @@ export async function batchExportImagesAsZip({
       });
     }
 
-    // Render image at original full resolution
+    // Render image with standardized crop dimensions and watermark
     const blob = await renderWatermarkedImage({
       sourceImage: item.file || item.previewUrl,
       watermarkImage,
       settings,
+      cropSettings,
       exportOptions
     });
 

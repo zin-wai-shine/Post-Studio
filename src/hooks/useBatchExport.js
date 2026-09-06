@@ -18,6 +18,7 @@ export function useBatchExport() {
     image,
     watermarkImage,
     settings,
+    cropSettings,
     exportOptions
   }) => {
     if (!image) return;
@@ -29,6 +30,7 @@ export function useBatchExport() {
         sourceImage: image.file || image.previewUrl,
         watermarkImage,
         settings,
+        cropSettings,
         exportOptions
       });
 
@@ -47,6 +49,7 @@ export function useBatchExport() {
     images,
     watermarkImage,
     settings,
+    cropSettings,
     exportOptions
   }) => {
     if (!images || images.length === 0) return;
@@ -65,6 +68,7 @@ export function useBatchExport() {
         images,
         watermarkImage,
         settings,
+        cropSettings,
         exportOptions,
         onProgress: (p) => setProgress(p),
         isCancelledRef

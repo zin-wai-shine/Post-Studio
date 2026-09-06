@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { FiImage, FiMove, FiSliders, FiDownload } from 'react-icons/fi';
+import { FiImage, FiCrop, FiMove, FiSliders, FiDownload } from 'react-icons/fi';
 import { Slider } from '../common/Slider';
 import { Select } from '../common/Select';
 import { PositionGrid } from './PositionGrid';
 import { WatermarkUploader } from './WatermarkUploader';
 import { SavedWatermarks } from './SavedWatermarks';
 import { ExportControls } from './ExportControls';
+import { CropControls } from './CropControls';
 import { WATERMARK_STYLES } from '../../constants/watermark';
 import './WatermarkControls.css';
 
@@ -18,6 +19,7 @@ const FONT_WEIGHT_OPTIONS = [
 
 const SECTIONS = [
   { id: 'watermark', label: 'Watermark', icon: <FiImage className="tab-nav-icon" /> },
+  { id: 'crop', label: 'Crop & Size', icon: <FiCrop className="tab-nav-icon" /> },
   { id: 'position', label: 'Position', icon: <FiMove className="tab-nav-icon" /> },
   { id: 'appearance', label: 'Appearance', icon: <FiSliders className="tab-nav-icon" /> },
   { id: 'export', label: 'Export', icon: <FiDownload className="tab-nav-icon" /> }
@@ -25,13 +27,18 @@ const SECTIONS = [
 
 export function WatermarkControls({
   settings,
+  cropSettings,
   exportSettings,
   activeWatermark,
   savedWatermarks,
   isSavedLoading,
+  activeImage,
   onUpdateSetting,
   onUpdatePatternSetting,
   onSetPositionPreset,
+  onUpdateCropSetting,
+  onSetCropPreset,
+  onSetCropFocus,
   onUpdateExportSetting,
   onSetTemporaryWatermark,
   onSaveAndSelectWatermark,
@@ -154,7 +161,19 @@ export function WatermarkControls({
           </div>
         )}
 
-        {/* 2. Position & Style Section */}
+        {/* 2. Crop & Standardize Size Section */}
+        {activeSection === 'crop' && (
+          <CropControls
+            cropSettings={cropSettings}
+            onUpdateCropSetting={onUpdateCropSetting}
+            onSetCropPreset={onSetCropPreset}
+            onSetCropFocus={onSetCropFocus}
+            totalImagesCount={totalImagesCount}
+            activeImage={activeImage}
+          />
+        )}
+
+        {/* 3. Position & Style Section */}
         {activeSection === 'position' && (
           <div className="section-pane">
             <Select

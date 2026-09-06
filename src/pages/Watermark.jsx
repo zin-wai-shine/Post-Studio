@@ -36,9 +36,13 @@ export function Watermark() {
 
   const {
     settings,
+    cropSettings,
     exportSettings,
     updateSetting,
     updatePatternSetting,
+    updateCropSetting,
+    setCropPreset,
+    setCropFocus,
     setPositionPreset,
     setCustomPosition,
     setExportSettings,
@@ -227,6 +231,7 @@ export function Watermark() {
         image: activeImage,
         watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
         settings,
+        cropSettings,
         exportOptions: exportSettings
       });
       setToast({
@@ -248,6 +253,7 @@ export function Watermark() {
         images,
         watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
         settings,
+        cropSettings,
         exportOptions: exportSettings
       });
       setToast({
@@ -377,6 +383,7 @@ export function Watermark() {
                 watermarkSource={activeWatermark?.previewUrl}
                 watermarkImgEl={watermarkImgEl}
                 settings={settings}
+                cropSettings={cropSettings}
                 onCustomPosition={setCustomPosition}
                 onUploadClick={() => uploaderTriggerRef.current?.click()}
               />
@@ -399,13 +406,18 @@ export function Watermark() {
       {/* Right Controls Panel */}
       <WatermarkControls
         settings={settings}
+        cropSettings={cropSettings}
         exportSettings={exportSettings}
         activeWatermark={activeWatermark}
         savedWatermarks={savedWatermarks}
         isSavedLoading={isSavedLoading}
+        activeImage={activeImage}
         onUpdateSetting={updateSetting}
         onUpdatePatternSetting={updatePatternSetting}
         onSetPositionPreset={setPositionPreset}
+        onUpdateCropSetting={updateCropSetting}
+        onSetCropPreset={setCropPreset}
+        onSetCropFocus={setCropFocus}
         onUpdateExportSetting={(key, val) =>
           setExportSettings((prev) => ({ ...prev, [key]: val }))
         }

@@ -11,6 +11,7 @@ export function ImagePreview({
   watermarkSource, // previewUrl or null
   watermarkImgEl, // HTMLImageElement or null
   settings,
+  cropSettings,
   onCustomPosition,
   onUploadClick
 }) {
@@ -21,7 +22,9 @@ export function ImagePreview({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
 
-  // Update wrap dimensions when active image or viewport size changes
+  const isCropActive = Boolean(cropSettings?.enabled && cropSettings.width && cropSettings.height);
+
+  // Update wrap dimensions when active image, crop settings, or viewport size changes
   const updateRenderedDimensions = useCallback(() => {
     if (!viewportRef.current || !activeImage) return;
 
@@ -31,27 +34,30 @@ export function ImagePreview({
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
-    const imgAspect = (activeImage.width && activeImage.height)
-      ? (activeImage.width / activeImage.height)
-      : (16 / 9);
+    // Use crop target aspect if crop is enabled, otherwise use natural image aspect
+    const targetAspect = (isCropActive && cropSettings.width && cropSettings.height)
+      ? (cropSettings.width / cropSettings.height)
+      : ((activeImage.width && activeImage.height)
+        ? (activeImage.width / activeImage.height)
+        : (16 / 9));
 
     const viewportAspect = availableWidth / availableHeight;
 
     let renderedWidth = 0;
     let renderedHeight = 0;
 
-    if (viewportAspect > imgAspect) {
+    if (viewportAspect > targetAspect) {
       // Height is constraining
       renderedHeight = availableHeight;
-      renderedWidth = Math.round(availableHeight * imgAspect);
+      renderedWidth = Math.round(availableHeight * targetAspect);
     } else {
       // Width is constraining
       renderedWidth = availableWidth;
-      renderedHeight = Math.round(availableWidth / imgAspect);
+      renderedHeight = Math.round(availableWidth / targetAspect);
     }
 
     setWrapDims({ width: renderedWidth, height: renderedHeight });
-  }, [activeImage]);
+  }, [activeImage, isCropActive, cropSettings?.width, cropSettings?.height]);
 
   useEffect(() => {
     updateRenderedDimensions();
@@ -251,13 +257,26 @@ export function ImagePreview({
           {activeImage.name}
         </span>
         <div className="preview-meta">
-          <span className="meta-badge">
-            {activeImage.width} × {activeImage.height} px
-          </span>
-          {activeImage.aspectRatio && (
-            <span className="meta-badge">
-              {activeImage.aspectRatio.toFixed(2)}:1
-            </span>
+          {isCropActive ? (
+            <>
+              <span className="meta-badge" title="Original Dimensions">
+                Orig: {activeImage.width} × {activeImage.height} px
+              </span>
+              <span className="meta-badge crop-active-badge" title="Standardized Dimensions">
+                Standardized: {cropSettings.width} × {cropSettings.height} px ({cropSettings.preset !== 'custom' ? cropSettings.preset : 'Custom'})
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="meta-badge">
+                {activeImage.width} × {activeImage.height} px
+              </span>
+              {activeImage.aspectRatio && (
+                <span className="meta-badge">
+                  {activeImage.aspectRatio.toFixed(2)}:1
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -275,6 +294,11 @@ export function ImagePreview({
             src={activeImage.previewUrl}
             alt={activeImage.name}
             className="preview-base-img"
+            style={isCropActive ? {
+              objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
+              objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
+              backgroundColor: cropSettings.bgColor || '#000000'
+            } : undefined}
             onLoad={updateRenderedDimensions}
           />
 

@@ -149,6 +149,53 @@ function drawRepeatedWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkI
 }
 
 /**
+ * Calculates crop coordinates and dimensions from source to target
+ * @param {number} srcWidth 
+ * @param {number} srcHeight 
+ * @param {number} targetWidth 
+ * @param {number} targetHeight 
+ * @param {number} focusX 0..1 (0 = left, 0.5 = center, 1 = right)
+ * @param {number} focusY 0..1 (0 = top, 0.5 = center, 1 = bottom)
+ * @returns {{ srcX: number, srcY: number, cropWidth: number, cropHeight: number }}
+ */
+export function calculateCropRect(srcWidth, srcHeight, targetWidth, targetHeight, focusX = 0.5, focusY = 0.5) {
+  const srcAspect = srcWidth / srcHeight;
+  const targetAspect = targetWidth / targetHeight;
+
+  let cropWidth = srcWidth;
+  let cropHeight = srcHeight;
+  let srcX = 0;
+  let srcY = 0;
+
+  if (srcAspect > targetAspect) {
+    // Source is wider than target: crop left/right excess based on focusX
+    cropHeight = srcHeight;
+    cropWidth = Math.round(srcHeight * targetAspect);
+    const excessWidth = Math.max(0, srcWidth - cropWidth);
+    srcX = Math.round(excessWidth * Math.max(0, Math.min(1, focusX)));
+    srcY = 0;
+  } else if (srcAspect < targetAspect) {
+    // Source is taller than target: crop top/bottom excess based on focusY
+    cropWidth = srcWidth;
+    cropHeight = Math.round(srcWidth / targetAspect);
+    const excessHeight = Math.max(0, srcHeight - cropHeight);
+    srcX = 0;
+    srcY = Math.round(excessHeight * Math.max(0, Math.min(1, focusY)));
+  }
+
+  // Safety clamps
+  srcX = Math.max(0, Math.min(srcWidth - cropWidth, srcX));
+  srcY = Math.max(0, Math.min(srcHeight - cropHeight, srcY));
+
+  return {
+    srcX,
+    srcY,
+    cropWidth,
+    cropHeight
+  };
+}
+
+/**
  * Renders source image and watermark onto an offscreen canvas and returns Blob
  * @param {Object} param0 
  * @returns {Promise<Blob>}
@@ -157,16 +204,22 @@ export async function renderWatermarkedImage({
   sourceImage, // HTMLImageElement or URL
   watermarkImage, // HTMLImageElement, URL, or null
   settings,
+  cropSettings,
   exportOptions = { format: 'original', quality: 0.92 }
 }) {
   // 1. Resolve source image
   const img = (sourceImage instanceof HTMLImageElement) ? sourceImage : await loadImage(sourceImage);
-  const canvasWidth = img.naturalWidth || img.width;
-  const canvasHeight = img.naturalHeight || img.height;
+  const naturalWidth = img.naturalWidth || img.width;
+  const naturalHeight = img.naturalHeight || img.height;
 
-  if (!canvasWidth || !canvasHeight) {
+  if (!naturalWidth || !naturalHeight) {
     throw new Error('Invalid source image dimensions.');
   }
+
+  // Determine final canvas dimensions
+  const isCropActive = Boolean(cropSettings && cropSettings.enabled && cropSettings.width && cropSettings.height);
+  const canvasWidth = isCropActive ? Math.round(cropSettings.width) : naturalWidth;
+  const canvasHeight = isCropActive ? Math.round(cropSettings.height) : naturalHeight;
 
   // 2. Create offscreen canvas
   const canvas = document.createElement('canvas');
@@ -203,8 +256,40 @@ export async function renderWatermarkedImage({
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   }
 
-  // Draw base image
-  ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+  // Draw base image (cropped or standard)
+  if (isCropActive) {
+    const fitMode = cropSettings.fitMode || 'cover';
+    const focusX = cropSettings.focusX ?? 0.5;
+    const focusY = cropSettings.focusY ?? 0.5;
+
+    if (fitMode === 'contain') {
+      // Fit within bounds without cropping, pad excess with white/black
+      ctx.fillStyle = cropSettings.bgColor || '#000000';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      const scale = Math.min(canvasWidth / naturalWidth, canvasHeight / naturalHeight);
+      const scaledW = Math.round(naturalWidth * scale);
+      const scaledH = Math.round(naturalHeight * scale);
+      const destX = Math.round((canvasWidth - scaledW) * focusX);
+      const destY = Math.round((canvasHeight - scaledH) * focusY);
+
+      ctx.drawImage(img, 0, 0, naturalWidth, naturalHeight, destX, destY, scaledW, scaledH);
+    } else {
+      // 'cover': crop excess based on focus point
+      const { srcX, srcY, cropWidth, cropHeight } = calculateCropRect(
+        naturalWidth,
+        naturalHeight,
+        canvasWidth,
+        canvasHeight,
+        focusX,
+        focusY
+      );
+
+      ctx.drawImage(img, srcX, srcY, cropWidth, cropHeight, 0, 0, canvasWidth, canvasHeight);
+    }
+  } else {
+    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+  }
 
   // If no watermark active, return base image directly
   const hasLogoWatermark = settings.type === 'image' && watermarkImage;

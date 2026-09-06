@@ -1,0 +1,322 @@
+.crop-controls-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: pane-fade 0.15s ease;
+}
+
+/* Enable Banner / Toggle */
+.crop-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background-color: var(--color-card-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.crop-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crop-toggle-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.crop-toggle-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Switch Toggle Button */
+.switch-btn {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background-color: var(--color-border-dark);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.switch-btn.active {
+  background-color: var(--color-main);
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background-color: #FFFFFF;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.switch-btn.active .switch-thumb {
+  transform: translateX(18px);
+}
+
+/* Dimension Inputs Row */
+.dimension-inputs-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.dimension-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dimension-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.dimension-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dimension-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background-color: #FFFFFF;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dimension-input:focus {
+  outline: none;
+  border-color: var(--color-main);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.dimension-unit {
+  position: absolute;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.dimension-divider {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding-top: 18px;
+}
+
+/* Quick Dimension Preset Chips */
+.quick-presets-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.quick-preset-chip {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-preset-chip:hover {
+  border-color: var(--color-border-dark);
+  color: var(--color-text-primary);
+  background-color: var(--color-hover);
+}
+
+.quick-preset-chip.active {
+  background-color: var(--color-main);
+  border-color: var(--color-main);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Focus Position 3x3 Grid */
+.focus-selector-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: var(--color-card-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.focus-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.focus-selector-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.focus-selector-current {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-main);
+  background-color: rgba(34, 34, 34, 0.06);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.focus-grid-layout {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.focus-3x3-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 90px;
+  height: 90px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border-dark);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  gap: 3px;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.focus-cell-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-card-subtle);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.focus-cell-btn:hover:not(.active) {
+  background-color: var(--color-hover);
+  border-color: var(--color-border-dark);
+}
+
+.focus-cell-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--color-border-dark);
+  transition: all 0.15s ease;
+}
+
+.focus-cell-btn.active {
+  background-color: var(--color-main);
+  border-color: var(--color-main);
+}
+
+.focus-cell-btn.active .focus-cell-dot {
+  background-color: #FFFFFF;
+  transform: scale(1.3);
+}
+
+.focus-explanation {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* Fit Mode Selector */
+.fit-mode-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fit-mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.fit-mode-btn:hover:not(.active) {
+  background-color: var(--color-hover);
+  border-color: var(--color-border-dark);
+}
+
+.fit-mode-btn.active {
+  border-color: var(--color-main);
+  background-color: rgba(34, 34, 34, 0.04);
+}
+
+.fit-mode-btn-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.fit-mode-btn-desc {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+/* Batch Standardization Summary Badge */
+.crop-summary-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background-color: #F8F9FA;
+  border: 1px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.crop-summary-badge.is-active {
+  background-color: #F0FDF4;
+  border-color: #86EFAC;
+  color: #166534;
+}
+
+.crop-summary-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
