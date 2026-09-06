@@ -677,11 +677,26 @@ const HEADER_FORMAT_OPTIONS = [
       <input
         ref={singleUploaderRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.jfif,.heic,.heif"
         className="sr-only"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
             handleSingleImageSelected(e.target.files);
+            e.target.value = '';
+          }
+        }}
+      />
+
+      {/* Hidden Batch Image Uploader Ref */}
+      <input
+        ref={uploaderTriggerRef}
+        type="file"
+        multiple
+        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.jfif,.heic,.heif"
+        className="sr-only"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleFilesSelected(e.target.files);
             e.target.value = '';
           }
         }}

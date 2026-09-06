@@ -143,7 +143,7 @@ export function ImageThumbnailList({
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.jfif,.heic,.heif"
             className="sr-only"
             onChange={(e) => {
               if (e.target.files && e.target.files.length > 0) {
@@ -198,7 +198,7 @@ export function ImageThumbnailList({
           {images.map((item) => {
             const isActive = item.id === activeImageId;
             const isEditing = editingId === item.id;
-            const isMenuOpen = menuOpenId === item.id;
+            const isMenuOpen = menuAnchor?.item?.id === item.id;
             const isCustomized = Boolean(item.hasCustomOverrides);
 
             return (

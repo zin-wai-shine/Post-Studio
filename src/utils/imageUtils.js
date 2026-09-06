@@ -5,13 +5,31 @@
  */
 export function isValidImageFile(file) {
   if (!file) return false;
-  const validMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-  const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-  
-  const matchesMime = validMimeTypes.includes(file.type.toLowerCase());
-  const matchesExt = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-  
-  return matchesMime || matchesExt;
+
+  const mime = typeof file.type === 'string' ? file.type.toLowerCase().trim() : '';
+  const name = typeof file.name === 'string' ? file.name.toLowerCase().trim() : '';
+
+  // Standard image mime types
+  if (mime.startsWith('image/')) {
+    return true;
+  }
+
+  // File extension checks
+  const validExtensions = [
+    '.jpg', '.jpeg', '.png', '.webp', '.avif', '.jfif',
+    '.heic', '.heif', '.bmp', '.gif', '.svg', '.tif', '.tiff', '.ico'
+  ];
+
+  if (validExtensions.some((ext) => name.endsWith(ext))) {
+    return true;
+  }
+
+  // Blob fallback
+  if (typeof Blob !== 'undefined' && file instanceof Blob && mime.includes('image')) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

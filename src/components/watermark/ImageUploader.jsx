@@ -77,7 +77,7 @@ export function ImageUploader({
         ref={fileInputRef}
         type="file"
         multiple={!isSingleImageMode}
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.jfif,.heic,.heif"
         className="sr-only"
         onChange={handleInputChange}
       />
