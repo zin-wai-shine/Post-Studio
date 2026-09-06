@@ -46,75 +46,92 @@ export function triggerDownload(blob, filename) {
 }
 
 
-// Curated dictionary pools for generating aesthetic, clean unique names
-const WORD_POOL_A = [
-  'sky', 'sun', 'sea', 'bay', 'oak', 'zen', 'arc', 'fox', 'lux', 'mod',
-  'neo', 'pro', 'pix', 'urb', 'top', 'gem', 'art', 'vue', 'geo', 'raw',
-  'air', 'ice', 'eco', 'pop', 'hub', 'dot', 'pad', 'red', 'den', 'one'
-];
-
-const WORD_POOL_B = [
-  'loft', 'view', 'home', 'room', 'deck', 'hall', 'pool', 'arch', 'lawn', 'gate',
-  'peak', 'cove', 'park', 'wall', 'wood', 'pine', 'palm', 'dune', 'base', 'hill'
-];
-
-const WORD_POOL_C = [
-  'wm', 'hd', 'hq', 'pro', 'std', 'art', 'res', 'fin', 'img', 'pic',
-  'out', 'post', 'view', 'card', 'glow', 'pure', 'prime', 'mark', 'tone', 'flow'
-];
+const BATCH_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 /**
- * Generates unique filename following pattern: 3words_5numbers_2words.[ext]
- * Example: "sky_loft_zen_74829_hd_wm.jpg"
- * @param {string} originalName 
- * @param {Object} exportOptions 
+ * Generates a 3-character uppercase batch prefix code (e.g. "XEA")
  * @returns {string}
  */
-export function generateUniqueImageName(originalName = '', exportOptions = {}) {
-  // 1. Pick 3 distinct words
-  const w1 = WORD_POOL_A[Math.floor(Math.random() * WORD_POOL_A.length)];
-  const w2 = WORD_POOL_B[Math.floor(Math.random() * WORD_POOL_B.length)];
-  let w3 = WORD_POOL_A[Math.floor(Math.random() * WORD_POOL_A.length)];
-  if (w3 === w1) {
-    w3 = WORD_POOL_B[Math.floor(Math.random() * WORD_POOL_B.length)];
+export function generateRandomBatchPrefix() {
+  let result = '';
+  for (let i = 0; i < 3; i++) {
+    result += BATCH_LETTERS.charAt(Math.floor(Math.random() * BATCH_LETTERS.length));
   }
+  return result;
+}
 
-  // 2. 5 random digits (10000 - 99999)
+/**
+ * Generates an image filename following the pattern: [PREFIX]_[5DIGITS]_[SUFFIX].[ext]
+ * Example: "XEA_23523_BAS.png"
+ * 
+ * @param {Object} param0
+ * @returns {string}
+ */
+export function generateBatchImageName({
+  batchPrefix = 'XEA',
+  suffix = 'BAS',
+  originalName = '',
+  exportOptions = {}
+} = {}) {
+  // 1. Five random digits (10000 - 99999)
   const num5 = Math.floor(10000 + Math.random() * 90000);
 
-  // 3. 2 distinct words
-  const w4 = WORD_POOL_C[Math.floor(Math.random() * WORD_POOL_C.length)];
-  let w5 = WORD_POOL_C[Math.floor(Math.random() * WORD_POOL_C.length)];
-  if (w5 === w4) {
-    w5 = 'wm';
-  }
+  // 2. Format 3-character prefix (e.g. "XEA")
+  const cleanPrefix = (batchPrefix || 'XEA')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 5) || 'XEA';
 
-  // 4. Resolve target extension
-  let targetExt = '.jpg';
+  // 3. Format suffix (e.g. "BAS")
+  const rawSuffix = exportOptions?.suffix !== undefined && exportOptions.suffix.trim() !== ''
+    ? exportOptions.suffix.replace(/^-+/, '')
+    : (suffix || 'BAS');
+  const cleanSuffix = rawSuffix.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5) || 'BAS';
+
+  // 4. Resolve extension
+  let targetExt = '.png';
   if (exportOptions.format === 'jpeg' || exportOptions.format === 'jpg') {
     targetExt = '.jpg';
   } else if (exportOptions.format === 'png') {
     targetExt = '.png';
   } else if (exportOptions.format === 'webp') {
     targetExt = '.webp';
-  } else if (originalName) {
+  } else if (originalName && originalName.includes('.')) {
     const { ext } = parseFilename(originalName);
     if (ext) targetExt = ext.toLowerCase();
   }
 
-  return `${w1}_${w2}_${w3}_${num5}_${w4}_${w5}${targetExt}`;
+  return `${cleanPrefix}_${num5}_${cleanSuffix}${targetExt}`;
+}
+
+/**
+ * Generates unique filename (backward compatibility alias)
+ */
+export function generateUniqueImageName(originalName = '', exportOptions = {}, batchPrefix = 'XEA') {
+  return generateBatchImageName({
+    batchPrefix,
+    suffix: exportOptions?.suffix ? exportOptions.suffix.replace(/^-+/, '') : 'BAS',
+    originalName,
+    exportOptions
+  });
 }
 
 /**
  * Legacy filename helper preserved for backward compatibility
  */
-export function getExportFilename(originalName, exportOptions = {}) {
-  return generateUniqueImageName(originalName, exportOptions);
+export function getExportFilename(originalName, exportOptions = {}, batchPrefix = 'XEA') {
+  return generateBatchImageName({
+    batchPrefix,
+    suffix: exportOptions?.suffix ? exportOptions.suffix.replace(/^-+/, '') : 'BAS',
+    originalName,
+    exportOptions
+  });
 }
 
 /**
  * Directly downloads all processed images sequentially into the browser download manager
- * (Direct downloads with zero zip requirement)
+ * Ensures that all images in this batch share the exact same 3-letter prefix (e.g. "XEA")
+ * 
  * @param {Object} param0 
  * @returns {Promise<void>}
  */
@@ -124,6 +141,7 @@ export async function batchDownloadImagesDirectly({
   settings,
   cropSettings,
   exportOptions,
+  batchPrefix, // Consistent 3-letter prefix for this batch, e.g. "XEA"
   onProgress, // ({ current, total, percentage, currentFilename }) => void
   isCancelledRef // { current: boolean }
 }) {
@@ -132,6 +150,9 @@ export async function batchDownloadImagesDirectly({
   }
 
   const total = images.length;
+  // Use the session batchPrefix or create a new consistent one for this batch
+  const activeBatchPrefix = batchPrefix || generateRandomBatchPrefix();
+  const activeSuffix = exportOptions?.suffix ? exportOptions.suffix.replace(/^-+/, '') : 'BAS';
 
   for (let i = 0; i < total; i++) {
     if (isCancelledRef?.current) {
@@ -139,8 +160,13 @@ export async function batchDownloadImagesDirectly({
     }
 
     const item = images[i];
-    // Generate unique name following: 3words_5numbers_2words.[ext]
-    const filename = generateUniqueImageName(item.name || `image_${i + 1}`, exportOptions);
+    // Generate name matching: XEA_23523_BAS.ext (prefix stays identical across the batch)
+    const filename = generateBatchImageName({
+      batchPrefix: activeBatchPrefix,
+      suffix: activeSuffix,
+      originalName: item.name || `image_${i + 1}`,
+      exportOptions
+    });
 
     if (onProgress) {
       onProgress({
@@ -171,3 +197,4 @@ export async function batchDownloadImagesDirectly({
     await new Promise((resolve) => setTimeout(resolve, 350));
   }
 }
+

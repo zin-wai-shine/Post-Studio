@@ -51,7 +51,11 @@ export function WatermarkControls({
   isExportingSingle,
   isExportingBatch,
   hasActiveImage,
-  totalImagesCount
+  totalImagesCount,
+  batchPrefix = 'XEA',
+  onRegeneratePrefix,
+  autoClearAfterDownload = false,
+  onToggleAutoClear
 }) {
   const [activeSection, setActiveSection] = useState('watermark');
   const isSingle = settings.style === 'single';
@@ -294,6 +298,10 @@ export function WatermarkControls({
               isExportingBatch={isExportingBatch}
               hasActiveImage={hasActiveImage}
               totalImagesCount={totalImagesCount}
+              batchPrefix={batchPrefix}
+              onRegeneratePrefix={onRegeneratePrefix}
+              autoClearAfterDownload={autoClearAfterDownload}
+              onToggleAutoClear={onToggleAutoClear}
             />
           </div>
         )}

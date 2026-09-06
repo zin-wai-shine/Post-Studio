@@ -19,7 +19,8 @@ export function useBatchExport() {
     watermarkImage,
     settings,
     cropSettings,
-    exportOptions
+    exportOptions,
+    batchPrefix
   }) => {
     if (!image) return;
     try {
@@ -34,8 +35,8 @@ export function useBatchExport() {
         exportOptions
       });
 
-      // Generate unique name following: 3words_5numbers_2words.[ext]
-      const filename = generateUniqueImageName(image.name, exportOptions);
+      // Generate name following: XEA_23523_BAS.[ext]
+      const filename = generateUniqueImageName(image.name, exportOptions, batchPrefix);
       triggerDownload(blob, filename);
     } catch (err) {
       console.error('Failed to export image:', err);
@@ -51,7 +52,8 @@ export function useBatchExport() {
     watermarkImage,
     settings,
     cropSettings,
-    exportOptions
+    exportOptions,
+    batchPrefix
   }) => {
     if (!images || images.length === 0) return;
     try {
@@ -72,6 +74,7 @@ export function useBatchExport() {
         settings,
         cropSettings,
         exportOptions,
+        batchPrefix,
         onProgress: (p) => setProgress(p),
         isCancelledRef
       });

@@ -13,6 +13,7 @@ import { Toast } from '../components/common/Toast';
 import { Modal } from '../components/common/Modal';
 import { Button } from '../components/common/Button';
 import { loadImage } from '../utils/imageUtils';
+import { generateRandomBatchPrefix } from '../utils/downloadUtils';
 import { FiDownload, FiArchive, FiRotateCcw } from 'react-icons/fi';
 import { Select } from '../components/common/Select';
 import { EXPORT_FORMATS } from '../constants/watermark';
@@ -73,7 +74,24 @@ export function Watermark() {
   const [watermarkImgEl, setWatermarkImgEl] = useState(null);
   const [toast, setToast] = useState(null); // { type, message }
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [batchPrefix, setBatchPrefix] = useState(() => generateRandomBatchPrefix());
+  const [autoClearAfterDownload, setAutoClearAfterDownload] = useState(() => {
+    try {
+      return localStorage.getItem('pofix_auto_clear') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const uploaderTriggerRef = useRef(null);
+
+  const handleToggleAutoClear = (checked) => {
+    setAutoClearAfterDownload(checked);
+    try {
+      localStorage.setItem('pofix_auto_clear', String(checked));
+    } catch (e) {
+      console.warn('Failed to save auto clear setting:', e);
+    }
+  };
 
   // Automatically select the first saved watermark if none is active
   useEffect(() => {
@@ -232,12 +250,26 @@ export function Watermark() {
         watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
         settings,
         cropSettings,
-        exportOptions: exportSettings
+        exportOptions: exportSettings,
+        batchPrefix
       });
-      setToast({
-        type: 'success',
-        message: `Downloaded ${activeImage.name}`
-      });
+
+      if (autoClearAfterDownload) {
+        removeImage(activeImage.id);
+        if (images.length <= 1) {
+          const nextPrefix = generateRandomBatchPrefix();
+          setBatchPrefix(nextPrefix);
+        }
+        setToast({
+          type: 'success',
+          message: `Downloaded ${activeImage.name}. Workspace auto-cleared.`
+        });
+      } else {
+        setToast({
+          type: 'success',
+          message: `Downloaded ${activeImage.name}`
+        });
+      }
     } catch (err) {
       setToast({
         type: 'error',
@@ -248,18 +280,31 @@ export function Watermark() {
 
   const handleDownloadAll = async () => {
     if (images.length === 0) return;
+    const downloadCount = images.length;
     try {
       await exportBatch({
         images,
         watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
         settings,
         cropSettings,
-        exportOptions: exportSettings
+        exportOptions: exportSettings,
+        batchPrefix
       });
-      setToast({
-        type: 'success',
-        message: `Successfully downloaded batch of ${images.length} images directly.`
-      });
+
+      if (autoClearAfterDownload) {
+        clearAllImages();
+        const nextPrefix = generateRandomBatchPrefix();
+        setBatchPrefix(nextPrefix);
+        setToast({
+          type: 'success',
+          message: `Successfully downloaded ${downloadCount} images. Workspace auto-cleared (New batch: ${nextPrefix}).`
+        });
+      } else {
+        setToast({
+          type: 'success',
+          message: `Successfully downloaded batch of ${downloadCount} images directly.`
+        });
+      }
     } catch (err) {
       if (!err.message?.includes('cancelled')) {
         setToast({
@@ -276,10 +321,12 @@ export function Watermark() {
       setActiveWatermark(null);
     }
     resetSettings();
+    const nextPrefix = generateRandomBatchPrefix();
+    setBatchPrefix(nextPrefix);
     setShowResetConfirm(false);
     setToast({
       type: 'info',
-      message: 'Workspace reset to defaults. Saved watermark library was preserved.'
+      message: `Workspace reset to defaults. New batch prefix: ${nextPrefix}.`
     });
   };
 
@@ -433,6 +480,10 @@ export function Watermark() {
         isExportingBatch={isExportingBatch}
         hasActiveImage={Boolean(activeImage)}
         totalImagesCount={images.length}
+        batchPrefix={batchPrefix}
+        onRegeneratePrefix={() => setBatchPrefix(generateRandomBatchPrefix())}
+        autoClearAfterDownload={autoClearAfterDownload}
+        onToggleAutoClear={handleToggleAutoClear}
       />
 
       {/* Batch Processing Modal */}
