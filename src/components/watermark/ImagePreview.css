@@ -155,7 +155,23 @@
   justify-content: center;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 681px) and (max-width: 1024px) {
+  .preview-container {
+    min-height: 180px;
+    flex: 1;
+    border-radius: var(--radius-sm);
+  }
+
+  .preview-topbar {
+    padding: 6px 12px;
+  }
+
+  .preview-viewport {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 680px) {
   .preview-container {
     min-height: 140px;
     flex: 1;

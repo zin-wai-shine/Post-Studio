@@ -105,13 +105,30 @@
   width: 135px;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 681px) and (max-width: 1024px) {
+  .header {
+    padding: 0 12px;
+  }
+
   .header-subtitle {
     display: none;
   }
+
+  .header-format-select-wrap {
+    width: 105px;
+  }
+
+  .header-actions-group {
+    gap: 6px;
+  }
+
+  .header-actions-group button {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 680px) {
   .header {
     display: flex;
     align-items: center;
@@ -164,7 +181,7 @@
     width: 96px;
   }
 
-  /* On mobile: Hide all buttons from navbar so only compact format select is on right */
+  /* On mobile phones: Hide desktop buttons from navbar so only compact format select is on right */
   .header-btn-download-selected,
   .header-btn-download-all,
   .header-btn-reset,
