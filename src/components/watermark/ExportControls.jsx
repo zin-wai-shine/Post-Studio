@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiDownload, FiArchive } from 'react-icons/fi';
+import { FiDownload } from 'react-icons/fi';
 import { Select } from '../common/Select';
 import { Slider } from '../common/Slider';
 import { Button } from '../common/Button';
@@ -65,13 +65,13 @@ export function ExportControls({
         <Button
           variant="primary"
           size="md"
-          iconLeft={<FiArchive size={14} />}
+          iconLeft={<FiDownload size={14} />}
           fullWidth
           disabled={totalImagesCount === 0 || isExportingBatch || isExportingSingle}
           loading={isExportingBatch}
           onClick={onDownloadAll}
         >
-          {isExportingBatch ? 'Processing ZIP...' : `Download All (${totalImagesCount})`}
+          {isExportingBatch ? 'Downloading...' : `Download All (${totalImagesCount})`}
         </Button>
 
         <Button

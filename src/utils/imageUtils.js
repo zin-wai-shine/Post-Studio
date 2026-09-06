@@ -15,19 +15,66 @@ export function isValidImageFile(file) {
 }
 
 /**
- * Loads an HTMLImageElement from a URL or Object URL
- * @param {string} src 
+ * Loads an HTMLImageElement from a URL, Blob, File, or existing HTMLImageElement
+ * @param {HTMLImageElement|File|Blob|string} source 
  * @returns {Promise<HTMLImageElement>}
  */
-export function loadImage(src) {
+export function loadImage(source) {
+  if (!source) {
+    return Promise.reject(new Error('No image source provided.'));
+  }
+
+  // If already an HTMLImageElement
+  if (typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement) {
+    if (source.complete && source.naturalWidth > 0) {
+      return Promise.resolve(source);
+    }
+    return new Promise((resolve, reject) => {
+      source.onload = () => resolve(source);
+      source.onerror = (err) => reject(new Error(`Failed to load image element: ${err?.message || 'error'}`));
+    });
+  }
+
+  let url = '';
+  let needRevoke = false;
+
+  if (typeof source === 'string') {
+    url = source;
+  } else if ((typeof Blob !== 'undefined' && source instanceof Blob) || (typeof File !== 'undefined' && source instanceof File)) {
+    url = URL.createObjectURL(source);
+    needRevoke = true;
+  } else {
+    return Promise.reject(new Error(`Invalid image source type: ${typeof source}`));
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(new Error(`Failed to load image from source: ${err}`));
-    img.src = src;
+    // Do NOT set crossOrigin on blob: or data: URLs as it causes errors in Safari & WebKit
+    if (typeof url === 'string' && !url.startsWith('blob:') && !url.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
+    img.onload = () => {
+      if (needRevoke) {
+        // Keep object URL alive briefly so canvas can finish accessing pixel buffer
+        setTimeout(() => {
+          try { URL.revokeObjectURL(url); } catch (e) {}
+        }, 1000);
+      }
+      resolve(img);
+    };
+
+    img.onerror = (err) => {
+      if (needRevoke) {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      }
+      reject(new Error(`Failed to load image from source: ${err?.message || 'unknown'}`));
+    };
+
+    img.src = url;
   });
 }
+
 
 /**
  * Gets the natural width and height of an image file

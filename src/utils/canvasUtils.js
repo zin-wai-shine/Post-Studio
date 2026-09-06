@@ -240,8 +240,14 @@ export async function renderWatermarkedImage({
   } else if (exportOptions.format === 'jpeg' || exportOptions.format === 'jpg') {
     mimeType = 'image/jpeg';
   } else {
-    // 'original'
-    if (img.src && img.src.includes('.png')) {
+    // 'original': resolve accurately from File/Blob, source name/type, or img.src
+    if (sourceImage && sourceImage.type) {
+      mimeType = sourceImage.type;
+    } else if (typeof sourceImage === 'string' && (sourceImage.endsWith('.png') || sourceImage.includes('image/png'))) {
+      mimeType = 'image/png';
+    } else if (typeof sourceImage === 'string' && (sourceImage.endsWith('.webp') || sourceImage.includes('image/webp'))) {
+      mimeType = 'image/webp';
+    } else if (img.src && img.src.includes('.png')) {
       mimeType = 'image/png';
     } else if (img.src && img.src.includes('.webp')) {
       mimeType = 'image/webp';
@@ -393,14 +399,27 @@ export async function renderWatermarkedImage({
     }
   }
 
-  // 4. Convert canvas to Blob
+  // 4. Convert canvas to Blob with dataURL fallback
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) {
           resolve(blob);
         } else {
-          reject(new Error('Failed to generate image Blob from canvas.'));
+          try {
+            const dataUrl = canvas.toDataURL(mimeType, exportOptions.quality ?? 0.92);
+            const arr = dataUrl.split(',');
+            const mime = arr[0].match(/:(.*?);/)?.[1] || mimeType;
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            resolve(new Blob([u8arr], { type: mime }));
+          } catch (fallbackErr) {
+            reject(new Error(`Failed to generate image Blob from canvas: ${fallbackErr.message}`));
+          }
         }
       },
       mimeType,

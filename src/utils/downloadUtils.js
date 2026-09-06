@@ -3,13 +3,48 @@ import { renderWatermarkedImage } from './canvasUtils';
 import { parseFilename } from './imageUtils';
 
 /**
- * Triggers a browser download for a Blob
+ * Triggers a direct browser download for a Blob
  * @param {Blob} blob 
  * @param {string} filename 
  */
 export function triggerDownload(blob, filename) {
-  saveAs(blob, filename);
+  if (!blob) return;
+
+  try {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.style.position = 'fixed';
+    link.style.left = '-9999px';
+    link.style.top = '-9999px';
+    link.href = url;
+    link.download = filename || 'watermarked-image.jpg';
+
+    // Must be attached to DOM for modern Chrome, Firefox and Safari to permit download
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up DOM and revoke object URL
+    setTimeout(() => {
+      try {
+        if (link.parentNode) {
+          document.body.removeChild(link);
+        }
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        // ignore
+      }
+    }, 15000);
+  } catch (err) {
+    console.warn('Direct anchor download failed, falling back to FileSaver:', err);
+    try {
+      saveAs(blob, filename);
+    } catch (saveAsErr) {
+      console.error('All download mechanisms failed:', saveAsErr);
+    }
+  }
 }
+
 
 // Curated dictionary pools for generating aesthetic, clean unique names
 const WORD_POOL_A = [
@@ -132,7 +167,7 @@ export async function batchDownloadImagesDirectly({
     // Direct browser download
     triggerDownload(blob, filename);
 
-    // Stagger downloads by 250ms to allow browser download manager to process smoothly
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    // Stagger downloads by 350ms to allow browser download manager to process smoothly
+    await new Promise((resolve) => setTimeout(resolve, 350));
   }
 }
