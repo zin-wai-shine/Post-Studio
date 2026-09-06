@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck } from 'react-icons/fi';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import './ImageThumbnailList.css';
@@ -14,8 +14,67 @@ export function ImageThumbnailList({
   onRenameImage
 }) {
   const fileInputRef = useRef(null);
+  const trackRef = useRef(null);
   const [editingId, setEditingId] = useState(null);
   const [tempName, setTempName] = useState('');
+
+  const [hasScroll, setHasScroll] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const overflow = scrollWidth > clientWidth + 4;
+    setHasScroll(overflow);
+    setCanScrollLeft(overflow && scrollLeft > 6);
+    setCanScrollRight(overflow && scrollLeft < scrollWidth - clientWidth - 6);
+  }, []);
+
+  const handleScroll = (direction) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cardWidth = 142; // 130px card + 12px gap
+    const visibleCards = Math.max(1, Math.floor(el.clientWidth / cardWidth));
+    const scrollCards = Math.max(1, visibleCards - 1);
+    const distance = scrollCards * cardWidth;
+
+    el.scrollBy({
+      left: direction === 'left' ? -distance : distance,
+      behavior: 'smooth'
+    });
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const el = trackRef.current;
+    if (!el) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateScrollState();
+    });
+    resizeObserver.observe(el);
+
+    const timer = setTimeout(updateScrollState, 150);
+
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timer);
+    };
+  }, [images, updateScrollState]);
+
+  useEffect(() => {
+    if (!activeImageId || !trackRef.current) return;
+    const activeEl = trackRef.current.querySelector(`[data-id="${activeImageId}"]`);
+    if (activeEl) {
+      const trackRect = trackRef.current.getBoundingClientRect();
+      const cardRect = activeEl.getBoundingClientRect();
+      if (cardRect.left < trackRect.left || cardRect.right > trackRect.right) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    }
+  }, [activeImageId]);
 
   if (!images || images.length === 0) return null;
 
@@ -45,6 +104,31 @@ export function ImageThumbnailList({
         <div className="thumbnail-count">
           <span>Batch Images</span>
           <span className="text-muted text-sm">({images.length})</span>
+
+          {hasScroll && (
+            <div className="thumbnail-header-nav" aria-label="Thumbnail navigation">
+              <button
+                type="button"
+                className="thumbnail-header-nav-btn"
+                disabled={!canScrollLeft}
+                onClick={() => handleScroll('left')}
+                title="Scroll previous images"
+                aria-label="Previous images"
+              >
+                <FiChevronLeft size={13} />
+              </button>
+              <button
+                type="button"
+                className="thumbnail-header-nav-btn"
+                disabled={!canScrollRight}
+                onClick={() => handleScroll('right')}
+                title="Scroll next images"
+                aria-label="Next images"
+              >
+                <FiChevronRight size={13} />
+              </button>
+            </div>
+          )}
         </div>
         <div className="thumbnail-actions">
           <input
@@ -79,15 +163,38 @@ export function ImageThumbnailList({
         </div>
       </div>
 
-      <div className="thumbnail-track" role="listbox" aria-label="Uploaded images thumbnail list">
-        {images.map((item) => {
-          const isActive = item.id === activeImageId;
-          const isEditing = editingId === item.id;
+      <div className="thumbnail-track-wrapper">
+        {hasScroll && canScrollLeft && (
+          <>
+            <div className="thumbnail-edge-fade left" />
+            <button
+              type="button"
+              className="thumbnail-track-arrow prev"
+              onClick={() => handleScroll('left')}
+              title="Scroll previous"
+              aria-label="Previous images"
+            >
+              <FiChevronLeft size={18} />
+            </button>
+          </>
+        )}
 
-          return (
-            <div
-              key={item.id}
-              className={`thumbnail-card ${isActive ? 'active' : ''}`}
+        <div
+          ref={trackRef}
+          className="thumbnail-track"
+          onScroll={updateScrollState}
+          role="listbox"
+          aria-label="Uploaded images thumbnail list"
+        >
+          {images.map((item) => {
+            const isActive = item.id === activeImageId;
+            const isEditing = editingId === item.id;
+
+            return (
+              <div
+                key={item.id}
+                data-id={item.id}
+                className={`thumbnail-card ${isActive ? 'active' : ''}`}
               onClick={() => {
                 if (!isEditing) onSelectImage(item.id);
               }}
@@ -173,6 +280,22 @@ export function ImageThumbnailList({
             </div>
           );
         })}
+        </div>
+
+        {hasScroll && canScrollRight && (
+          <>
+            <div className="thumbnail-edge-fade right" />
+            <button
+              type="button"
+              className="thumbnail-track-arrow next"
+              onClick={() => handleScroll('right')}
+              title="Scroll next"
+              aria-label="Next images"
+            >
+              <FiChevronRight size={18} />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
