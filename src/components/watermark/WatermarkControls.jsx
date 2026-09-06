@@ -28,6 +28,7 @@ const SECTIONS = [
 export function WatermarkControls({
   settings,
   cropSettings,
+  gridCropSettings,
   exportSettings,
   activeWatermark,
   savedWatermarks,
@@ -37,8 +38,14 @@ export function WatermarkControls({
   onUpdatePatternSetting,
   onSetPositionPreset,
   onUpdateCropSetting,
+  onUpdateGridCropSetting,
   onSetCropPreset,
   onSetCropFocus,
+  onSliceImage,
+  isSlicing = false,
+  onTriggerSingleUpload,
+  activeSection: externalActiveSection,
+  onSectionChange,
   onUpdateExportSetting,
   onSetTemporaryWatermark,
   onSaveAndSelectWatermark,
@@ -57,7 +64,12 @@ export function WatermarkControls({
   autoClearAfterDownload = false,
   onToggleAutoClear
 }) {
-  const [activeSection, setActiveSection] = useState('watermark');
+  const [internalActiveSection, setInternalActiveSection] = useState('watermark');
+  const activeSection = externalActiveSection || internalActiveSection;
+  const setActiveSection = (sec) => {
+    setInternalActiveSection(sec);
+    if (onSectionChange) onSectionChange(sec);
+  };
   // Putup box is OPEN by default on mobile so user sees the controls clearly
   const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
@@ -218,6 +230,11 @@ export function WatermarkControls({
             onSetCropFocus={onSetCropFocus}
             totalImagesCount={totalImagesCount}
             activeImage={activeImage}
+            gridCropSettings={gridCropSettings}
+            onUpdateGridCropSetting={onUpdateGridCropSetting}
+            onSliceImage={onSliceImage}
+            isSlicing={isSlicing}
+            onTriggerSingleUpload={onTriggerSingleUpload}
           />
         )}
 

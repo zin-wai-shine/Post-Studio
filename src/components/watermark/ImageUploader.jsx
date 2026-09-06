@@ -3,7 +3,13 @@ import { FiUploadCloud, FiImage } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import './ImageUploader.css';
 
-export function ImageUploader({ onFilesSelected, loading = false, compact = false, onLoadSample }) {
+export function ImageUploader({
+  onFilesSelected,
+  loading = false,
+  compact = false,
+  onLoadSample,
+  isSingleImageMode = false
+}) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -24,7 +30,12 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFilesSelected(e.dataTransfer.files);
+      if (isSingleImageMode) {
+        // Take only the first file
+        onFilesSelected([e.dataTransfer.files[0]]);
+      } else {
+        onFilesSelected(e.dataTransfer.files);
+      }
     }
   };
 
@@ -36,7 +47,11 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
 
   const handleInputChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFilesSelected(e.target.files);
+      if (isSingleImageMode) {
+        onFilesSelected([e.target.files[0]]);
+      } else {
+        onFilesSelected(e.target.files);
+      }
       // Reset value so identical files can be uploaded again if needed
       e.target.value = '';
     }
@@ -44,7 +59,7 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
 
   return (
     <div
-      className={`uploader-dropzone ${isDragging ? 'dragging' : ''} ${compact ? 'compact' : ''}`}
+      className={`uploader-dropzone ${isDragging ? 'dragging' : ''} ${compact ? 'compact' : ''} ${isSingleImageMode ? 'single-mode' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -61,7 +76,7 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
       <input
         ref={fileInputRef}
         type="file"
-        multiple
+        multiple={!isSingleImageMode}
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
         onChange={handleInputChange}
@@ -70,10 +85,16 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
         <FiUploadCloud size={24} />
       </div>
       <h3 className="uploader-title">
-        {compact ? 'Add More Images' : 'Upload Images'}
+        {compact
+          ? 'Add More Images'
+          : isSingleImageMode
+          ? 'Upload Single Image for Grid Split'
+          : 'Upload Images'}
       </h3>
       <p className="uploader-subtitle">
-        Drag and drop images here, or click to browse files from your computer.
+        {isSingleImageMode
+          ? 'Choose 1 high-resolution photo to crop and split into social media grid tiles.'
+          : 'Drag and drop images here, or click to browse files from your computer.'}
       </p>
       <div className="uploader-actions">
         <Button
@@ -86,7 +107,7 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
             handleClick();
           }}
         >
-          Choose Images
+          {isSingleImageMode ? 'Choose Single Image' : 'Choose Images'}
         </Button>
         {onLoadSample && !compact && (
           <Button
@@ -97,12 +118,14 @@ export function ImageUploader({ onFilesSelected, loading = false, compact = fals
               onLoadSample();
             }}
           >
-            Load Sample Photos
+            Load Sample Photo
           </Button>
         )}
       </div>
       <span className="uploader-formats">
-        Supported formats: JPG, PNG, WEBP. No batch limit.
+        {isSingleImageMode
+          ? 'Supported formats: JPG, PNG, WEBP. Ready for social grid slicing.'
+          : 'Supported formats: JPG, PNG, WEBP. No batch limit.'}
       </span>
     </div>
   );

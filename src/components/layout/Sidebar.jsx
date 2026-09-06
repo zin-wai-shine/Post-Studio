@@ -1,14 +1,13 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FiDroplet, FiX } from 'react-icons/fi';
+import { NavLink, useLocation } from 'react-router-dom';
+import { FiDroplet, FiGrid, FiX } from 'react-icons/fi';
 import { IconButton } from '../common/IconButton';
 import './Sidebar.css';
 
-const NAV_ITEMS = [
-  { path: '/watermark', label: 'Watermark', icon: <FiDroplet /> }
-];
-
 export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }) {
+  const location = useLocation();
+  const isGridModeActive = location.pathname === '/watermark' && location.search.includes('mode=grid');
+
   return (
     <>
       <div
@@ -34,17 +33,23 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
           )}
 
           <nav className="sidebar-nav">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                onClick={onCloseMobile}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </NavLink>
-            ))}
+            <NavLink
+              to="/watermark"
+              end
+              className={({ isActive }) => `nav-link ${isActive && !isGridModeActive ? 'active' : ''}`}
+              onClick={onCloseMobile}
+            >
+              <span className="nav-icon"><FiDroplet /></span>
+              <span className="nav-label">Watermark</span>
+            </NavLink>
+            <NavLink
+              to="/watermark?mode=grid&tab=crop"
+              className={`nav-link ${isGridModeActive ? 'active' : ''}`}
+              onClick={onCloseMobile}
+            >
+              <span className="nav-icon"><FiGrid /></span>
+              <span className="nav-label">Social Grid Split</span>
+            </NavLink>
           </nav>
 
           <div className="sidebar-footer">

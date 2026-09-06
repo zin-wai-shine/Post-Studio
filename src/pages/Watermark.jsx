@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useImageFiles } from '../hooks/useImageFiles';
 import { useWatermarkSettings } from '../hooks/useWatermarkSettings';
 import { useSavedWatermarks } from '../hooks/useSavedWatermarks';
@@ -13,6 +13,7 @@ import { Toast } from '../components/common/Toast';
 import { Modal } from '../components/common/Modal';
 import { Button } from '../components/common/Button';
 import { loadImage } from '../utils/imageUtils';
+import { sliceImageIntoGridTiles } from '../utils/gridCropUtils';
 import { generateRandomBatchPrefix } from '../utils/downloadUtils';
 import { FiDownload, FiArchive, FiRotateCcw } from 'react-icons/fi';
 import { Select } from '../components/common/Select';
@@ -21,6 +22,7 @@ import './Watermark.css';
 
 export function Watermark() {
   const { registerResetHandler, setHeaderActions } = useOutletContext?.() || {};
+  const [searchParams] = useSearchParams();
 
   // Custom Hooks
   const {
@@ -38,10 +40,12 @@ export function Watermark() {
   const {
     settings,
     cropSettings,
+    gridCropSettings,
     exportSettings,
     updateSetting,
     updatePatternSetting,
     updateCropSetting,
+    updateGridCropSetting,
     setCropPreset,
     setCropFocus,
     setPositionPreset,
@@ -83,6 +87,21 @@ export function Watermark() {
     }
   });
   const uploaderTriggerRef = useRef(null);
+  const singleUploaderRef = useRef(null);
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('mode') === 'grid' || searchParams.get('tab') === 'crop'
+      ? 'crop'
+      : 'watermark';
+  });
+  const [isSlicing, setIsSlicing] = useState(false);
+
+  // Auto-activate grid mode if URL has ?mode=grid
+  useEffect(() => {
+    if (searchParams.get('mode') === 'grid') {
+      updateGridCropSetting('mode', 'grid');
+      setActiveSection('crop');
+    }
+  }, [searchParams, updateGridCropSetting]);
 
   const handleToggleAutoClear = (checked) => {
     setAutoClearAfterDownload(checked);
@@ -136,6 +155,69 @@ export function Watermark() {
       });
     } catch (err) {
       setToast({ type: 'error', message: err.message || 'Failed to upload images.' });
+    }
+  };
+
+  const handleSingleImageSelected = async (fileList) => {
+    try {
+      if (!fileList || fileList.length === 0) return;
+      const singleFile = fileList[0];
+      const added = await addImages([singleFile]);
+      if (added && added.length > 0) {
+        setActiveImageId(added[0].id);
+        setToast({
+          type: 'success',
+          message: `Loaded single image for grid crop: ${added[0].name}`
+        });
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: err.message || 'Failed to upload image.' });
+    }
+  };
+
+  const handleSliceImage = async () => {
+    if (!activeImage) {
+      setToast({ type: 'error', message: 'Please upload or select an image to slice.' });
+      return;
+    }
+
+    try {
+      setIsSlicing(true);
+      const layoutId = gridCropSettings?.activeLayout || 'four-squares';
+      const focus = gridCropSettings?.gridFocus || 'center';
+
+      const tiles = await sliceImageIntoGridTiles(
+        activeImage.file || activeImage.previewUrl,
+        layoutId,
+        {
+          focus,
+          baseFilename: activeImage.name
+        }
+      );
+
+      if (!tiles || tiles.length === 0) {
+        throw new Error('No grid tiles generated.');
+      }
+
+      const tileFiles = tiles.map((t) => t.file);
+      const added = await addImages(tileFiles);
+
+      if (added && added.length > 0) {
+        setActiveImageId(added[0].id);
+      }
+
+      setToast({
+        type: 'success',
+        message: `Successfully sliced into ${tiles.length} tiles! Added to workspace.`
+      });
+    } catch (err) {
+      console.error('Failed to slice image:', err);
+      setToast({
+        type: 'error',
+        message: err.message || 'Failed to slice image into grid.'
+      });
+    } finally {
+      setIsSlicing(false);
     }
   };
 
@@ -424,14 +506,29 @@ const HEADER_FORMAT_OPTIONS = [
         </div>
       )}
 
+      {/* Hidden Single Image Uploader Ref */}
+      <input
+        ref={singleUploaderRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleSingleImageSelected(e.target.files);
+            e.target.value = '';
+          }
+        }}
+      />
+
       {/* Main Left Workspace (Preview & Thumbnails) */}
       <div className="workspace-left">
         {images.length === 0 ? (
           <div className="preview-area empty-preview-area">
             <ImageUploader
-              onFilesSelected={handleFilesSelected}
+              onFilesSelected={gridCropSettings?.mode === 'grid' ? handleSingleImageSelected : handleFilesSelected}
               onLoadSample={handleLoadDemoSamples}
               loading={isProcessingUpload}
+              isSingleImageMode={gridCropSettings?.mode === 'grid'}
             />
           </div>
         ) : (
@@ -444,7 +541,14 @@ const HEADER_FORMAT_OPTIONS = [
                 settings={settings}
                 cropSettings={cropSettings}
                 onCustomPosition={setCustomPosition}
-                onUploadClick={() => uploaderTriggerRef.current?.click()}
+                onUploadClick={() =>
+                  gridCropSettings?.mode === 'grid'
+                    ? singleUploaderRef.current?.click()
+                    : uploaderTriggerRef.current?.click()
+                }
+                gridCropSettings={gridCropSettings}
+                onSliceImage={handleSliceImage}
+                isSlicing={isSlicing}
               />
             </div>
             <div className="thumbnails-area">
@@ -466,6 +570,7 @@ const HEADER_FORMAT_OPTIONS = [
       <WatermarkControls
         settings={settings}
         cropSettings={cropSettings}
+        gridCropSettings={gridCropSettings}
         exportSettings={exportSettings}
         activeWatermark={activeWatermark}
         savedWatermarks={savedWatermarks}
@@ -475,8 +580,14 @@ const HEADER_FORMAT_OPTIONS = [
         onUpdatePatternSetting={updatePatternSetting}
         onSetPositionPreset={setPositionPreset}
         onUpdateCropSetting={updateCropSetting}
+        onUpdateGridCropSetting={updateGridCropSetting}
         onSetCropPreset={setCropPreset}
         onSetCropFocus={setCropFocus}
+        onSliceImage={handleSliceImage}
+        isSlicing={isSlicing}
+        onTriggerSingleUpload={() => singleUploaderRef.current?.click()}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
         onUpdateExportSetting={(key, val) =>
           setExportSettings((prev) => ({ ...prev, [key]: val }))
         }

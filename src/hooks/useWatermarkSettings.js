@@ -3,6 +3,7 @@ import {
   DEFAULT_WATERMARK_SETTINGS,
   DEFAULT_EXPORT_SETTINGS,
   DEFAULT_CROP_SETTINGS,
+  DEFAULT_GRID_CROP_SETTINGS,
   POSITION_PRESETS,
   CROP_PRESETS,
   FOCUS_POSITIONS,
@@ -40,6 +41,18 @@ export function useWatermarkSettings() {
     return DEFAULT_CROP_SETTINGS;
   });
 
+  const [gridCropSettings, setGridCropSettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.GRID_CROP_SETTINGS);
+      if (stored) {
+        return { ...DEFAULT_GRID_CROP_SETTINGS, ...JSON.parse(stored) };
+      }
+    } catch (e) {
+      console.warn('Failed to parse grid crop settings from localStorage:', e);
+    }
+    return DEFAULT_GRID_CROP_SETTINGS;
+  });
+
   const [exportSettings, setExportSettings] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.EXPORT_SETTINGS);
@@ -72,6 +85,14 @@ export function useWatermarkSettings() {
 
   useEffect(() => {
     try {
+      localStorage.setItem(STORAGE_KEYS.GRID_CROP_SETTINGS, JSON.stringify(gridCropSettings));
+    } catch (e) {
+      console.warn('Failed to save grid crop settings:', e);
+    }
+  }, [gridCropSettings]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(STORAGE_KEYS.EXPORT_SETTINGS, JSON.stringify(exportSettings));
     } catch (e) {
       console.warn('Failed to save export settings:', e);
@@ -94,6 +115,10 @@ export function useWatermarkSettings() {
 
   const updateCropSetting = useCallback((key, value) => {
     setCropSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const updateGridCropSetting = useCallback((key, value) => {
+    setGridCropSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const setCropPreset = useCallback((presetId) => {
@@ -169,16 +194,19 @@ export function useWatermarkSettings() {
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_WATERMARK_SETTINGS);
     setCropSettings(DEFAULT_CROP_SETTINGS);
+    setGridCropSettings(DEFAULT_GRID_CROP_SETTINGS);
     setExportSettings(DEFAULT_EXPORT_SETTINGS);
   }, []);
 
   return {
     settings,
     cropSettings,
+    gridCropSettings,
     exportSettings,
     updateSetting,
     updatePatternSetting,
     updateCropSetting,
+    updateGridCropSetting,
     setCropPreset,
     setCropFocus,
     setPositionPreset,

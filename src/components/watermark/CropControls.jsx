@@ -6,13 +6,16 @@ import {
   FiCheck,
   FiTrash2,
   FiEdit2,
-  FiBookmark
+  FiBookmark,
+  FiMaximize2,
+  FiGrid
 } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { Modal } from '../common/Modal';
 import { useSavedCropPresets } from '../../hooks/useSavedCropPresets';
 import { FOCUS_POSITIONS } from '../../constants/watermark';
+import { GridSplitControls } from './GridSplitControls';
 import './CropControls.css';
 
 const FOCUS_CELLS = [
@@ -33,7 +36,12 @@ export function CropControls({
   onSetCropPreset,
   onSetCropFocus,
   totalImagesCount = 0,
-  activeImage = null
+  activeImage = null,
+  gridCropSettings = { mode: 'standard', activeLayout: 'four-squares', gridFocus: 'center' },
+  onUpdateGridCropSetting,
+  onSliceImage,
+  isSlicing = false,
+  onTriggerSingleUpload
 }) {
   const {
     presets,
@@ -133,11 +141,50 @@ export function CropControls({
       (cropSettings?.width === p.width && cropSettings?.height === p.height)
   );
   const activePresetDisplayName = currentActivePreset?.name || 'Custom Dimensions';
+  const cropMode = gridCropSettings?.mode || 'standard';
 
   return (
     <div className="crop-controls-pane">
-      {/* Enable Crop & Standardization Switch */}
-      <div className="crop-toggle-card">
+      {/* Mode Switcher: Standard Resolution vs Social Grid Split */}
+      <div className="crop-mode-switcher-bar" role="tablist" aria-label="Crop Mode">
+        <button
+          type="button"
+          className={`crop-mode-tab-btn ${cropMode === 'standard' ? 'active' : ''}`}
+          onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('mode', 'standard')}
+          role="tab"
+          aria-selected={cropMode === 'standard'}
+        >
+          <FiMaximize2 size={13} />
+          <span>Standard Resolution</span>
+        </button>
+        <button
+          type="button"
+          className={`crop-mode-tab-btn ${cropMode === 'grid' ? 'active' : ''}`}
+          onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('mode', 'grid')}
+          role="tab"
+          aria-selected={cropMode === 'grid'}
+        >
+          <FiGrid size={13} />
+          <span>Social Grid Split</span>
+          <span className="grid-mode-badge">New</span>
+        </button>
+      </div>
+
+      {cropMode === 'grid' ? (
+        <GridSplitControls
+          activeLayout={gridCropSettings?.activeLayout || 'four-squares'}
+          onSelectLayout={(layoutId) => onUpdateGridCropSetting && onUpdateGridCropSetting('activeLayout', layoutId)}
+          focus={gridCropSettings?.gridFocus || 'center'}
+          onSetFocus={(f) => onUpdateGridCropSetting && onUpdateGridCropSetting('gridFocus', f)}
+          activeImage={activeImage}
+          onSliceImage={onSliceImage}
+          isSlicing={isSlicing}
+          onTriggerSingleUpload={onTriggerSingleUpload}
+        />
+      ) : (
+        <>
+          {/* Enable Crop & Standardization Switch */}
+          <div className="crop-toggle-card">
         <div className="crop-toggle-info">
           <span className="crop-toggle-title">Crop & Standardize Resolution</span>
           <span className="crop-toggle-desc">
@@ -417,15 +464,17 @@ export function CropControls({
         </>
       )}
 
-      {!isEnabled && (
-        <div className="crop-summary-badge">
-          <FiInfo className="crop-summary-icon" />
-          <span>
-            {activeImage
-              ? `Current image: ${activeImage.width} × ${activeImage.height} px (no crop applied)`
-              : 'Each image retains its original resolution and aspect ratio.'}
-          </span>
-        </div>
+          {!isEnabled && (
+            <div className="crop-summary-badge">
+              <FiInfo className="crop-summary-icon" />
+              <span>
+                {activeImage
+                  ? `Current image: ${activeImage.width} × ${activeImage.height} px (no crop applied)`
+                  : 'Each image retains its original resolution and aspect ratio.'}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add New Crop Preset Modal */}

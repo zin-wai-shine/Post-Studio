@@ -106,9 +106,96 @@ export const BUILT_IN_CROP_PRESETS = [
 export const STORAGE_KEYS = {
   SETTINGS: 'post_studio_watermark_settings',
   CROP_SETTINGS: 'post_studio_crop_settings',
+  GRID_CROP_SETTINGS: 'post_studio_grid_crop_settings',
   EXPORT_SETTINGS: 'post_studio_export_settings',
   LAST_WATERMARK_ID: 'post_studio_last_watermark_id',
   SIDEBAR_COLLAPSED: 'post_studio_sidebar_collapsed',
   SAVED_CROP_PRESETS: 'post_studio_saved_crop_presets'
 };
+
+export const SOCIAL_GRID_LAYOUTS = [
+  {
+    id: 'one-square',
+    name: 'One Square',
+    subtitle: '1 Single Square',
+    tileCount: 1,
+    aspect: 1,
+    tiles: [
+      { id: 1, key: 'square', label: 'Tile 1', x: 0, y: 0, w: 1, h: 1 }
+    ]
+  },
+  {
+    id: 'two-squares',
+    name: 'Two Squares',
+    subtitle: 'Half Split (2 Tiles)',
+    tileCount: 2,
+    aspect: 1,
+    tiles: [
+      { id: 1, key: 'left', label: 'Left Half (1/2)', x: 0, y: 0, w: 0.5, h: 1 },
+      { id: 2, key: 'right', label: 'Right Half (2/2)', x: 0.5, y: 0, w: 0.5, h: 1 }
+    ]
+  },
+  {
+    id: 'three-squares',
+    name: 'Three Squares',
+    subtitle: 'Top Banner + 2 Squares',
+    tileCount: 3,
+    aspect: 1,
+    tiles: [
+      { id: 1, key: 'top', label: 'Top Banner (1/3)', x: 0, y: 0, w: 1, h: 0.52 },
+      { id: 2, key: 'bottom-left', label: 'Bottom Left (2/3)', x: 0, y: 0.52, w: 0.5, h: 0.48 },
+      { id: 3, key: 'bottom-right', label: 'Bottom Right (3/3)', x: 0.5, y: 0.52, w: 0.5, h: 0.48 }
+    ]
+  },
+  {
+    id: 'four-squares',
+    name: 'Four Squares',
+    subtitle: '2×2 Cross Grid (4 Tiles)',
+    tileCount: 4,
+    aspect: 1,
+    tiles: [
+      { id: 1, key: 'top-left', label: 'Top Left (1/4)', x: 0, y: 0, w: 0.5, h: 0.5 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/4)', x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { id: 3, key: 'bottom-left', label: 'Bottom Left (3/4)', x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { id: 4, key: 'bottom-right', label: 'Bottom Right (4/4)', x: 0.5, y: 0.5, w: 0.5, h: 0.5 }
+    ]
+  },
+  {
+    id: 'five-squares',
+    name: 'Five Squares',
+    subtitle: '2 Top + 3 Bottom (5 Tiles)',
+    tileCount: 5,
+    aspect: 1,
+    tiles: [
+      { id: 1, key: 'top-left', label: 'Top Left (1/5)', x: 0, y: 0, w: 0.5, h: 0.55 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/5)', x: 0.5, y: 0, w: 0.5, h: 0.55 },
+      { id: 3, key: 'bottom-left', label: 'Bottom Left (3/5)', x: 0, y: 0.55, w: 1 / 3, h: 0.45 },
+      { id: 4, key: 'bottom-mid', label: 'Bottom Center (4/5)', x: 1 / 3, y: 0.55, w: 1 / 3, h: 0.45 },
+      { id: 5, key: 'bottom-right', label: 'Bottom Right (5/5)', x: 2 / 3, y: 0.55, w: 1 / 3, h: 0.45 }
+    ]
+  },
+  {
+    id: 'six-squares',
+    name: 'Six Squares',
+    subtitle: '2 Top + 4 Bottom (+1 Facebook Grid)',
+    tileCount: 6,
+    aspect: 1,
+    hasPlusOneBadge: true,
+    tiles: [
+      { id: 1, key: 'top-left', label: 'Top Left (1/6)', x: 0, y: 0, w: 0.5, h: 0.55 },
+      { id: 2, key: 'top-right', label: 'Top Right (2/6)', x: 0.5, y: 0, w: 0.5, h: 0.55 },
+      { id: 3, key: 'bottom-1', label: 'Bottom 1 (3/6)', x: 0, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 4, key: 'bottom-2', label: 'Bottom 2 (4/6)', x: 0.25, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 5, key: 'bottom-3', label: 'Bottom 3 (5/6)', x: 0.50, y: 0.55, w: 0.25, h: 0.45 },
+      { id: 6, key: 'bottom-4', label: 'Bottom 4 (6/6)', x: 0.75, y: 0.55, w: 0.25, h: 0.45 }
+    ]
+  }
+];
+
+export const DEFAULT_GRID_CROP_SETTINGS = {
+  mode: 'standard', // 'standard' | 'grid'
+  activeLayout: 'four-squares',
+  gridFocus: 'center'
+};
+
 

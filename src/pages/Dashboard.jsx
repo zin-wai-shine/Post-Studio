@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiDroplet,
+  FiGrid,
   FiLayers,
   FiLayout,
   FiImage,
@@ -20,13 +21,13 @@ const TOOLS = [
     badge: 'Active'
   },
   {
-    id: 'post-generator',
-    title: 'Post Generator',
-    description: 'Compose and format social media property listings and promotional announcements automatically.',
-    icon: <FiLayers />,
-    path: '/post-generator',
-    active: false,
-    badge: 'Coming Soon'
+    id: 'grid-splitter',
+    title: 'Social Grid Splitter',
+    description: 'Upload 1 high-resolution photo and split it into 1, 2, 3, 4, 5, or 6 social media grid collage tiles.',
+    icon: <FiGrid />,
+    path: '/watermark?mode=grid&tab=crop',
+    active: true,
+    badge: 'Active'
   },
   {
     id: 'templates',

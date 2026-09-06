@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { FiImage, FiUploadCloud } from 'react-icons/fi';
+import { FiImage, FiUploadCloud, FiScissors } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
 import { calculateWatermarkDimensions } from '../../utils/canvasUtils';
 import { loadImage } from '../../utils/imageUtils';
+import { getLayoutConfig } from '../../utils/gridCropUtils';
+import { FOCUS_POSITIONS } from '../../constants/watermark';
 import './ImagePreview.css';
 
 export function ImagePreview({
@@ -13,7 +15,10 @@ export function ImagePreview({
   settings,
   cropSettings,
   onCustomPosition,
-  onUploadClick
+  onUploadClick,
+  gridCropSettings,
+  onSliceImage,
+  isSlicing = false
 }) {
   const viewportRef = useRef(null);
   const wrapRef = useRef(null);
@@ -23,8 +28,10 @@ export function ImagePreview({
   const dragStartRef = useRef({ startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
 
   const isCropActive = Boolean(cropSettings?.enabled && cropSettings.width && cropSettings.height);
+  const isGridMode = Boolean(gridCropSettings?.mode === 'grid' && !activeImage?.isGridTile);
+  const activeGridLayout = isGridMode ? getLayoutConfig(gridCropSettings?.activeLayout) : null;
 
-  // Update wrap dimensions when active image, crop settings, or viewport size changes
+  // Update wrap dimensions when active image, crop settings, grid settings, or viewport size changes
   const updateRenderedDimensions = useCallback(() => {
     if (!viewportRef.current || !activeImage) return;
 
@@ -34,12 +41,15 @@ export function ImagePreview({
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
-    // Use crop target aspect if crop is enabled, otherwise use natural image aspect
-    const targetAspect = (isCropActive && cropSettings.width && cropSettings.height)
-      ? (cropSettings.width / cropSettings.height)
-      : ((activeImage.width && activeImage.height)
-        ? (activeImage.width / activeImage.height)
-        : (16 / 9));
+    // Use grid aspect, crop target aspect, or natural image aspect
+    let targetAspect = 16 / 9;
+    if (isGridMode && activeGridLayout) {
+      targetAspect = activeGridLayout.aspect || 1;
+    } else if (isCropActive && cropSettings.width && cropSettings.height) {
+      targetAspect = cropSettings.width / cropSettings.height;
+    } else if (activeImage.width && activeImage.height) {
+      targetAspect = activeImage.width / activeImage.height;
+    }
 
     const viewportAspect = availableWidth / availableHeight;
 
@@ -57,7 +67,14 @@ export function ImagePreview({
     }
 
     setWrapDims({ width: renderedWidth, height: renderedHeight });
-  }, [activeImage, isCropActive, cropSettings?.width, cropSettings?.height]);
+  }, [
+    activeImage,
+    isCropActive,
+    cropSettings?.width,
+    cropSettings?.height,
+    isGridMode,
+    activeGridLayout?.aspect
+  ]);
 
   useEffect(() => {
     updateRenderedDimensions();
@@ -261,6 +278,8 @@ export function ImagePreview({
   const hasWatermark = (settings.type === 'image' && watermarkSource) ||
     (settings.type === 'text' && settings.text && settings.text.trim().length > 0);
 
+  const focusObj = FOCUS_POSITIONS[gridCropSettings?.gridFocus || 'center'] || FOCUS_POSITIONS.center;
+
   return (
     <div className="preview-container">
       <div className="preview-topbar">
@@ -268,7 +287,27 @@ export function ImagePreview({
           {activeImage.name}
         </span>
         <div className="preview-meta">
-          {isCropActive ? (
+          {activeImage.isGridTile ? (
+            <span className="meta-badge grid-active-badge">
+              Grid Tile {activeImage.tileIndex}/{activeImage.totalTiles} ({activeImage.tileLabel})
+            </span>
+          ) : isGridMode && activeGridLayout ? (
+            <>
+              <span className="meta-badge grid-active-badge">
+                Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
+              </span>
+              <Button
+                variant="primary"
+                size="xs"
+                iconLeft={<FiScissors size={12} />}
+                loading={isSlicing}
+                onClick={onSliceImage}
+                title="Slice into tiles and add to workspace"
+              >
+                {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
+              </Button>
+            </>
+          ) : isCropActive ? (
             <>
               <span className="meta-badge" title="Original Dimensions">
                 Orig: {activeImage.width} × {activeImage.height} px
@@ -305,13 +344,43 @@ export function ImagePreview({
             src={activeImage.previewUrl}
             alt={activeImage.name}
             className="preview-base-img"
-            style={isCropActive ? {
+            style={isGridMode ? {
+              objectFit: 'cover',
+              objectPosition: `${(focusObj.x ?? 0.5) * 100}% ${(focusObj.y ?? 0.5) * 100}%`
+            } : isCropActive ? {
               objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
               objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
               backgroundColor: cropSettings.bgColor || '#000000'
             } : undefined}
             onLoad={updateRenderedDimensions}
           />
+
+          {/* Social Grid Cut Overlay on Source Image */}
+          {isGridMode && activeGridLayout && (
+            <div className="preview-grid-overlay" aria-hidden="true">
+              {activeGridLayout.tiles.map((tile) => (
+                <div
+                  key={tile.id}
+                  className="preview-grid-tile"
+                  style={{
+                    left: `${tile.x * 100}%`,
+                    top: `${tile.y * 100}%`,
+                    width: `${tile.w * 100}%`,
+                    height: `${tile.h * 100}%`
+                  }}
+                >
+                  <span className="preview-grid-tag">
+                    {tile.id} • {tile.label}
+                  </span>
+                  {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
+                    <div className="preview-grid-plus-one">
+                      <span>+1</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {hasWatermark && (
             <div className="preview-overlay-layer">
