@@ -1,0 +1,17 @@
+.select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.select-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}

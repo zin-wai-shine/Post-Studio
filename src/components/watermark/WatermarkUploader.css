@@ -1,0 +1,132 @@
+.watermark-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.wm-drop-zone {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 16px 12px;
+  background-color: var(--color-card-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wm-drop-zone:hover {
+  border-color: var(--color-main);
+  background-color: #FFFFFF;
+}
+
+.wm-drop-icon {
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.wm-drop-title {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.wm-drop-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* Inline pending decision state */
+.wm-pending-box {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wm-pending-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wm-pending-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: #F0F0F0;
+  object-fit: contain;
+}
+
+.wm-pending-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wm-name-input {
+  width: 100%;
+  font-size: var(--font-size-sm);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  background-color: #FFFFFF;
+}
+
+.wm-name-input:focus {
+  outline: none;
+  border-color: var(--color-main);
+}
+
+.wm-pending-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wm-active-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.wm-active-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wm-active-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background-color: #FAFAFA;
+  border: 1px solid var(--color-border-light);
+  object-fit: contain;
+}
+
+.wm-active-name {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.wm-active-tag {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}

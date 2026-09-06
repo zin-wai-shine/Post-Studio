@@ -1,0 +1,145 @@
+.preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-subtle);
+  overflow: hidden;
+  position: relative;
+  min-height: 480px;
+}
+
+.preview-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  background-color: var(--color-card-subtle);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.preview-filename {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meta-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.preview-viewport {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ECECEC;
+  background-image: 
+    linear-gradient(45deg, #E2E2E2 25%, transparent 25%), 
+    linear-gradient(-45deg, #E2E2E2 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #E2E2E2 75%), 
+    linear-gradient(-45deg, transparent 75%, #E2E2E2 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.preview-canvas-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  background-color: #FFFFFF;
+}
+
+.preview-base-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Watermark Overlay Layer */
+.preview-overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Draggable single watermark box */
+.draggable-watermark {
+  position: absolute;
+  pointer-events: auto;
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  transform-origin: center center;
+}
+
+.draggable-watermark:hover,
+.draggable-watermark.is-dragging {
+  outline: 1px dashed rgba(34, 34, 34, 0.6);
+  outline-offset: 2px;
+}
+
+.draggable-watermark.is-dragging {
+  cursor: grabbing;
+}
+
+.watermark-img-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.watermark-text-preview {
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  line-height: 1.1;
+}
+
+/* Repeating Pattern Preview Overlay Canvas */
+.pattern-preview-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Empty State Wrap */
+.preview-empty-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

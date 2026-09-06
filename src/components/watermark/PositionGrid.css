@@ -1,0 +1,72 @@
+.position-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.position-grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.position-grid-label {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.position-grid-status {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.position-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background-color: var(--color-hover);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  width: 140px;
+}
+
+.grid-cell-btn {
+  height: 32px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-cell-btn:hover {
+  background-color: #F8F8F8;
+  border-color: var(--color-border-dark);
+}
+
+.grid-cell-btn.active {
+  background-color: var(--color-main);
+  border-color: var(--color-main);
+}
+
+.cell-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-text-muted);
+  transition: background-color 0.15s ease;
+}
+
+.grid-cell-btn:hover .cell-dot {
+  background-color: var(--color-text-primary);
+}
+
+.grid-cell-btn.active .cell-dot {
+  background-color: #FFFFFF;
+}
