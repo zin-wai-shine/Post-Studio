@@ -19,11 +19,11 @@ export function GridSplitControls({
       {/* Compact Header */}
       <div className="grid-mini-header">
         <span className="grid-mini-title">Select Grid Format</span>
-        <span className="grid-mini-current">{currentLayout.name} ({currentLayout.tileCount} Tiles)</span>
+        <span className="grid-mini-current">{currentLayout.name} ({currentLayout.fbBadge || `${currentLayout.tileCount} Tiles`})</span>
       </div>
 
       {/* Small Compact Grid Wireframe Buttons (Site Colors, No Big Titles) */}
-      <div className="grid-mini-matrix" role="radiogroup" aria-label="Grid Format">
+      <div className="grid-mini-matrix" role="radiogroup" aria-label="Facebook Grid Format">
         {SOCIAL_GRID_LAYOUTS.map((layout) => {
           const isSelected = activeLayout === layout.id;
 
@@ -35,8 +35,8 @@ export function GridSplitControls({
               onClick={() => onSelectLayout(layout.id)}
               role="radio"
               aria-checked={isSelected}
-              title={`${layout.name} - ${layout.tileCount} Tiles`}
-              aria-label={`${layout.name} - ${layout.tileCount} Tiles`}
+              title={`${layout.name} — FB Grid: ${layout.fbSummary}`}
+              aria-label={`${layout.name} — FB Grid: ${layout.fbSummary}`}
             >
               <div className={`mini-wireframe wireframe-${layout.id}`}>
                 {layout.id === 'one-square' && (
@@ -117,6 +117,12 @@ export function GridSplitControls({
               </span>
             </div>
 
+            {/* Target Facebook Dimensions Display */}
+            <div className="grid-slice-target-row">
+              <span className="target-label">FB Grid Output:</span>
+              <span className="target-val">{currentLayout.fbSummary}</span>
+            </div>
+
             <Button
               variant="primary"
               size="md"
@@ -124,9 +130,9 @@ export function GridSplitControls({
               iconLeft={<FiScissors size={14} />}
               loading={isSlicing}
               onClick={onSliceImage}
-              title={`Slice image into ${currentLayout.tileCount} tiles without altering original size`}
+              title={`Slice image into Facebook Grid ${currentLayout.fbSummary}`}
             >
-              {isSlicing ? 'Slicing...' : `Slice into ${currentLayout.tileCount} Tiles`}
+              {isSlicing ? 'Slicing...' : `Slice to Facebook Grid (${currentLayout.tileCount} Tiles)`}
             </Button>
 
             <button
@@ -158,7 +164,7 @@ export function GridSplitControls({
       <div className="grid-hint-card">
         <FiInfo className="grid-hint-icon" />
         <span>
-          Preserves 100% of the original photo size. Slices into {currentLayout.tileCount} sequential images ready for social upload.
+          Outputs exact standard Facebook feed dimensions ({currentLayout.fbSummary}) for automatic collage arrangement.
         </span>
       </div>
     </div>

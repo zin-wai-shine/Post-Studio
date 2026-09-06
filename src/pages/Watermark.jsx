@@ -208,7 +208,7 @@ export function Watermark() {
 
       setToast({
         type: 'success',
-        message: `Successfully sliced into ${tiles.length} tiles! Added to workspace.`
+        message: `Successfully sliced into ${tiles.length} Facebook Grid tiles! Added to workspace.`
       });
     } catch (err) {
       console.error('Failed to slice image:', err);

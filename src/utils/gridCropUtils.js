@@ -74,11 +74,13 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
   const { base: rawBaseName } = parseFilename(baseFilename);
   const cleanBaseName = rawBaseName.replace(/[-_]grid[-_]\d+.*$/i, ''); // Strip previous grid suffix if any
 
-  // Preserve 100% of original image dimensions - split the full image canvas directly
-  const cropX = 0;
-  const cropY = 0;
-  const cropWidth = naturalWidth;
-  const cropHeight = naturalHeight;
+  // Calculate bounding crop rect on source image matching Facebook layout master aspect (1:1)
+  const { cropX, cropY, cropWidth, cropHeight } = computeGridCropRect(
+    naturalWidth,
+    naturalHeight,
+    layout.aspect || 1,
+    focus
+  );
 
   const tileResults = [];
 
@@ -93,10 +95,14 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
 
     if (sw <= 0 || sh <= 0) continue;
 
-    // Create slice canvas
+    // Target Facebook grid dimensions
+    const targetW = tile.targetWidth || sw;
+    const targetH = tile.targetHeight || sh;
+
+    // Create slice canvas matching exact Facebook dimensions
     const canvas = document.createElement('canvas');
-    canvas.width = sw;
-    canvas.height = sh;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext('2d', { willReadFrequently: false });
 
     if (!ctx) {
@@ -107,12 +113,12 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // White background for safety
+    // Background fill for safety
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, sw, sh);
+    ctx.fillRect(0, 0, targetW, targetH);
 
-    // Draw slice
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+    // Draw slice scaled to Facebook target dimensions
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
 
     // Convert to Blob
     const mimeType = 'image/jpeg';
@@ -136,9 +142,10 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       file: tileFile,
       name: tileFileName,
       size: tileFile.size,
-      width: sw,
-      height: sh,
-      aspectRatio: sw / (sh || 1),
+      width: targetW,
+      height: targetH,
+      aspectRatio: targetW / (targetH || 1),
+      facebookSize: `${targetW} × ${targetH} px`,
       previewUrl,
       isGridTile: true,
       tileIndex: i + 1,

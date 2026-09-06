@@ -41,12 +41,11 @@ export function ImagePreview({
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
-    // Use natural image aspect in grid mode to preserve 100% of original image dimensions
+    // Target aspect calculation
     let targetAspect = 16 / 9;
-    if (isGridMode) {
-      targetAspect = (activeImage.width && activeImage.height)
-        ? (activeImage.width / activeImage.height)
-        : (16 / 9);
+    if (isGridMode && activeGridLayout) {
+      // Use Facebook grid layout master container aspect ratio (1:1)
+      targetAspect = activeGridLayout.aspect || 1;
     } else if (isCropActive && cropSettings.width && cropSettings.height) {
       targetAspect = cropSettings.width / cropSettings.height;
     } else if (activeImage.width && activeImage.height) {
@@ -295,8 +294,8 @@ export function ImagePreview({
             </span>
           ) : isGridMode && activeGridLayout ? (
             <>
-              <span className="meta-badge grid-active-badge">
-                Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
+              <span className="meta-badge grid-active-badge" title={`Facebook Grid: ${activeGridLayout.fbSummary}`}>
+                FB Grid: {activeGridLayout.name} ({activeGridLayout.fbBadge || `${activeGridLayout.tileCount} Tiles`})
               </span>
               <Button
                 variant="primary"
@@ -304,7 +303,7 @@ export function ImagePreview({
                 iconLeft={<FiScissors size={12} />}
                 loading={isSlicing}
                 onClick={onSliceImage}
-                title="Slice into tiles and add to workspace"
+                title={`Slice into Facebook Grid (${activeGridLayout.fbSummary})`}
               >
                 {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
               </Button>
@@ -346,7 +345,10 @@ export function ImagePreview({
             src={activeImage.previewUrl}
             alt={activeImage.name}
             className="preview-base-img"
-            style={isGridMode ? undefined : isCropActive ? {
+            style={isGridMode ? {
+              objectFit: 'cover',
+              objectPosition: 'center'
+            } : isCropActive ? {
               objectFit: cropSettings.fitMode === 'contain' ? 'contain' : 'cover',
               objectPosition: `${(cropSettings.focusX ?? 0.5) * 100}% ${(cropSettings.focusY ?? 0.5) * 100}%`,
               backgroundColor: cropSettings.bgColor || '#000000'
@@ -368,8 +370,8 @@ export function ImagePreview({
                     height: `${tile.h * 100}%`
                   }}
                 >
-                  <span className="preview-grid-tag">
-                    {tile.id} • {tile.label}
+                  <span className="preview-grid-tag" title={tile.label}>
+                    {tile.id} • {tile.targetWidth ? `${tile.targetWidth}×${tile.targetHeight}` : tile.label}
                   </span>
                   {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
                     <div className="preview-grid-plus-one">
