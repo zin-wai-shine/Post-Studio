@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
 import { IconButton } from './IconButton';
 import './Modal.css';
@@ -68,7 +69,7 @@ export function Modal({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
       className={`modal-backdrop ${backdropClassName}`.trim()}
       onClick={(e) => {
@@ -107,4 +108,9 @@ export function Modal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }
+

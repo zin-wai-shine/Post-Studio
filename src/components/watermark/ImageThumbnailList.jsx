@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
+import { Modal } from '../common/Modal';
 import './ImageThumbnailList.css';
 
 export function ImageThumbnailList({
@@ -17,6 +18,8 @@ export function ImageThumbnailList({
   const trackRef = useRef(null);
   const [editingId, setEditingId] = useState(null);
   const [tempName, setTempName] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [deletingImage, setDeletingImage] = useState(null);
 
   const [hasScroll, setHasScroll] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -156,7 +159,8 @@ export function ImageThumbnailList({
             variant="ghost"
             size="sm"
             iconLeft={<FiTrash2 size={13} />}
-            onClick={onClearAll}
+            disabled={images.length === 0}
+            onClick={() => setShowClearConfirm(true)}
           >
             Clear All
           </Button>
@@ -220,7 +224,7 @@ export function ImageThumbnailList({
                   className="thumbnail-remove-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRemoveImage(item.id);
+                    setDeletingImage(item);
                   }}
                   title="Remove this image"
                   aria-label={`Remove ${item.name}`}
@@ -297,6 +301,74 @@ export function ImageThumbnailList({
           </>
         )}
       </div>
+
+      {/* Clear All Batch Images Confirmation Modal */}
+      <Modal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear All Images"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowClearConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                setShowClearConfirm(false);
+                onClearAll();
+              }}
+            >
+              Clear All Images
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Are you sure you want to remove all {images.length} images from the workspace?
+          This action cannot be undone.
+        </p>
+      </Modal>
+
+      {/* Remove Single Image Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(deletingImage)}
+        onClose={() => setDeletingImage(null)}
+        title="Remove Image"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDeletingImage(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                if (deletingImage) {
+                  onRemoveImage(deletingImage.id);
+                  setDeletingImage(null);
+                }
+              }}
+            >
+              Remove
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Are you sure you want to remove <strong>{deletingImage?.name}</strong> from your batch?
+        </p>
+      </Modal>
     </div>
   );
 }
+
