@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { FiTrash2, FiPlus, FiX, FiEdit2, FiCheck, FiChevronLeft, FiChevronRight, FiMoreHorizontal, FiSliders } from 'react-icons/fi';
+import { FiTrash2, FiPlus, FiX, FiEdit2, FiChevronLeft, FiChevronRight, FiMoreHorizontal, FiSliders } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { Modal } from '../common/Modal';
@@ -19,7 +19,7 @@ export function ImageThumbnailList({
 }) {
   const fileInputRef = useRef(null);
   const trackRef = useRef(null);
-  const [editingId, setEditingId] = useState(null);
+  const [renamingImage, setRenamingImage] = useState(null);
   const [tempName, setTempName] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [deletingImage, setDeletingImage] = useState(null);
@@ -43,7 +43,7 @@ export function ImageThumbnailList({
   const handleScroll = (direction) => {
     const el = trackRef.current;
     if (!el) return;
-    const cardWidth = 142; // 130px card + 12px gap
+    const cardWidth = 136; // 124px card + 12px gap
     const visibleCards = Math.max(1, Math.floor(el.clientWidth / cardWidth));
     const scrollCards = Math.max(1, visibleCards - 1);
     const distance = scrollCards * cardWidth;
@@ -86,24 +86,17 @@ export function ImageThumbnailList({
 
   if (!images || images.length === 0) return null;
 
-  const handleStartRename = (e, item) => {
-    e.stopPropagation();
-    setEditingId(item.id);
-    setTempName(item.name);
+  const handleStartRename = (item) => {
+    setRenamingImage(item);
+    setTempName(item.name || '');
+    setMenuAnchor(null);
   };
 
-  const handleSaveRename = (e, id) => {
-    e?.stopPropagation();
-    if (tempName.trim() && onRenameImage) {
-      onRenameImage(id, tempName.trim());
+  const handleConfirmRename = () => {
+    if (renamingImage && tempName.trim() && onRenameImage) {
+      onRenameImage(renamingImage.id, tempName.trim());
     }
-    setEditingId(null);
-  };
-
-  const handleCancelRename = (e) => {
-    e?.stopPropagation();
-    setEditingId(null);
-    setTempName('');
+    setRenamingImage(null);
   };
 
   return (
@@ -197,7 +190,6 @@ export function ImageThumbnailList({
         >
           {images.map((item) => {
             const isActive = item.id === activeImageId;
-            const isEditing = editingId === item.id;
             const isMenuOpen = menuAnchor?.item?.id === item.id;
             const isCustomized = Boolean(item.hasCustomOverrides);
 
@@ -206,14 +198,12 @@ export function ImageThumbnailList({
                 key={item.id}
                 data-id={item.id}
                 className={`thumbnail-card ${isActive ? 'active' : ''} ${isMenuOpen ? 'menu-active' : ''} ${isCustomized ? 'is-customized' : ''}`}
-                onClick={() => {
-                  if (!isEditing) onSelectImage(item.id);
-                }}
+                onClick={() => onSelectImage(item.id)}
                 role="option"
                 aria-selected={isActive}
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if ((e.key === 'Enter' || e.key === ' ') && !isEditing) {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     onSelectImage(item.id);
                   }
@@ -269,55 +259,13 @@ export function ImageThumbnailList({
                       <FiX size={13} />
                     </button>
                   </div>
-                </div>
 
-                <div className="thumbnail-info">
-                  {isEditing ? (
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="text"
-                        value={tempName}
-                        onChange={(e) => setTempName(e.target.value)}
-                        className="thumbnail-rename-input"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveRename(e, item.id);
-                          if (e.key === 'Escape') handleCancelRename(e);
-                        }}
-                      />
-                      <IconButton
-                        icon={<FiCheck size={10} />}
-                        size="sm"
-                        onClick={(e) => handleSaveRename(e, item.id)}
-                        aria-label="Save image name"
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                      <span
-                        className="thumbnail-name"
-                        title={`${item.name} (Click to rename)`}
-                        onDoubleClick={(e) => handleStartRename(e, item)}
-                      >
-                        {item.name}
-                      </span>
-                      <button
-                        type="button"
-                        className="thumbnail-rename-btn"
-                        onClick={(e) => handleStartRename(e, item)}
-                        title="Rename file"
-                        aria-label={`Rename ${item.name}`}
-                      >
-                        <FiEdit2 size={10} />
-                      </button>
-                    </div>
-                  )}
-                  <span className="thumbnail-dims">
-                    {item.width && item.height ? `${item.width}×${item.height}` : 'Loading...'}
-                  </span>
+                  {/* Subtle Base of Image showing size badge */}
+                  <div className="thumbnail-base-overlay">
+                    <span className="thumbnail-size-badge">
+                      {item.width && item.height ? `${item.width}×${item.height}` : 'Loading...'}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
@@ -401,9 +349,7 @@ export function ImageThumbnailList({
               className="popover-action-item"
               onClick={(e) => {
                 e.stopPropagation();
-                setEditingId(menuAnchor.item.id);
-                setTempName(menuAnchor.item.name);
-                setMenuAnchor(null);
+                handleStartRename(menuAnchor.item);
               }}
             >
               <span className="popover-action-icon">
@@ -435,6 +381,52 @@ export function ImageThumbnailList({
         </div>,
         document.body
       )}
+
+      {/* Rename Single Image Modal */}
+      <Modal
+        isOpen={Boolean(renamingImage)}
+        onClose={() => setRenamingImage(null)}
+        title="Rename Image"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setRenamingImage(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmRename}
+              disabled={!tempName.trim()}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleConfirmRename();
+          }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+        >
+          <label htmlFor="rename-img-input" style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+            Enter a new name for this image:
+          </label>
+          <input
+            id="rename-img-input"
+            type="text"
+            className="thumbnail-rename-modal-input"
+            value={tempName}
+            onChange={(e) => setTempName(e.target.value)}
+            autoFocus
+          />
+        </form>
+      </Modal>
 
       {/* Clear All Batch Images Confirmation Modal */}
       <Modal
