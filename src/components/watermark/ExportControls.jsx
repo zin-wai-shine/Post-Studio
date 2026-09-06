@@ -3,6 +3,7 @@ import { FiDownload, FiRefreshCw } from 'react-icons/fi';
 import { Select } from '../common/Select';
 import { Slider } from '../common/Slider';
 import { Button } from '../common/Button';
+import { InfoTooltip } from '../common/Tooltip';
 import { EXPORT_FORMATS } from '../../constants/watermark';
 import './ExportControls.css';
 
@@ -37,30 +38,37 @@ export function ExportControls({
     <div className="export-controls">
       <div className="export-section-title">
         <span>Export Settings</span>
+        <InfoTooltip
+          text="Configure file format, compression quality, and batch filename parameters."
+          position="bottom-right"
+        />
       </div>
 
       {/* File Naming Pattern Card */}
       <div className="naming-preview-card">
         <div className="naming-card-top">
           <span className="naming-label">Image Filename Preview</span>
-          {onRegeneratePrefix && (
-            <button
-              type="button"
-              className="naming-refresh-btn"
-              onClick={onRegeneratePrefix}
-              title="Generate a new 3-letter batch prefix"
-            >
-              <FiRefreshCw size={11} />
-              <span>New Prefix ({batchPrefix})</span>
-            </button>
-          )}
+          <div className="naming-card-actions">
+            {onRegeneratePrefix && (
+              <button
+                type="button"
+                className="naming-refresh-btn"
+                onClick={onRegeneratePrefix}
+                title="Generate a new 3-letter batch prefix"
+              >
+                <FiRefreshCw size={11} />
+                <span>New Prefix ({batchPrefix})</span>
+              </button>
+            )}
+            <InfoTooltip
+              text={`Prefix ${batchPrefix} stays identical across all images in this batch for clean organization.`}
+              position="bottom-right"
+            />
+          </div>
         </div>
         <div className="naming-display">
           <code>{sampleFilename}</code>
         </div>
-        <span className="naming-note">
-          Prefix <code>{batchPrefix}</code> stays identical across all images in this batch.
-        </span>
       </div>
 
       <Select
@@ -110,11 +118,12 @@ export function ExportControls({
           <span className="auto-clear-switch" />
           <div className="auto-clear-text">
             <span className="auto-clear-title">Auto-clear after download</span>
-            <span className="auto-clear-subtitle">
-              Clears workspace and generates fresh batch prefix on completion
-            </span>
           </div>
         </label>
+        <InfoTooltip
+          text="Clears workspace and generates fresh batch prefix immediately after downloading completes."
+          position="top-right"
+        />
       </div>
 
       <div className="export-actions">

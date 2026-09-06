@@ -7,6 +7,7 @@ import { WatermarkUploader } from './WatermarkUploader';
 import { SavedWatermarks } from './SavedWatermarks';
 import { ExportControls } from './ExportControls';
 import { CropControls } from './CropControls';
+import { InfoTooltip } from '../common/Tooltip';
 import { WATERMARK_STYLES } from '../../constants/watermark';
 import './WatermarkControls.css';
 
@@ -150,7 +151,13 @@ export function WatermarkControls({
         {/* 1. Watermark Section (Logo / Text) */}
         {activeSection === 'watermark' && (
           <div className="section-pane">
-            <div className="section-label">Source Type</div>
+            <div className="section-label-row">
+              <div className="section-label">Source Type</div>
+              <InfoTooltip
+                text="Choose between uploading a PNG brand logo or styling a custom text watermark."
+                position="bottom-right"
+              />
+            </div>
             <div className="type-toggle-group">
               <button
                 type="button"
@@ -241,8 +248,14 @@ export function WatermarkControls({
         {/* 3. Position & Style Section */}
         {activeSection === 'position' && (
           <div className="section-pane">
+            <div className="section-label-row">
+              <div className="section-label">Watermark Style</div>
+              <InfoTooltip
+                text="Choose Single to anchor one logo, or Pattern to tile repeating watermarks across the photo."
+                position="bottom-right"
+              />
+            </div>
             <Select
-              label="Watermark Style"
               value={settings.style}
               onChange={(val) => onUpdateSetting('style', val)}
               options={WATERMARK_STYLES}
@@ -309,6 +322,13 @@ export function WatermarkControls({
         {/* 3. Appearance Section (Size, Opacity, Rotation) */}
         {activeSection === 'appearance' && (
           <div className="section-pane">
+            <div className="section-label-row">
+              <div className="section-label">Watermark Appearance</div>
+              <InfoTooltip
+                text="Fine-tune the size scale, transparency opacity, and rotation angle."
+                position="bottom-right"
+              />
+            </div>
             <Slider
               label="Size"
               value={Math.round((settings.size || 0.20) * 100)}

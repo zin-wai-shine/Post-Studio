@@ -13,6 +13,7 @@ import {
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { Modal } from '../common/Modal';
+import { InfoTooltip } from '../common/Tooltip';
 import { useSavedCropPresets } from '../../hooks/useSavedCropPresets';
 import { FOCUS_POSITIONS } from '../../constants/watermark';
 import { GridSplitControls } from './GridSplitControls';
@@ -183,34 +184,44 @@ export function CropControls({
         <>
           {/* Enable Crop & Standardization Switch */}
           <div className="crop-toggle-card">
-        <div className="crop-toggle-info">
-          <span className="crop-toggle-title">Crop & Standardize Resolution</span>
-          <span className="crop-toggle-desc">
-            {isEnabled
-              ? `Unified output: ${cropSettings.width} × ${cropSettings.height} px (${activePresetDisplayName})`
-              : 'Keep each image at its original resolution'}
-          </span>
-        </div>
-        <button
-          type="button"
-          className={`switch-btn ${isEnabled ? 'active' : ''}`}
-          onClick={handleToggle}
-          aria-pressed={isEnabled}
-          title={isEnabled ? 'Disable crop standardization' : 'Enable crop standardization'}
-        >
-          <span className="switch-thumb" />
-        </button>
-      </div>
-
-      {isEnabled && (
-        <>
-          {/* Multiple Crop Size Profiles / Library */}
-          <div className="crop-profiles-section">
-            <div className="crop-profiles-header">
-              <div className="crop-profiles-title-wrap">
-                <span className="crop-profiles-title">Session Crop Sizes</span>
-                <span className="crop-profiles-count">({presets.length})</span>
+            <div className="crop-toggle-info">
+              <div className="crop-toggle-title-row">
+                <span className="crop-toggle-title">Crop & Standardize Resolution</span>
+                <InfoTooltip
+                  text="Standardize all batch images to match unified dimensions and focal crop upon export."
+                  position="bottom-right"
+                />
               </div>
+              <span className="crop-toggle-desc">
+                {isEnabled
+                  ? `Unified output: ${cropSettings.width} × ${cropSettings.height} px (${activePresetDisplayName})`
+                  : 'Keep each image at its original resolution'}
+              </span>
+            </div>
+            <button
+              type="button"
+              className={`switch-btn ${isEnabled ? 'active' : ''}`}
+              onClick={handleToggle}
+              aria-pressed={isEnabled}
+              title={isEnabled ? 'Disable crop standardization' : 'Enable crop standardization'}
+            >
+              <span className="switch-thumb" />
+            </button>
+          </div>
+
+          {isEnabled && (
+            <>
+              {/* Multiple Crop Size Profiles / Library */}
+              <div className="crop-profiles-section">
+                <div className="crop-profiles-header">
+                  <div className="crop-profiles-title-wrap">
+                    <span className="crop-profiles-title">Session Crop Sizes</span>
+                    <span className="crop-profiles-count">({presets.length})</span>
+                    <InfoTooltip
+                      text="Choose standard aspect ratios or create custom dimension presets for your batch."
+                      position="bottom-right"
+                    />
+                  </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -335,6 +346,13 @@ export function CropControls({
 
           {/* Direct Width & Height Pixel Inputs */}
           <div className="control-group">
+            <div className="crop-section-header-row">
+              <span className="dimension-field-label">Custom Target Dimensions</span>
+              <InfoTooltip
+                text="Adjust custom width and height in pixels. Aspect ratio automatically calculates."
+                position="top-right"
+              />
+            </div>
             <div className="dimension-inputs-row">
               <div className="dimension-field">
                 <label className="dimension-field-label" htmlFor="crop-width-input">
@@ -399,7 +417,13 @@ export function CropControls({
           <div className="focus-selector-card">
             <div className="focus-selector-header">
               <span className="focus-selector-title">Crop Focus Position</span>
-              <span className="focus-selector-current">{focusLabel}</span>
+              <div className="focus-selector-header-actions">
+                <span className="focus-selector-current">{focusLabel}</span>
+                <InfoTooltip
+                  text="Select where the crop anchors when trimming excess width or height. The chosen focus region is preserved across all batch images."
+                  position="top-right"
+                />
+              </div>
             </div>
 
             <div className="focus-grid-layout">
@@ -421,33 +445,35 @@ export function CropControls({
                   );
                 })}
               </div>
-
-              <p className="focus-explanation">
-                Select where the crop anchors when trimming excess width or height. The chosen focus region will be preserved across all batch images.
-              </p>
             </div>
           </div>
 
           {/* Fit Mode Selector */}
           <div className="control-group">
-            <span className="dimension-field-label">Crop Behavior</span>
+            <div className="crop-section-header-row">
+              <span className="dimension-field-label">Crop Behavior</span>
+              <InfoTooltip
+                text="Cover trims excess edges to fill target pixels completely. Contain adds clean letterbox borders to preserve the whole original photo."
+                position="top-right"
+              />
+            </div>
             <div className="fit-mode-row">
               <button
                 type="button"
                 className={`fit-mode-btn ${fitMode === 'cover' ? 'active' : ''}`}
                 onClick={() => onUpdateCropSetting('fitMode', 'cover')}
+                title="Cover: Fills target px with zero empty borders"
               >
                 <span className="fit-mode-btn-title">Cover (Fill & Crop)</span>
-                <span className="fit-mode-btn-desc">Fills target px with zero empty borders</span>
               </button>
 
               <button
                 type="button"
                 className={`fit-mode-btn ${fitMode === 'contain' ? 'active' : ''}`}
                 onClick={() => onUpdateCropSetting('fitMode', 'contain')}
+                title="Contain: Fits entire image with clean letterbox"
               >
                 <span className="fit-mode-btn-title">Contain (Pad & Fit)</span>
-                <span className="fit-mode-btn-desc">Fits entire image with clean letterbox</span>
               </button>
             </div>
           </div>

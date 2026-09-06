@@ -90,6 +90,13 @@
   animation: pane-fade 0.15s ease;
 }
 
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
 .section-label {
   font-size: var(--font-size-sm);
   font-weight: 600;

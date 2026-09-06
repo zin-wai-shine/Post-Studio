@@ -1,7 +1,8 @@
 import React from 'react';
-import { FiScissors, FiUploadCloud, FiImage, FiInfo } from 'react-icons/fi';
+import { FiScissors, FiUploadCloud, FiImage } from 'react-icons/fi';
 import { SOCIAL_GRID_LAYOUTS } from '../../constants/watermark';
 import { Button } from '../common/Button';
+import { InfoTooltip } from '../common/Tooltip';
 import './GridSplitControls.css';
 
 export function GridSplitControls({
@@ -19,7 +20,13 @@ export function GridSplitControls({
       {/* Compact Header */}
       <div className="grid-mini-header">
         <span className="grid-mini-title">Select Grid Format</span>
-        <span className="grid-mini-current">{currentLayout.name} ({currentLayout.tileCount} Tiles)</span>
+        <div className="grid-mini-header-right">
+          <span className="grid-mini-current">{currentLayout.name} ({currentLayout.tileCount} Tiles)</span>
+          <InfoTooltip
+            text={`Preserves 100% of original photo size. Slices into ${currentLayout.tileCount} sequential images ready for social upload.`}
+            position="bottom-right"
+          />
+        </div>
       </div>
 
       {/* Small Compact Grid Wireframe Buttons (Site Colors, No Big Titles) */}
@@ -152,14 +159,6 @@ export function GridSplitControls({
             </Button>
           </div>
         )}
-      </div>
-
-      {/* Subtle Hint */}
-      <div className="grid-hint-card">
-        <FiInfo className="grid-hint-icon" />
-        <span>
-          Preserves 100% of the original photo size. Slices into {currentLayout.tileCount} sequential images ready for social upload.
-        </span>
       </div>
     </div>
   );
