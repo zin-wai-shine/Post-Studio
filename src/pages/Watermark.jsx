@@ -374,6 +374,8 @@ export function Watermark() {
       const targetHeight = gridCropSettings?.targetHeight || null;
       const tileFocusMap = gridCropSettings?.tileFocusMap || {};
 
+      const useWatermark = gridCropSettings?.useWatermark !== false;
+
       const tiles = await sliceImageIntoGridTiles(
         activeImage.file || activeImage.previewUrl,
         layoutId,
@@ -383,7 +385,10 @@ export function Watermark() {
           targetCropPreset,
           targetWidth,
           targetHeight,
-          baseFilename: activeImage.name
+          baseFilename: activeImage.name,
+          useWatermark,
+          watermarkImage: watermarkImgEl || activeWatermark?.previewUrl,
+          watermarkSettings: effectiveSettings
         }
       );
 

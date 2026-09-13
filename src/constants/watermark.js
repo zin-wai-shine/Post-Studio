@@ -204,7 +204,9 @@ export const DEFAULT_GRID_CROP_SETTINGS = {
   targetHeight: null,
   tileFocusMap: {}, // e.g. { 1: 'center-right', 2: 'center-left' }
   selectedTileId: 1,
-  isAutoPosition: false
+  isAutoPosition: false,
+  useWatermark: true,
+  isPreviewMode: false
 };
 
 /**

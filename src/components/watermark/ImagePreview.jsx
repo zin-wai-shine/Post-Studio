@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { FiImage, FiUploadCloud, FiScissors } from 'react-icons/fi';
+import { FiImage, FiUploadCloud, FiScissors, FiEye, FiEyeOff } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
 import { calculateWatermarkDimensions, calculateCropRect } from '../../utils/canvasUtils';
@@ -278,8 +278,12 @@ export function ImagePreview({
     );
   }
 
-  const hasWatermark = (settings.type === 'image' && watermarkSource) ||
-    (settings.type === 'text' && settings.text && settings.text.trim().length > 0);
+  const isPreviewLocked = Boolean(isGridMode && gridCropSettings?.isPreviewMode);
+  const showWatermark = Boolean(
+    (!isGridMode || gridCropSettings?.useWatermark !== false) &&
+    ((settings.type === 'image' && watermarkSource) ||
+      (settings.type === 'text' && settings.text && settings.text.trim().length > 0))
+  );
 
   const focusObj = FOCUS_POSITIONS[gridCropSettings?.gridFocus || 'center'] || FOCUS_POSITIONS.center;
 
@@ -296,19 +300,38 @@ export function ImagePreview({
             </span>
           ) : isGridMode && activeGridLayout ? (
             <>
-              <span className="meta-badge grid-active-badge">
-                Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
-              </span>
-              <Button
-                variant="primary"
-                size="xs"
-                iconLeft={<FiScissors size={12} />}
-                loading={isSlicing}
-                onClick={onSliceImage}
-                title="Slice into tiles and add to workspace"
-              >
-                {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
-              </Button>
+              {isPreviewLocked ? (
+                <>
+                  <span className="meta-badge preview-mode-active-badge">
+                    Clean Preview (Guides Hidden)
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    iconLeft={<FiEyeOff size={12} />}
+                    onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('isPreviewMode', false)}
+                    title="Exit clean preview and show crop guides"
+                  >
+                    Exit Preview
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="meta-badge grid-active-badge">
+                    Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
+                  </span>
+                  <Button
+                    variant="primary"
+                    size="xs"
+                    iconLeft={<FiScissors size={12} />}
+                    loading={isSlicing}
+                    onClick={onSliceImage}
+                    title="Slice into tiles and add to workspace"
+                  >
+                    {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
+                  </Button>
+                </>
+              )}
             </>
           ) : isCropActive ? (
             <>
@@ -374,8 +397,8 @@ export function ImagePreview({
             </div>
           )}
 
-          {/* Social Grid Cut Overlay on Source Image */}
-          {isGridMode && activeGridLayout && (
+          {/* Social Grid Cut Overlay on Source Image (Hidden in Clean Preview Mode) */}
+          {isGridMode && activeGridLayout && !isPreviewLocked && (
             <div className="preview-grid-overlay">
               {activeGridLayout.tiles.map((tile) => {
                 const isSelected = tile.id === (gridCropSettings?.selectedTileId || 1);
@@ -479,8 +502,11 @@ export function ImagePreview({
             </div>
           )}
 
-          {hasWatermark && (
-            <div className="preview-overlay-layer">
+          {showWatermark && (
+            <div
+              className="preview-overlay-layer"
+              style={{ pointerEvents: isPreviewLocked ? 'none' : undefined }}
+            >
               {settings.style === 'single' ? (
                 <div
                   className={`draggable-watermark ${isDragging ? 'is-dragging' : ''}`}

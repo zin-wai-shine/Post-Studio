@@ -199,6 +199,123 @@ export function calculateCropRect(srcWidth, srcHeight, targetWidth, targetHeight
 }
 
 /**
+ * Draws the watermark (image or text) layer onto any canvas context
+ * @param {CanvasRenderingContext2D} ctx 
+ * @param {number} canvasWidth 
+ * @param {number} canvasHeight 
+ * @param {Object} settings 
+ * @param {HTMLImageElement|string|null} watermarkImage 
+ */
+export async function drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage) {
+  if (!settings || !ctx) return;
+  const hasLogoWatermark = settings.type === 'image' && watermarkImage;
+  const hasTextWatermark = settings.type === 'text' && settings.text && settings.text.trim().length > 0;
+
+  if (!hasLogoWatermark && !hasTextWatermark) return;
+
+  // Resolve watermark image element if needed
+  let wmImg = null;
+  let naturalWmWidth = 100;
+  let naturalWmHeight = 100;
+
+  if (hasLogoWatermark) {
+    wmImg = (watermarkImage instanceof HTMLImageElement) ? watermarkImage : await loadImage(watermarkImage);
+    naturalWmWidth = wmImg.naturalWidth || wmImg.width || 100;
+    naturalWmHeight = wmImg.naturalHeight || wmImg.height || 100;
+  }
+
+  // Watermark dimensions
+  let wmDims = { width: 100, height: 100 };
+  let scaledFontSize = 24;
+
+  if (hasLogoWatermark) {
+    wmDims = calculateWatermarkDimensions(
+      canvasWidth,
+      canvasHeight,
+      naturalWmWidth,
+      naturalWmHeight,
+      settings.size || 0.20
+    );
+  } else {
+    // Text watermark sizing scaled to image resolution
+    const resolutionScale = Math.max(0.5, canvasWidth / 1200);
+    scaledFontSize = Math.round((settings.fontSize || 24) * resolutionScale);
+    ctx.font = `${settings.fontWeight || '600'} ${scaledFontSize}px ${settings.fontFamily || 'Inter, sans-serif'}`;
+    const textMetrics = ctx.measureText(settings.text);
+    wmDims = {
+      width: Math.round(textMetrics.width + 10),
+      height: Math.round(scaledFontSize * 1.3)
+    };
+  }
+
+  // Save context state before drawing watermark
+  ctx.save();
+
+  // Set overall opacity
+  ctx.globalAlpha = Math.max(0.05, Math.min(1.0, settings.opacity || 0.80));
+
+  const watermarkItem = {
+    type: settings.type,
+    image: wmImg,
+    text: settings.text,
+    textColor: settings.textColor,
+    fontFamily: settings.fontFamily,
+    fontSize: scaledFontSize,
+    fontWeight: settings.fontWeight,
+    width: wmDims.width,
+    height: wmDims.height,
+    rotationDeg: settings.rotation || 0
+  };
+
+  const style = settings.style || 'single';
+
+  if (style === 'single') {
+    const pos = calculateWatermarkPosition(
+      canvasWidth,
+      canvasHeight,
+      wmDims.width,
+      wmDims.height,
+      settings.position?.x ?? 0.95,
+      settings.position?.y ?? 0.95,
+      settings.edgePadding ?? 0.03
+    );
+
+    drawSingleWatermarkItem(ctx, {
+      ...watermarkItem,
+      centerX: pos.centerX,
+      centerY: pos.centerY
+    });
+  } else {
+    // Repeated styles
+    let densityMultiplier = 1.0;
+    let rotation = settings.pattern?.rotation ?? -30;
+    let horizontalGap = settings.pattern?.horizontalGap ?? 0.15;
+    let verticalGap = settings.pattern?.verticalGap ?? 0.15;
+
+    if (style === 'diagonal') {
+      rotation = settings.pattern?.rotation ?? -35;
+      densityMultiplier = 0.9;
+    } else if (style === 'dot-grid') {
+      rotation = 0;
+      densityMultiplier = 0.65;
+    } else if (style === 'sparse') {
+      densityMultiplier = 1.6;
+    } else if (style === 'dense') {
+      densityMultiplier = 0.55;
+    }
+
+    drawRepeatedWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkItem, {
+      rotation,
+      horizontalGap,
+      verticalGap,
+      densityMultiplier
+    });
+  }
+
+  ctx.restore();
+}
+
+/**
  * Renders source image and watermark onto an offscreen canvas and returns Blob
  * @param {Object} param0 
  * @returns {Promise<Blob>}
@@ -302,107 +419,9 @@ export async function renderWatermarkedImage({
     ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
   }
 
-  // If no watermark active, return base image directly
-  const hasLogoWatermark = settings.type === 'image' && watermarkImage;
-  const hasTextWatermark = settings.type === 'text' && settings.text && settings.text.trim().length > 0;
+  // Draw watermark layer if active
+  await drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage);
 
-  if (hasLogoWatermark || hasTextWatermark) {
-    // 3. Resolve watermark image element if needed
-    let wmImg = null;
-    let naturalWmWidth = 100;
-    let naturalWmHeight = 100;
-
-    if (hasLogoWatermark) {
-      wmImg = (watermarkImage instanceof HTMLImageElement) ? watermarkImage : await loadImage(watermarkImage);
-      naturalWmWidth = wmImg.naturalWidth || wmImg.width || 100;
-      naturalWmHeight = wmImg.naturalHeight || wmImg.height || 100;
-    }
-
-    // Watermark dimensions
-    let wmDims = { width: 100, height: 100 };
-    let scaledFontSize = 24;
-
-    if (hasLogoWatermark) {
-      wmDims = calculateWatermarkDimensions(
-        canvasWidth,
-        canvasHeight,
-        naturalWmWidth,
-        naturalWmHeight,
-        settings.size || 0.20
-      );
-    } else {
-      // Text watermark sizing scaled to image resolution
-      const resolutionScale = Math.max(0.5, canvasWidth / 1200);
-      scaledFontSize = Math.round((settings.fontSize || 24) * resolutionScale);
-      ctx.font = `${settings.fontWeight || '600'} ${scaledFontSize}px ${settings.fontFamily || 'Inter, sans-serif'}`;
-      const textMetrics = ctx.measureText(settings.text);
-      wmDims = {
-        width: Math.round(textMetrics.width + 10),
-        height: Math.round(scaledFontSize * 1.3)
-      };
-    }
-
-    // Set overall opacity
-    ctx.globalAlpha = Math.max(0.05, Math.min(1.0, settings.opacity || 0.80));
-
-    const watermarkItem = {
-      type: settings.type,
-      image: wmImg,
-      text: settings.text,
-      textColor: settings.textColor,
-      fontFamily: settings.fontFamily,
-      fontSize: scaledFontSize,
-      fontWeight: settings.fontWeight,
-      width: wmDims.width,
-      height: wmDims.height,
-      rotationDeg: settings.rotation || 0
-    };
-
-    const style = settings.style || 'single';
-
-    if (style === 'single') {
-      const pos = calculateWatermarkPosition(
-        canvasWidth,
-        canvasHeight,
-        wmDims.width,
-        wmDims.height,
-        settings.position?.x ?? 0.95,
-        settings.position?.y ?? 0.95,
-        settings.edgePadding ?? 0.03
-      );
-
-      drawSingleWatermarkItem(ctx, {
-        ...watermarkItem,
-        centerX: pos.centerX,
-        centerY: pos.centerY
-      });
-    } else {
-      // Repeated styles
-      let densityMultiplier = 1.0;
-      let rotation = settings.pattern?.rotation ?? -30;
-      let horizontalGap = settings.pattern?.horizontalGap ?? 0.15;
-      let verticalGap = settings.pattern?.verticalGap ?? 0.15;
-
-      if (style === 'diagonal') {
-        rotation = settings.pattern?.rotation ?? -35;
-        densityMultiplier = 0.9;
-      } else if (style === 'dot-grid') {
-        rotation = 0;
-        densityMultiplier = 0.65;
-      } else if (style === 'sparse') {
-        densityMultiplier = 1.6;
-      } else if (style === 'dense') {
-        densityMultiplier = 0.55;
-      }
-
-      drawRepeatedWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkItem, {
-        rotation,
-        horizontalGap,
-        verticalGap,
-        densityMultiplier
-      });
-    }
-  }
 
   // 4. Convert canvas to Blob with dataURL fallback
   return new Promise((resolve, reject) => {

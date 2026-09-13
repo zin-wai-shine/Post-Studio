@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiScissors, FiUploadCloud, FiImage, FiTarget, FiZap } from 'react-icons/fi';
+import { FiScissors, FiUploadCloud, FiImage, FiTarget, FiZap, FiEye, FiEyeOff } from 'react-icons/fi';
 import { SOCIAL_GRID_LAYOUTS, FOCUS_POSITIONS, getAutoTileFocusMap } from '../../constants/watermark';
 import { Button } from '../common/Button';
 import { Select } from '../common/Select';
@@ -49,6 +49,18 @@ export function GridSplitControls({
   const targetPresetId = gridCropSettings?.targetCropPreset || 'original';
   const selectedTileId = gridCropSettings?.selectedTileId || 1;
   const tileFocusMap = gridCropSettings?.tileFocusMap || {};
+  const useWatermark = gridCropSettings?.useWatermark !== false;
+  const isPreviewMode = Boolean(gridCropSettings?.isPreviewMode);
+
+  const handleToggleWatermark = () => {
+    if (!onUpdateGridCropSetting) return;
+    onUpdateGridCropSetting('useWatermark', !useWatermark);
+  };
+
+  const handleTogglePreviewMode = () => {
+    if (!onUpdateGridCropSetting) return;
+    onUpdateGridCropSetting('isPreviewMode', !isPreviewMode);
+  };
 
   // Build dropdown options
   const cropSizeOptions = [
@@ -117,17 +129,69 @@ export function GridSplitControls({
 
   return (
     <div className="grid-split-controls-pane">
-      {/* Compact Header */}
-      <div className="grid-mini-header">
-        <span className="grid-mini-title">Select Grid Format</span>
-        <div className="grid-mini-header-right">
-          <span className="grid-mini-current">{currentLayout.name} ({currentLayout.tileCount} Tiles)</span>
-          <InfoTooltip
-            text={`Slices into ${currentLayout.tileCount} sequential images ready for social upload.`}
-            position="bottom-right"
-          />
+      {/* Session Toolbar: Watermark Switch & Clean Preview Toggle */}
+      <div className="grid-session-bar">
+        <div className="grid-session-watermark-row">
+          <div className="grid-watermark-info">
+            <span className="grid-watermark-title">Use Watermark</span>
+            <span className="grid-watermark-desc">
+              {useWatermark ? 'Apply watermark to slices' : 'Clean slices (no watermark)'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={`switch-btn ${useWatermark ? 'active' : ''}`}
+            onClick={handleToggleWatermark}
+            aria-pressed={useWatermark}
+            title={useWatermark ? 'Disable watermark on cut tiles' : 'Enable watermark on cut tiles'}
+          >
+            <span className="switch-thumb" />
+          </button>
         </div>
+
+        <button
+          type="button"
+          className={`grid-session-preview-btn ${isPreviewMode ? 'active' : ''}`}
+          onClick={handleTogglePreviewMode}
+          title={isPreviewMode ? 'Exit preview mode and re-enable crop controls' : 'Hide crop features & lock controls for clean preview'}
+        >
+          {isPreviewMode ? <FiEyeOff size={13} /> : <FiEye size={13} />}
+          <span>{isPreviewMode ? 'Exit Preview' : 'Clean Preview'}</span>
+          <span className="preview-status-pill">{isPreviewMode ? 'Locked' : 'Hide Guides'}</span>
+        </button>
       </div>
+
+      {/* Notice when session is locked in preview mode */}
+      {isPreviewMode && (
+        <div className="grid-preview-locked-notice">
+          <FiEyeOff size={14} className="locked-icon" />
+          <div className="locked-text">
+            <strong>Preview Mode Active</strong>
+            <span>Crop features hidden & session controls locked.</span>
+          </div>
+          <button
+            type="button"
+            className="locked-unlock-action-btn"
+            onClick={handleTogglePreviewMode}
+          >
+            Unlock
+          </button>
+        </div>
+      )}
+
+      {/* Main Interactive Controls (Locked when in Preview Mode) */}
+      <div className={`grid-session-controls-body ${isPreviewMode ? 'session-locked' : ''}`}>
+        {/* Compact Header */}
+        <div className="grid-mini-header">
+          <span className="grid-mini-title">Select Grid Format</span>
+          <div className="grid-mini-header-right">
+            <span className="grid-mini-current">{currentLayout.name} ({currentLayout.tileCount} Tiles)</span>
+            <InfoTooltip
+              text={`Slices into ${currentLayout.tileCount} sequential images ready for social upload.`}
+              position="bottom-right"
+            />
+          </div>
+        </div>
 
       {/* Small Compact Grid Wireframe Buttons */}
       <div className="grid-mini-matrix" role="radiogroup" aria-label="Grid Format">
@@ -407,5 +471,6 @@ export function GridSplitControls({
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }

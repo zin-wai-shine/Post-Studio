@@ -1,6 +1,6 @@
 import { loadImage, parseFilename } from './imageUtils.js';
 import { SOCIAL_GRID_LAYOUTS, FOCUS_POSITIONS } from '../constants/watermark.js';
-import { calculateCropRect } from './canvasUtils.js';
+import { calculateCropRect, drawWatermarkLayer } from './canvasUtils.js';
 
 /**
  * Retrieves layout config by id
@@ -120,7 +120,10 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     targetWidth = null,
     targetHeight = null,
     baseFilename = 'grid-post.jpg',
-    quality = 0.95
+    quality = 0.95,
+    useWatermark = true,
+    watermarkImage = null,
+    watermarkSettings = null
   } = options;
   const layout = getLayoutConfig(layoutId);
 
@@ -137,6 +140,24 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
 
   const { base: rawBaseName } = parseFilename(baseFilename);
   const cleanBaseName = rawBaseName.replace(/[-_]grid[-_]\d+.*$/i, ''); // Strip previous grid suffix if any
+
+  // Prepare source drawable: composite watermark if enabled
+  let sourceDrawable = img;
+  if (useWatermark && watermarkSettings && (watermarkImage || (watermarkSettings.type === 'text' && watermarkSettings.text))) {
+    try {
+      const compositeCanvas = document.createElement('canvas');
+      compositeCanvas.width = naturalWidth;
+      compositeCanvas.height = naturalHeight;
+      const cCtx = compositeCanvas.getContext('2d');
+      if (cCtx) {
+        cCtx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
+        await drawWatermarkLayer(cCtx, naturalWidth, naturalHeight, watermarkSettings, watermarkImage);
+        sourceDrawable = compositeCanvas;
+      }
+    } catch (wmErr) {
+      console.warn('Failed to composite watermark onto grid source:', wmErr);
+    }
+  }
 
   const isTargetCropActive = Boolean(
     targetCropPreset &&
@@ -183,8 +204,8 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    // Draw slice (cropped to target size)
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+    // Draw slice from sourceDrawable (cropped to target size)
+    ctx.drawImage(sourceDrawable, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
 
     // Convert to Blob
     const mimeType = 'image/jpeg';
