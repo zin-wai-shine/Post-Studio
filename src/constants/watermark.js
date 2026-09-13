@@ -198,7 +198,55 @@ export const SOCIAL_GRID_LAYOUTS = [
 export const DEFAULT_GRID_CROP_SETTINGS = {
   mode: 'standard', // 'standard' | 'grid'
   activeLayout: 'four-squares',
-  gridFocus: 'center'
+  gridFocus: 'center',
+  targetCropPreset: 'original', // 'original' or preset id
+  targetWidth: null,
+  targetHeight: null,
+  tileFocusMap: {}, // e.g. { 1: 'center-right', 2: 'center-left' }
+  selectedTileId: 1,
+  isAutoPosition: false
 };
+
+/**
+ * Returns smart auto focus mapping for a given grid layout
+ * @param {string} layoutId 
+ * @returns {Record<number, string>}
+ */
+export function getAutoTileFocusMap(layoutId) {
+  switch (layoutId) {
+    case 'two-squares':
+      return { 1: 'center-right', 2: 'center-left' };
+    case 'three-squares':
+      return { 1: 'center', 2: 'center-right', 3: 'center-left' };
+    case 'four-squares':
+      return {
+        1: 'bottom-right',
+        2: 'bottom-left',
+        3: 'top-right',
+        4: 'top-left'
+      };
+    case 'five-squares':
+      return {
+        1: 'bottom-right',
+        2: 'bottom-left',
+        3: 'top-right',
+        4: 'top-center',
+        5: 'top-left'
+      };
+    case 'six-squares':
+      return {
+        1: 'bottom-right',
+        2: 'bottom-left',
+        3: 'top-right',
+        4: 'top-center',
+        5: 'top-center',
+        6: 'top-left'
+      };
+    case 'one-square':
+    default:
+      return { 1: 'center' };
+  }
+}
+
 
 

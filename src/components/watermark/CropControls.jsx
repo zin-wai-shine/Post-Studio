@@ -192,6 +192,9 @@ export function CropControls({
           onSliceImage={onSliceImage}
           isSlicing={isSlicing}
           onTriggerSingleUpload={onTriggerSingleUpload}
+          gridCropSettings={gridCropSettings}
+          onUpdateGridCropSetting={onUpdateGridCropSetting}
+          presets={presets}
         />
       ) : (
         <>

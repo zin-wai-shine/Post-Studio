@@ -369,12 +369,20 @@ export function Watermark() {
       setIsSlicing(true);
       const layoutId = gridCropSettings?.activeLayout || 'four-squares';
       const focus = gridCropSettings?.gridFocus || 'center';
+      const targetCropPreset = gridCropSettings?.targetCropPreset || 'original';
+      const targetWidth = gridCropSettings?.targetWidth || null;
+      const targetHeight = gridCropSettings?.targetHeight || null;
+      const tileFocusMap = gridCropSettings?.tileFocusMap || {};
 
       const tiles = await sliceImageIntoGridTiles(
         activeImage.file || activeImage.previewUrl,
         layoutId,
         {
           focus,
+          tileFocusMap,
+          targetCropPreset,
+          targetWidth,
+          targetHeight,
           baseFilename: activeImage.name
         }
       );
@@ -390,9 +398,10 @@ export function Watermark() {
         setActiveImageId(added[0].id);
       }
 
+      const sizeMsg = targetWidth && targetHeight ? ` (${targetWidth}×${targetHeight})` : '';
       setToast({
         type: 'success',
-        message: `Successfully sliced into ${tiles.length} tiles! Added to workspace.`
+        message: `Successfully sliced into ${tiles.length} tiles${sizeMsg}! Added to workspace.`
       });
     } catch (err) {
       console.error('Failed to slice image:', err);
@@ -746,6 +755,7 @@ const HEADER_FORMAT_OPTIONS = [
                     : uploaderTriggerRef.current?.click()
                 }
                 gridCropSettings={gridCropSettings}
+                onUpdateGridCropSetting={updateGridCropSetting}
                 onSliceImage={handleSliceImage}
                 isSlicing={isSlicing}
               />

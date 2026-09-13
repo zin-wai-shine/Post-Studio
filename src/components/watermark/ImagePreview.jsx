@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { FiImage, FiUploadCloud, FiScissors } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
-import { calculateWatermarkDimensions } from '../../utils/canvasUtils';
+import { calculateWatermarkDimensions, calculateCropRect } from '../../utils/canvasUtils';
 import { loadImage } from '../../utils/imageUtils';
 import { getLayoutConfig } from '../../utils/gridCropUtils';
 import { FOCUS_POSITIONS } from '../../constants/watermark';
@@ -17,6 +17,7 @@ export function ImagePreview({
   onCustomPosition,
   onUploadClick,
   gridCropSettings,
+  onUpdateGridCropSetting,
   onSliceImage,
   isSlicing = false
 }) {
@@ -375,28 +376,106 @@ export function ImagePreview({
 
           {/* Social Grid Cut Overlay on Source Image */}
           {isGridMode && activeGridLayout && (
-            <div className="preview-grid-overlay" aria-hidden="true">
-              {activeGridLayout.tiles.map((tile) => (
-                <div
-                  key={tile.id}
-                  className="preview-grid-tile"
-                  style={{
-                    left: `${tile.x * 100}%`,
-                    top: `${tile.y * 100}%`,
-                    width: `${tile.w * 100}%`,
-                    height: `${tile.h * 100}%`
-                  }}
-                >
-                  <span className="preview-grid-tag">
-                    {tile.id} • {tile.label}
-                  </span>
-                  {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
-                    <div className="preview-grid-plus-one">
-                      <span>+1</span>
+            <div className="preview-grid-overlay">
+              {activeGridLayout.tiles.map((tile) => {
+                const isSelected = tile.id === (gridCropSettings?.selectedTileId || 1);
+                const tileFocusKey = (gridCropSettings?.tileFocusMap && gridCropSettings.tileFocusMap[tile.id]) || gridCropSettings?.gridFocus || 'center';
+                const focusDef = FOCUS_POSITIONS[tileFocusKey] || FOCUS_POSITIONS.center;
+
+                const isTargetCropActive = Boolean(
+                  gridCropSettings?.targetCropPreset &&
+                  gridCropSettings.targetCropPreset !== 'original' &&
+                  gridCropSettings?.targetWidth &&
+                  gridCropSettings?.targetHeight &&
+                  activeImage?.width &&
+                  activeImage?.height
+                );
+
+                let cropRectStyles = null;
+                let focalStyles = null;
+
+                if (isTargetCropActive) {
+                  const tilePxW = tile.w * activeImage.width;
+                  const tilePxH = tile.h * activeImage.height;
+                  const { srcX, srcY, cropWidth, cropHeight } = calculateCropRect(
+                    tilePxW,
+                    tilePxH,
+                    gridCropSettings.targetWidth,
+                    gridCropSettings.targetHeight,
+                    focusDef.x ?? 0.5,
+                    focusDef.y ?? 0.5,
+                    1
+                  );
+
+                  const leftPct = (srcX / tilePxW) * 100;
+                  const topPct = (srcY / tilePxH) * 100;
+                  const widthPct = (cropWidth / tilePxW) * 100;
+                  const heightPct = (cropHeight / tilePxH) * 100;
+
+                  cropRectStyles = {
+                    left: `${leftPct}%`,
+                    top: `${topPct}%`,
+                    width: `${widthPct}%`,
+                    height: `${heightPct}%`
+                  };
+
+                  focalStyles = {
+                    left: `${leftPct + widthPct * (focusDef.x ?? 0.5)}%`,
+                    top: `${topPct + heightPct * (focusDef.y ?? 0.5)}%`
+                  };
+                } else {
+                  focalStyles = {
+                    left: `${(focusDef.x ?? 0.5) * 100}%`,
+                    top: `${(focusDef.y ?? 0.5) * 100}%`
+                  };
+                }
+
+                return (
+                  <div
+                    key={tile.id}
+                    className={`preview-grid-tile ${isSelected ? 'tile-selected' : ''}`}
+                    style={{
+                      left: `${tile.x * 100}%`,
+                      top: `${tile.y * 100}%`,
+                      width: `${tile.w * 100}%`,
+                      height: `${tile.h * 100}%`
+                    }}
+                    onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('selectedTileId', tile.id)}
+                    title={`Tile ${tile.id} (${tile.label}) - Focus: ${focusDef.label}. Click to adjust.`}
+                  >
+                    {isTargetCropActive && cropRectStyles && (
+                      <div
+                        className="preview-grid-tile-cropbox"
+                        style={cropRectStyles}
+                      />
+                    )}
+
+                    <div
+                      className="preview-tile-focal-indicator"
+                      style={focalStyles}
+                      aria-hidden="true"
+                    >
+                      <div className="preview-tile-focal-dot" />
+                      <div className="preview-tile-focal-ring" />
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="preview-grid-tag-wrap">
+                      <span className="preview-grid-tag">
+                        {tile.id} • {tile.label}
+                      </span>
+                      <span className="preview-grid-focus-tag">
+                        {focusDef.label}
+                      </span>
+                    </div>
+
+                    {activeGridLayout.hasPlusOneBadge && tile.key === 'bottom-4' && (
+                      <div className="preview-grid-plus-one">
+                        <span>+1</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
