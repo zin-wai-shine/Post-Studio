@@ -19,6 +19,7 @@ export function useWatermarkSettings() {
         return {
           ...DEFAULT_WATERMARK_SETTINGS,
           ...parsed,
+          enabled: parsed.enabled !== undefined ? Boolean(parsed.enabled) : DEFAULT_WATERMARK_SETTINGS.enabled,
           position: { ...DEFAULT_WATERMARK_SETTINGS.position, ...(parsed.position || {}) },
           pattern: { ...DEFAULT_WATERMARK_SETTINGS.pattern, ...(parsed.pattern || {}) },
           border: { ...DEFAULT_WATERMARK_SETTINGS.border, ...(parsed.border || {}) }

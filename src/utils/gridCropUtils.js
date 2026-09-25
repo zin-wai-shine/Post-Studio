@@ -143,7 +143,12 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
 
   // Prepare source drawable: composite watermark if enabled
   let sourceDrawable = img;
-  const hasWatermark = Boolean(useWatermark && watermarkSettings && (watermarkImage || (watermarkSettings.type === 'text' && watermarkSettings.text)));
+  const hasWatermark = Boolean(
+    useWatermark &&
+    watermarkSettings &&
+    watermarkSettings.enabled !== false &&
+    (watermarkImage || (watermarkSettings.type === 'text' && watermarkSettings.text))
+  );
   const hasBorder = Boolean(watermarkSettings?.border && watermarkSettings.border.style && watermarkSettings.border.style !== 'none');
 
   if (hasWatermark || hasBorder) {

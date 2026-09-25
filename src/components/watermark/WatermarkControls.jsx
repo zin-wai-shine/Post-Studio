@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiImage, FiCrop, FiMove, FiSliders, FiDownload, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiImage, FiCrop, FiMove, FiSliders, FiDownload, FiChevronDown, FiChevronUp, FiX } from 'react-icons/fi';
 import { Slider } from '../common/Slider';
 import { Select } from '../common/Select';
 import { PositionGrid } from './PositionGrid';
@@ -81,6 +81,7 @@ export function WatermarkControls({
   const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
   const isSingle = settings.style === 'single';
+  const isWatermarkEnabled = settings.enabled !== false;
 
   return (
     <div className={`controls-panel ${isMobileCollapsed ? 'mobile-collapsed' : 'mobile-open'}`}>
@@ -169,15 +170,25 @@ export function WatermarkControls({
             type="button"
             role="tab"
             aria-selected={activeSection === sec.id}
-            className={`tab-nav-btn ${activeSection === sec.id ? 'active' : ''}`}
+            className={`tab-nav-btn ${activeSection === sec.id ? 'active' : ''} ${sec.id === 'watermark' && !isWatermarkEnabled ? 'is-disabled-tab' : ''}`}
             onClick={() => {
               setActiveSection(sec.id);
               if (isMobileCollapsed) setIsMobileCollapsed(false);
             }}
           >
             {sec.icon}
-            <span className="tab-label-full">{sec.label}</span>
-            <span className="tab-label-short">{sec.shortLabel}</span>
+            <span className="tab-label-full">
+              {sec.label}
+              {sec.id === 'watermark' && !isWatermarkEnabled && (
+                <span className="tab-off-pill">Off</span>
+              )}
+            </span>
+            <span className="tab-label-short">
+              {sec.shortLabel}
+              {sec.id === 'watermark' && !isWatermarkEnabled && (
+                <span className="tab-off-pill">Off</span>
+              )}
+            </span>
           </button>
         ))}
       </div>
@@ -187,80 +198,139 @@ export function WatermarkControls({
         {/* 1. Watermark Section (Logo / Text) */}
         {activeSection === 'watermark' && (
           <div className="section-pane">
-            <div className="section-label-row">
-              <div className="section-label">Source Type</div>
-              <InfoTooltip
-                text="Choose between uploading a PNG brand logo or styling a custom text watermark."
-                position="bottom-right"
-              />
-            </div>
-            <div className="type-toggle-group">
+            {/* Master Watermark Enable / Close Switch Card */}
+            <div className={`watermark-master-toggle-card ${!isWatermarkEnabled ? 'is-disabled' : ''}`}>
+              <div className="watermark-toggle-info">
+                <div className="watermark-toggle-header">
+                  <span className="watermark-toggle-title">Use Watermark</span>
+                  <span className={`watermark-status-tag ${isWatermarkEnabled ? 'active' : 'off'}`}>
+                    {isWatermarkEnabled ? 'Active' : 'Ignored'}
+                  </span>
+                </div>
+                <span className="watermark-toggle-desc">
+                  {isWatermarkEnabled
+                    ? 'Watermark is applied to your images and exports.'
+                    : 'Watermark is closed & ignored. Clean images and borders only.'}
+                </span>
+              </div>
               <button
                 type="button"
-                className={`type-toggle-btn ${settings.type === 'image' ? 'active' : ''}`}
-                onClick={() => onUpdateSetting('type', 'image')}
+                className={`switch-btn ${isWatermarkEnabled ? 'active' : ''}`}
+                onClick={() => onUpdateSetting('enabled', !isWatermarkEnabled)}
+                aria-pressed={isWatermarkEnabled}
+                title={isWatermarkEnabled ? 'Close / ignore watermark' : 'Enable watermark'}
               >
-                Logo Watermark
-              </button>
-              <button
-                type="button"
-                className={`type-toggle-btn ${settings.type === 'text' ? 'active' : ''}`}
-                onClick={() => onUpdateSetting('type', 'text')}
-              >
-                Text Watermark
+                <span className="switch-thumb" />
               </button>
             </div>
 
-            {settings.type === 'image' ? (
-              <>
-                <WatermarkUploader
-                  onSetTemporaryWatermark={onSetTemporaryWatermark}
-                  onSaveAndSelectWatermark={onSaveAndSelectWatermark}
-                />
-                <SavedWatermarks
-                  savedWatermarks={savedWatermarks}
-                  activeWatermarkId={activeWatermark?.id}
-                  onSelectWatermark={onSelectSavedWatermark}
-                  onDeleteWatermark={onDeleteSavedWatermark}
-                  onRenameWatermark={onRenameSavedWatermark}
-                  loading={isSavedLoading}
-                />
-              </>
-            ) : (
-              <div className="text-inputs-wrap">
-                <div>
-                  <label className="text-sm font-medium" htmlFor="text-wm-input">
-                    Watermark Text
-                  </label>
-                  <input
-                    id="text-wm-input"
-                    type="text"
-                    value={settings.text || ''}
-                    onChange={(e) => onUpdateSetting('text', e.target.value)}
-                    placeholder="Enter watermark text..."
-                    className="text-field-input"
+            {/* Active Logo Indicator Strip with Deselect button */}
+            {settings.type === 'image' && activeWatermark && (
+              <div className="active-watermark-strip">
+                <div className="active-watermark-thumb-wrap">
+                  <img
+                    src={activeWatermark.previewUrl}
+                    alt={activeWatermark.name}
+                    className="active-watermark-thumb"
                   />
                 </div>
-
-                <Select
-                  label="Font Weight"
-                  value={settings.fontWeight || '600'}
-                  onChange={(val) => onUpdateSetting('fontWeight', val)}
-                  options={FONT_WEIGHT_OPTIONS}
-                />
-
-                <div className="color-picker-row">
-                  <span>Text Color</span>
-                  <input
-                    type="color"
-                    value={settings.textColor || '#FFFFFF'}
-                    onChange={(e) => onUpdateSetting('textColor', e.target.value)}
-                    className="color-picker-input"
-                    title="Choose text watermark color"
-                  />
+                <div className="active-watermark-meta">
+                  <span className="active-watermark-name" title={activeWatermark.name}>
+                    {activeWatermark.name}
+                  </span>
+                  <span className="active-watermark-sub">
+                    {isWatermarkEnabled ? 'Active logo watermark' : 'Logo selected (currently ignored)'}
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  className="active-watermark-close-btn"
+                  onClick={onClearWatermark}
+                  title="Close / Deselect this watermark"
+                >
+                  <FiX size={13} />
+                  <span>Deselect</span>
+                </button>
               </div>
             )}
+
+            {/* Watermark settings body (dimmed when watermark is closed/ignored) */}
+            <div className={`watermark-controls-body ${!isWatermarkEnabled ? 'controls-dimmed' : ''}`}>
+              <div className="section-label-row">
+                <div className="section-label">Source Type</div>
+                <InfoTooltip
+                  text="Choose between uploading a PNG brand logo or styling a custom text watermark."
+                  position="bottom-right"
+                />
+              </div>
+              <div className="type-toggle-group">
+                <button
+                  type="button"
+                  className={`type-toggle-btn ${settings.type === 'image' ? 'active' : ''}`}
+                  onClick={() => onUpdateSetting('type', 'image')}
+                >
+                  Logo Watermark
+                </button>
+                <button
+                  type="button"
+                  className={`type-toggle-btn ${settings.type === 'text' ? 'active' : ''}`}
+                  onClick={() => onUpdateSetting('type', 'text')}
+                >
+                  Text Watermark
+                </button>
+              </div>
+
+              {settings.type === 'image' ? (
+                <>
+                  <WatermarkUploader
+                    onSetTemporaryWatermark={onSetTemporaryWatermark}
+                    onSaveAndSelectWatermark={onSaveAndSelectWatermark}
+                  />
+                  <SavedWatermarks
+                    savedWatermarks={savedWatermarks}
+                    activeWatermarkId={activeWatermark?.id}
+                    onSelectWatermark={onSelectSavedWatermark}
+                    onDeleteWatermark={onDeleteSavedWatermark}
+                    onRenameWatermark={onRenameSavedWatermark}
+                    loading={isSavedLoading}
+                  />
+                </>
+              ) : (
+                <div className="text-inputs-wrap">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="text-wm-input">
+                      Watermark Text
+                    </label>
+                    <input
+                      id="text-wm-input"
+                      type="text"
+                      value={settings.text || ''}
+                      onChange={(e) => onUpdateSetting('text', e.target.value)}
+                      placeholder="Enter watermark text..."
+                      className="text-field-input"
+                    />
+                  </div>
+
+                  <Select
+                    label="Font Weight"
+                    value={settings.fontWeight || '600'}
+                    onChange={(val) => onUpdateSetting('fontWeight', val)}
+                    options={FONT_WEIGHT_OPTIONS}
+                  />
+
+                  <div className="color-picker-row">
+                    <span>Text Color</span>
+                    <input
+                      type="color"
+                      value={settings.textColor || '#FFFFFF'}
+                      onChange={(e) => onUpdateSetting('textColor', e.target.value)}
+                      className="color-picker-input"
+                      title="Choose text watermark color"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

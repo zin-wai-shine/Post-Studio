@@ -168,13 +168,17 @@ export function ImagePreview({
   // Draw pattern canvas for repeating watermark modes
   useEffect(() => {
     if (!patternCanvasRef.current || wrapDims.width === 0 || wrapDims.height === 0) return;
-    if (settings.style === 'single') return;
 
     const canvas = patternCanvasRef.current;
     canvas.width = wrapDims.width;
     canvas.height = wrapDims.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if (settings.enabled === false || (isGridMode && gridCropSettings?.useWatermark === false) || settings.style === 'single') {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = Math.max(0.05, Math.min(1.0, settings.opacity || 0.80));
@@ -301,7 +305,9 @@ export function ImagePreview({
   }
 
   const isPreviewLocked = Boolean(isGridMode && gridCropSettings?.isPreviewMode);
+  const isWatermarkEnabled = settings.enabled !== false;
   const showWatermark = Boolean(
+    isWatermarkEnabled &&
     (!isGridMode || gridCropSettings?.useWatermark !== false) &&
     ((settings.type === 'image' && watermarkSource) ||
       (settings.type === 'text' && settings.text && settings.text.trim().length > 0))

@@ -74,6 +74,7 @@ export const BORDER_STYLES = [
 ];
 
 export const DEFAULT_WATERMARK_SETTINGS = {
+  enabled: true, // Master toggle: true to render watermark, false to ignore/close watermark
   type: 'image', // 'image' | 'text'
   watermarkId: null,
   text: 'Post Studio',

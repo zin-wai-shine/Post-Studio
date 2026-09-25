@@ -350,7 +350,7 @@ function hexToRgb(hex) {
  * @param {HTMLImageElement|string|null} watermarkImage 
  */
 export async function drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage) {
-  if (!settings || !ctx) return;
+  if (!settings || !ctx || settings.enabled === false) return;
   const hasLogoWatermark = settings.type === 'image' && watermarkImage;
   const hasTextWatermark = settings.type === 'text' && settings.text && settings.text.trim().length > 0;
 
@@ -563,7 +563,9 @@ export async function renderWatermarkedImage({
   }
 
   // Draw watermark layer if active
-  await drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage);
+  if (settings?.enabled !== false) {
+    await drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage);
+  }
 
   // Draw border layer on top of everything (image + watermark)
   if (settings?.border && settings.border.style && settings.border.style !== 'none') {

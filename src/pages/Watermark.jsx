@@ -312,10 +312,12 @@ export function Watermark() {
   };
 
 
-  // Automatically select the first saved watermark if none is active
+  // Automatically select the first saved watermark on initial mount only
+  const hasAutoSelectedInitialRef = useRef(false);
   useEffect(() => {
-    if (!activeWatermark && savedWatermarks.length > 0) {
+    if (!hasAutoSelectedInitialRef.current && !activeWatermark && savedWatermarks.length > 0) {
       setActiveWatermark(savedWatermarks[0]);
+      hasAutoSelectedInitialRef.current = true;
     }
   }, [savedWatermarks, activeWatermark]);
 
@@ -437,6 +439,7 @@ export function Watermark() {
 
   const handleSetTemporaryWatermark = (tempWm) => {
     setActiveWatermark(tempWm);
+    handleUpdateSetting('enabled', true);
     setToast({
       type: 'info',
       message: 'Temporary watermark loaded. It will not be stored in your library.'
@@ -449,6 +452,7 @@ export function Watermark() {
       // Construct preview record to make immediately active
       const preview = URL.createObjectURL(record.blob);
       setActiveWatermark({ ...record, previewUrl: preview });
+      handleUpdateSetting('enabled', true);
       setToast({
         type: 'success',
         message: 'Watermark logo saved to browser IndexedDB.'
@@ -463,6 +467,7 @@ export function Watermark() {
 
   const handleSelectSavedWatermark = (item) => {
     setActiveWatermark(item);
+    handleUpdateSetting('enabled', true);
   };
 
   const handleDeleteSavedWatermark = async (id) => {
@@ -503,6 +508,11 @@ export function Watermark() {
 
   const handleClearWatermark = () => {
     setActiveWatermark(null);
+    handleUpdateSetting('enabled', false);
+    setToast({
+      type: 'info',
+      message: 'Watermark closed / ignored. Clean images and borders only.'
+    });
   };
 
   const handleLoadDemoSamples = async () => {
