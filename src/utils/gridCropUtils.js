@@ -1,6 +1,6 @@
 import { loadImage, parseFilename } from './imageUtils.js';
 import { SOCIAL_GRID_LAYOUTS, FOCUS_POSITIONS } from '../constants/watermark.js';
-import { calculateCropRect, drawWatermarkLayer } from './canvasUtils.js';
+import { calculateCropRect, drawWatermarkLayer, drawBorderLayer } from './canvasUtils.js';
 
 /**
  * Retrieves layout config by id
@@ -143,7 +143,10 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
 
   // Prepare source drawable: composite watermark if enabled
   let sourceDrawable = img;
-  if (useWatermark && watermarkSettings && (watermarkImage || (watermarkSettings.type === 'text' && watermarkSettings.text))) {
+  const hasWatermark = Boolean(useWatermark && watermarkSettings && (watermarkImage || (watermarkSettings.type === 'text' && watermarkSettings.text)));
+  const hasBorder = Boolean(watermarkSettings?.border && watermarkSettings.border.style && watermarkSettings.border.style !== 'none');
+
+  if (hasWatermark || hasBorder) {
     try {
       const compositeCanvas = document.createElement('canvas');
       compositeCanvas.width = naturalWidth;
@@ -151,11 +154,21 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       const cCtx = compositeCanvas.getContext('2d');
       if (cCtx) {
         cCtx.drawImage(img, 0, 0, naturalWidth, naturalHeight);
-        await drawWatermarkLayer(cCtx, naturalWidth, naturalHeight, watermarkSettings, watermarkImage);
+        if (hasWatermark) {
+          await drawWatermarkLayer(cCtx, naturalWidth, naturalHeight, watermarkSettings, watermarkImage);
+        }
+        if (hasBorder) {
+          const scale = naturalWidth / 1080;
+          const scaledBorder = {
+            ...watermarkSettings.border,
+            size: Math.max(1, Math.round((watermarkSettings.border.size || 12) * scale))
+          };
+          drawBorderLayer(cCtx, naturalWidth, naturalHeight, scaledBorder);
+        }
         sourceDrawable = compositeCanvas;
       }
     } catch (wmErr) {
-      console.warn('Failed to composite watermark onto grid source:', wmErr);
+      console.warn('Failed to composite watermark/border onto grid source:', wmErr);
     }
   }
 

@@ -8,7 +8,7 @@ import { SavedWatermarks } from './SavedWatermarks';
 import { ExportControls } from './ExportControls';
 import { CropControls } from './CropControls';
 import { InfoTooltip } from '../common/Tooltip';
-import { WATERMARK_STYLES } from '../../constants/watermark';
+import { WATERMARK_STYLES, BORDER_STYLES } from '../../constants/watermark';
 import './WatermarkControls.css';
 
 const FONT_WEIGHT_OPTIONS = [
@@ -37,6 +37,7 @@ export function WatermarkControls({
   activeImage,
   onUpdateSetting,
   onUpdatePatternSetting,
+  onUpdateBorderSetting,
   onSetPositionPreset,
   onUpdateCropSetting,
   onUpdateGridCropSetting,
@@ -399,6 +400,94 @@ export function WatermarkControls({
               defaultValue={0}
               onReset={(val) => onUpdateSetting('rotation', val)}
             />
+
+            <div className="border-section-divider" />
+
+            <div className="section-label-row">
+              <div className="section-label">Image Frame / Border</div>
+              <InfoTooltip
+                text="Add an architectural framing border that visually merges with your Dot logo aesthetic."
+                position="bottom-right"
+              />
+            </div>
+
+            <Select
+              label="Border Style"
+              value={settings.border?.style || 'none'}
+              onChange={(val) => onUpdateBorderSetting?.('style', val)}
+              options={BORDER_STYLES}
+            />
+
+            {settings.border?.style && settings.border.style !== 'none' && (
+              <div className="border-controls-wrap">
+                <Slider
+                  label="Border Width"
+                  value={settings.border?.size ?? 12}
+                  onChange={(val) => onUpdateBorderSetting?.('size', val)}
+                  min={2}
+                  max={60}
+                  step={1}
+                  unit="px"
+                  defaultValue={12}
+                  onReset={(val) => onUpdateBorderSetting?.('size', val)}
+                />
+
+                <div className="color-picker-row border-color-picker-row">
+                  <span className="color-picker-label">Border Color</span>
+                  <div className="border-color-actions">
+                    <input
+                      type="color"
+                      value={settings.border?.color || '#C0392B'}
+                      onChange={(e) => onUpdateBorderSetting?.('color', e.target.value)}
+                      className="color-picker-input"
+                      title="Choose border color"
+                    />
+                    <div className="border-color-presets">
+                      <button
+                        type="button"
+                        className="border-preset-chip dot-crimson"
+                        onClick={() => onUpdateBorderSetting?.('color', '#C0392B')}
+                        title="Dot Crimson (#C0392B)"
+                      >
+                        <span className="preset-color-dot" style={{ backgroundColor: '#C0392B' }} />
+                        Logo Red
+                      </button>
+                      <button
+                        type="button"
+                        className="border-preset-chip"
+                        onClick={() => onUpdateBorderSetting?.('color', '#FFFFFF')}
+                        title="Pure White"
+                      >
+                        <span className="preset-color-dot" style={{ backgroundColor: '#FFFFFF' }} />
+                        White
+                      </button>
+                      <button
+                        type="button"
+                        className="border-preset-chip"
+                        onClick={() => onUpdateBorderSetting?.('color', '#181817')}
+                        title="Dark Obsidian"
+                      >
+                        <span className="preset-color-dot" style={{ backgroundColor: '#181817' }} />
+                        Dark
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <label className="border-shadow-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={settings.border?.shadowEnabled ?? true}
+                    onChange={(e) => onUpdateBorderSetting?.('shadowEnabled', e.target.checked)}
+                    className="border-shadow-checkbox"
+                  />
+                  <div className="border-shadow-toggle-text">
+                    <span className="border-shadow-title">Dot Glow Drop Shadow</span>
+                    <span className="border-shadow-desc">Deep crimson atmospheric glow inspired by the Dot logo</span>
+                  </div>
+                </label>
+              </div>
+            )}
           </div>
         )}
 

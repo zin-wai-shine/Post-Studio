@@ -199,6 +199,28 @@ export function useImageFiles() {
     );
   }, []);
 
+  // Update a border setting for an individual customized image
+  const updateImageBorderSetting = useCallback((id, key, value) => {
+    if (!id) return;
+    setImages((prev) =>
+      prev.map((img) => {
+        if (img.id !== id) return img;
+        const currentSettings = img.customSettings || {};
+        return {
+          ...img,
+          hasCustomOverrides: true,
+          customSettings: {
+            ...currentSettings,
+            border: {
+              ...(currentSettings.border || {}),
+              [key]: value
+            }
+          }
+        };
+      })
+    );
+  }, []);
+
   // Update a crop setting for an individual customized image
   const updateImageCropSetting = useCallback((id, key, value) => {
     if (!id) return;
@@ -259,6 +281,7 @@ export function useImageFiles() {
     enableImageCustomOverrides,
     updateImageCustomSetting,
     updateImagePatternSetting,
+    updateImageBorderSetting,
     updateImageCropSetting,
     clearImageCustomOverrides,
     isProcessingUpload

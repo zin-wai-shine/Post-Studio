@@ -199,6 +199,149 @@ export function calculateCropRect(srcWidth, srcHeight, targetWidth, targetHeight
 }
 
 /**
+ * Draws a styled border around the full canvas, inspired by the Dot logo aesthetic.
+ * Supports: solid, double, corner-accent, groove, ribbon — all with optional crimson shadow.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} canvasWidth
+ * @param {number} canvasHeight
+ * @param {Object} borderSettings  { style, size, color, shadowEnabled }
+ */
+export function drawBorderLayer(ctx, canvasWidth, canvasHeight, borderSettings) {
+  if (!borderSettings || borderSettings.style === 'none') return;
+
+  const {
+    style = 'solid',
+    size = 12,
+    color = '#C0392B',
+    shadowEnabled = true
+  } = borderSettings;
+
+  ctx.save();
+
+  // Logo-inspired drop shadow — deep crimson, soft spread
+  if (shadowEnabled) {
+    ctx.shadowColor = 'rgba(139, 0, 0, 0.65)';
+    ctx.shadowBlur = size * 2.5;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }
+
+  ctx.strokeStyle = color;
+  ctx.lineCap = 'square';
+  ctx.lineJoin = 'miter';
+
+  const half = size / 2;
+
+  switch (style) {
+    case 'solid': {
+      ctx.lineWidth = size;
+      ctx.strokeRect(half, half, canvasWidth - size, canvasHeight - size);
+      break;
+    }
+
+    case 'double': {
+      const gap = Math.max(2, Math.round(size * 0.55));
+      const outer = Math.max(1, Math.round(size * 0.35));
+      const inner = Math.max(1, Math.round(size * 0.35));
+      // Outer line
+      ctx.lineWidth = outer;
+      ctx.strokeRect(outer / 2, outer / 2, canvasWidth - outer, canvasHeight - outer);
+      // Inner line
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = inner;
+      const inset = outer + gap + inner / 2;
+      ctx.strokeRect(inset, inset, canvasWidth - inset * 2, canvasHeight - inset * 2);
+      break;
+    }
+
+    case 'corner-accent': {
+      // Architectural corner lines — channels cut into the frame like building facades
+      const armLen = Math.min(canvasWidth, canvasHeight) * 0.14;
+      const lw = size;
+      ctx.lineWidth = lw;
+      const corners = [
+        // [startX, startY, endX1, endY1, endX2, endY2]   (L-shape)
+        [half, half,                       half + armLen, half,            half, half + armLen],           // TL
+        [canvasWidth - half, half,          canvasWidth - half - armLen, half, canvasWidth - half, half + armLen], // TR
+        [half, canvasHeight - half,         half + armLen, canvasHeight - half, half, canvasHeight - half - armLen], // BL
+        [canvasWidth - half, canvasHeight - half, canvasWidth - half - armLen, canvasHeight - half, canvasWidth - half, canvasHeight - half - armLen] // BR
+      ];
+      corners.forEach(([sx, sy, ex1, ey1, ex2, ey2]) => {
+        ctx.beginPath();
+        ctx.moveTo(ex1, ey1);
+        ctx.lineTo(sx, sy);
+        ctx.lineTo(ex2, ey2);
+        ctx.stroke();
+      });
+      break;
+    }
+
+    case 'groove': {
+      // Layered inset groove — two tones emulating the logo's 3-D depth effect
+      const dark = size * 0.55;
+      const light = size * 0.45;
+      // Dark outer groove
+      ctx.lineWidth = dark;
+      ctx.strokeStyle = darkenHex(color, 0.45);
+      ctx.strokeRect(dark / 2, dark / 2, canvasWidth - dark, canvasHeight - dark);
+      // Light inner groove
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = light;
+      ctx.strokeStyle = lightenHex(color, 0.30);
+      const inset2 = dark + light / 2;
+      ctx.strokeRect(inset2, inset2, canvasWidth - inset2 * 2, canvasHeight - inset2 * 2);
+      break;
+    }
+
+    case 'ribbon': {
+      // Thick bold band, fills with solid color — ribbon effect
+      ctx.lineWidth = size * 1.5;
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.9;
+      ctx.strokeRect((size * 1.5) / 2, (size * 1.5) / 2,
+        canvasWidth - size * 1.5, canvasHeight - size * 1.5);
+      // Thin inner accent line
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = Math.max(1, size * 0.2);
+      ctx.strokeStyle = lightenHex(color, 0.4);
+      const ribInset = size * 1.5 + size * 0.2 / 2 + size * 0.25;
+      ctx.strokeRect(ribInset, ribInset, canvasWidth - ribInset * 2, canvasHeight - ribInset * 2);
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  ctx.restore();
+}
+
+/** Darken a hex color by a ratio (0..1) */
+function darkenHex(hex, ratio) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgb(${Math.round(r * (1 - ratio))},${Math.round(g * (1 - ratio))},${Math.round(b * (1 - ratio))})`;
+}
+
+/** Lighten a hex color by a ratio (0..1) */
+function lightenHex(hex, ratio) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgb(${Math.round(r + (255 - r) * ratio)},${Math.round(g + (255 - g) * ratio)},${Math.round(b + (255 - b) * ratio)})`;
+}
+
+function hexToRgb(hex) {
+  const clean = hex.replace('#', '');
+  const full = clean.length === 3
+    ? clean.split('').map(c => c + c).join('')
+    : clean;
+  const num = parseInt(full, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+/**
  * Draws the watermark (image or text) layer onto any canvas context
  * @param {CanvasRenderingContext2D} ctx 
  * @param {number} canvasWidth 
@@ -421,6 +564,16 @@ export async function renderWatermarkedImage({
 
   // Draw watermark layer if active
   await drawWatermarkLayer(ctx, canvasWidth, canvasHeight, settings, watermarkImage);
+
+  // Draw border layer on top of everything (image + watermark)
+  if (settings?.border && settings.border.style && settings.border.style !== 'none') {
+    const scale = canvasWidth / 1080;
+    const scaledBorder = {
+      ...settings.border,
+      size: Math.max(1, Math.round((settings.border.size || 12) * scale))
+    };
+    drawBorderLayer(ctx, canvasWidth, canvasHeight, scaledBorder);
+  }
 
 
   // 4. Convert canvas to Blob with dataURL fallback

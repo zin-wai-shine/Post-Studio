@@ -64,6 +64,15 @@ export const DEFAULT_CROP_SETTINGS = {
 };
 
 
+export const BORDER_STYLES = [
+  { id: 'none', label: 'None' },
+  { id: 'solid', label: 'Solid' },
+  { id: 'double', label: 'Double Line' },
+  { id: 'corner-accent', label: 'Corner Accent' },
+  { id: 'groove', label: 'Groove Shadow' },
+  { id: 'ribbon', label: 'Ribbon Bold' }
+];
+
 export const DEFAULT_WATERMARK_SETTINGS = {
   type: 'image', // 'image' | 'text'
   watermarkId: null,
@@ -88,7 +97,14 @@ export const DEFAULT_WATERMARK_SETTINGS = {
     rotation: -30,
     scale: 0.12
   },
-  edgePadding: 0.03
+  edgePadding: 0.03,
+  // Image border settings
+  border: {
+    style: 'none',       // 'none' | 'solid' | 'double' | 'corner-accent' | 'groove' | 'ribbon'
+    size: 12,            // px (relative to canvas — scaled at export)
+    color: '#C0392B',    // default crimson matching Dot logo
+    shadowEnabled: true  // apply logo-style drop shadow
+  }
 };
 
 export const DEFAULT_EXPORT_SETTINGS = {

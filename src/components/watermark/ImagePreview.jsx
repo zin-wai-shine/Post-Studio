@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { FiImage, FiUploadCloud, FiScissors, FiEye, FiEyeOff } from 'react-icons/fi';
 import { Button } from '../common/Button';
 import { EmptyState } from '../common/EmptyState';
-import { calculateWatermarkDimensions, calculateCropRect } from '../../utils/canvasUtils';
+import { calculateWatermarkDimensions, calculateCropRect, drawBorderLayer } from '../../utils/canvasUtils';
 import { loadImage } from '../../utils/imageUtils';
 import { getLayoutConfig } from '../../utils/gridCropUtils';
 import { FOCUS_POSITIONS } from '../../constants/watermark';
@@ -24,6 +24,7 @@ export function ImagePreview({
   const viewportRef = useRef(null);
   const wrapRef = useRef(null);
   const patternCanvasRef = useRef(null);
+  const borderCanvasRef = useRef(null);
   const [wrapDims, setWrapDims] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ startX: 0, startY: 0, initialLeft: 0, initialTop: 0 });
@@ -253,6 +254,27 @@ export function ImagePreview({
     displayWmWidth,
     displayWmHeight
   ]);
+
+  // Draw border overlay canvas
+  useEffect(() => {
+    if (!borderCanvasRef.current || wrapDims.width === 0 || wrapDims.height === 0) return;
+    const canvas = borderCanvasRef.current;
+    canvas.width = wrapDims.width;
+    canvas.height = wrapDims.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (settings?.border && settings.border.style && settings.border.style !== 'none') {
+      const scale = wrapDims.width / 1080;
+      const scaledBorder = {
+        ...settings.border,
+        size: Math.max(1, Math.round((settings.border.size || 12) * scale))
+      };
+      drawBorderLayer(ctx, wrapDims.width, wrapDims.height, scaledBorder);
+    }
+  }, [wrapDims, settings?.border]);
 
   if (!activeImage) {
     return (
@@ -551,6 +573,12 @@ export function ImagePreview({
               )}
             </div>
           )}
+
+          {/* Frame / Border Preview Overlay */}
+          <canvas
+            ref={borderCanvasRef}
+            className="border-preview-canvas"
+          />
         </div>
       </div>
     </div>

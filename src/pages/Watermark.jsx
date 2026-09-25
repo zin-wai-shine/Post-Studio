@@ -38,6 +38,7 @@ export function Watermark() {
     enableImageCustomOverrides,
     updateImageCustomSetting,
     updateImagePatternSetting,
+    updateImageBorderSetting,
     updateImageCropSetting,
     clearImageCustomOverrides,
     isProcessingUpload
@@ -51,6 +52,7 @@ export function Watermark() {
     exportSettings,
     updateSetting,
     updatePatternSetting,
+    updateBorderSetting,
     updateCropSetting,
     updateGridCropSetting,
     setCropPreset,
@@ -139,6 +141,10 @@ export function Watermark() {
         pattern: {
           ...settings.pattern,
           ...(activeImage.customSettings?.pattern || {})
+        },
+        border: {
+          ...settings.border,
+          ...(activeImage.customSettings?.border || {})
         }
       }
     : settings;
@@ -171,6 +177,14 @@ export function Watermark() {
       updateImagePatternSetting(activeImage.id, key, val);
     } else {
       updatePatternSetting(key, val);
+    }
+  };
+
+  const handleUpdateBorderSetting = (key, val) => {
+    if (activeImage?.hasCustomOverrides) {
+      updateImageBorderSetting(activeImage.id, key, val);
+    } else {
+      updateBorderSetting(key, val);
     }
   };
 
@@ -276,6 +290,8 @@ export function Watermark() {
       Object.entries(target.customSettings).forEach(([k, v]) => {
         if (k === 'pattern') {
           Object.entries(v).forEach(([pk, pv]) => updatePatternSetting(pk, pv));
+        } else if (k === 'border') {
+          Object.entries(v).forEach(([bk, bv]) => updateBorderSetting(bk, bv));
         } else {
           updateSetting(k, v);
         }
@@ -794,6 +810,7 @@ const HEADER_FORMAT_OPTIONS = [
         activeImage={activeImage}
         onUpdateSetting={handleUpdateSetting}
         onUpdatePatternSetting={handleUpdatePatternSetting}
+        onUpdateBorderSetting={handleUpdateBorderSetting}
         onSetPositionPreset={handleSetPositionPreset}
         onUpdateCropSetting={handleUpdateCropSetting}
         onUpdateGridCropSetting={updateGridCropSetting}

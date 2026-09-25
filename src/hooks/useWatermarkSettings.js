@@ -20,7 +20,8 @@ export function useWatermarkSettings() {
           ...DEFAULT_WATERMARK_SETTINGS,
           ...parsed,
           position: { ...DEFAULT_WATERMARK_SETTINGS.position, ...(parsed.position || {}) },
-          pattern: { ...DEFAULT_WATERMARK_SETTINGS.pattern, ...(parsed.pattern || {}) }
+          pattern: { ...DEFAULT_WATERMARK_SETTINGS.pattern, ...(parsed.pattern || {}) },
+          border: { ...DEFAULT_WATERMARK_SETTINGS.border, ...(parsed.border || {}) }
         };
       }
     } catch (e) {
@@ -108,6 +109,16 @@ export function useWatermarkSettings() {
       ...prev,
       pattern: {
         ...prev.pattern,
+        [key]: value
+      }
+    }));
+  }, []);
+
+  const updateBorderSetting = useCallback((key, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      border: {
+        ...prev.border,
         [key]: value
       }
     }));
@@ -205,6 +216,7 @@ export function useWatermarkSettings() {
     exportSettings,
     updateSetting,
     updatePatternSetting,
+    updateBorderSetting,
     updateCropSetting,
     updateGridCropSetting,
     setCropPreset,
