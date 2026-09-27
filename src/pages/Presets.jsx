@@ -96,6 +96,23 @@ export function Presets() {
     }
   };
 
+  const addMoreInputRef = useRef(null);
+
+  const handleFilesSelected = async (fileList) => {
+    try {
+      const added = await addImages(fileList);
+      if (added && added.length > 0) {
+        setToast({
+          type: 'success',
+          message: `Loaded ${added.length} image${added.length > 1 ? 's' : ''}.`
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ type: 'error', message: err.message || 'Failed to upload images.' });
+    }
+  };
+
   // Register reset workspace
   useEffect(() => {
     if (registerResetHandler) {
@@ -463,6 +480,37 @@ export function Presets() {
                 </div>
               );
             })}
+
+            <button
+              type="button"
+              className="presets-thumb-item"
+              onClick={() => addMoreInputRef.current?.click()}
+              title="Add more photos"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'var(--color-card)',
+                border: '1px dashed var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                cursor: 'pointer'
+              }}
+            >
+              <FiPlus size={20} />
+            </button>
+            <input
+              type="file"
+              ref={addMoreInputRef}
+              multiple
+              accept="image/*,.jpg,.jpeg,.png,.webp,.avif"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files) {
+                  handleFilesSelected(e.target.files);
+                  e.target.value = '';
+                }
+              }}
+            />
           </div>
 
           <div className="presets-strip-info">
@@ -480,9 +528,10 @@ export function Presets() {
           <div className="presets-empty-container">
             <div className="presets-upload-box">
               <ImageUploader
-                onImagesSelected={addImages}
-                isProcessing={isProcessingUpload}
-                disabled={isProcessingUpload}
+                onFilesSelected={handleFilesSelected}
+                onImagesSelected={handleFilesSelected}
+                onLoadSample={handleLoadDemoSamples}
+                loading={isProcessingUpload}
               />
             </div>
 

@@ -5,6 +5,7 @@ import './ImageUploader.css';
 
 export function ImageUploader({
   onFilesSelected,
+  onImagesSelected,
   loading = false,
   compact = false,
   onLoadSample,
@@ -12,6 +13,13 @@ export function ImageUploader({
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  const notifyFilesSelected = (files) => {
+    const handler = onFilesSelected || onImagesSelected;
+    if (typeof handler === 'function') {
+      handler(files);
+    }
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -32,9 +40,9 @@ export function ImageUploader({
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       if (isSingleImageMode) {
         // Take only the first file
-        onFilesSelected([e.dataTransfer.files[0]]);
+        notifyFilesSelected([e.dataTransfer.files[0]]);
       } else {
-        onFilesSelected(e.dataTransfer.files);
+        notifyFilesSelected(e.dataTransfer.files);
       }
     }
   };
@@ -48,9 +56,9 @@ export function ImageUploader({
   const handleInputChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       if (isSingleImageMode) {
-        onFilesSelected([e.target.files[0]]);
+        notifyFilesSelected([e.target.files[0]]);
       } else {
-        onFilesSelected(e.target.files);
+        notifyFilesSelected(e.target.files);
       }
       // Reset value so identical files can be uploaded again if needed
       e.target.value = '';
