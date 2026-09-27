@@ -19,7 +19,9 @@ export function ImagePreview({
   gridCropSettings,
   onUpdateGridCropSetting,
   onSliceImage,
-  isSlicing = false
+  isSlicing = false,
+  hideTopbar = false,
+  className = ''
 }) {
   const viewportRef = useRef(null);
   const wrapRef = useRef(null);
@@ -38,8 +40,9 @@ export function ImagePreview({
     if (!viewportRef.current || !activeImage) return;
 
     const viewportRect = viewportRef.current.getBoundingClientRect();
-    const availableWidth = viewportRect.width - 32;
-    const availableHeight = viewportRect.height - 32;
+    const pad = hideTopbar ? 12 : 32;
+    const availableWidth = viewportRect.width - pad;
+    const availableHeight = viewportRect.height - pad;
 
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
@@ -316,74 +319,76 @@ export function ImagePreview({
   const focusObj = FOCUS_POSITIONS[gridCropSettings?.gridFocus || 'center'] || FOCUS_POSITIONS.center;
 
   return (
-    <div className="preview-container">
-      <div className="preview-topbar">
-        <span className="preview-filename" title={activeImage.name}>
-          {activeImage.name}
-        </span>
-        <div className="preview-meta">
-          {activeImage.isGridTile ? (
-            <span className="meta-badge grid-active-badge">
-              Grid Tile {activeImage.tileIndex}/{activeImage.totalTiles} ({activeImage.tileLabel})
-            </span>
-          ) : isGridMode && activeGridLayout ? (
-            <>
-              {isPreviewLocked ? (
-                <>
-                  <span className="meta-badge preview-mode-active-badge">
-                    Clean Preview (Guides Hidden)
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    iconLeft={<FiEyeOff size={12} />}
-                    onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('isPreviewMode', false)}
-                    title="Exit clean preview and show crop guides"
-                  >
-                    Exit Preview
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="meta-badge grid-active-badge">
-                    Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
-                  </span>
-                  <Button
-                    variant="primary"
-                    size="xs"
-                    iconLeft={<FiScissors size={12} />}
-                    loading={isSlicing}
-                    onClick={onSliceImage}
-                    title="Slice into tiles and add to workspace"
-                  >
-                    {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
-                  </Button>
-                </>
-              )}
-            </>
-          ) : isCropActive ? (
-            <>
-              <span className="meta-badge" title="Original Dimensions">
-                Orig: {activeImage.width} × {activeImage.height} px
+    <div className={`preview-container ${hideTopbar ? 'preview-container-seamless' : ''} ${className}`.trim()}>
+      {!hideTopbar && (
+        <div className="preview-topbar">
+          <span className="preview-filename" title={activeImage.name}>
+            {activeImage.name}
+          </span>
+          <div className="preview-meta">
+            {activeImage.isGridTile ? (
+              <span className="meta-badge grid-active-badge">
+                Grid Tile {activeImage.tileIndex}/{activeImage.totalTiles} ({activeImage.tileLabel})
               </span>
-              <span className="meta-badge crop-active-badge" title="Standardized Dimensions">
-                Standardized: {cropSettings.width} × {cropSettings.height} px ({cropSettings.preset !== 'custom' ? cropSettings.preset : 'Custom'})
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="meta-badge">
-                {activeImage.width} × {activeImage.height} px
-              </span>
-              {activeImage.aspectRatio && (
-                <span className="meta-badge">
-                  {activeImage.aspectRatio.toFixed(2)}:1
+            ) : isGridMode && activeGridLayout ? (
+              <>
+                {isPreviewLocked ? (
+                  <>
+                    <span className="meta-badge preview-mode-active-badge">
+                      Clean Preview (Guides Hidden)
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      iconLeft={<FiEyeOff size={12} />}
+                      onClick={() => onUpdateGridCropSetting && onUpdateGridCropSetting('isPreviewMode', false)}
+                      title="Exit clean preview and show crop guides"
+                    >
+                      Exit Preview
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="meta-badge grid-active-badge">
+                      Grid: {activeGridLayout.name} ({activeGridLayout.tileCount} Tiles)
+                    </span>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      iconLeft={<FiScissors size={12} />}
+                      loading={isSlicing}
+                      onClick={onSliceImage}
+                      title="Slice into tiles and add to workspace"
+                    >
+                      {isSlicing ? 'Slicing...' : `Slice (${activeGridLayout.tileCount})`}
+                    </Button>
+                  </>
+                )}
+              </>
+            ) : isCropActive ? (
+              <>
+                <span className="meta-badge" title="Original Dimensions">
+                  Orig: {activeImage.width} × {activeImage.height} px
                 </span>
-              )}
-            </>
-          )}
+                <span className="meta-badge crop-active-badge" title="Standardized Dimensions">
+                  Standardized: {cropSettings.width} × {cropSettings.height} px ({cropSettings.preset !== 'custom' ? cropSettings.preset : 'Custom'})
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="meta-badge">
+                  {activeImage.width} × {activeImage.height} px
+                </span>
+                {activeImage.aspectRatio && (
+                  <span className="meta-badge">
+                    {activeImage.aspectRatio.toFixed(2)}:1
+                  </span>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="preview-viewport" ref={viewportRef}>
         <div

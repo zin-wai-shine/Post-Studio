@@ -132,10 +132,22 @@ export function PresetEditorCard({
             watermarkSource={preset.watermarkPreviewUrl || preset.watermarkDataUrl || null}
             settings={preset.settings}
             cropSettings={preset.cropSettings}
+            hideTopbar={true}
+            onCustomPosition={(x, y) => {
+              if (onUpdatePresetSettings) {
+                onUpdatePresetSettings(preset.id, {
+                  settings: {
+                    ...preset.settings,
+                    position: { preset: 'custom', x, y }
+                  }
+                });
+              }
+            }}
           />
         ) : (
-          <div style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
-            Upload images to preview
+          <div className="preset-card-no-img">
+            <span>No image selected</span>
+            <span style={{ fontSize: '11px', opacity: 0.7 }}>Upload or select an image above</span>
           </div>
         )}
       </div>

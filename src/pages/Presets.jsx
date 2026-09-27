@@ -678,6 +678,8 @@ export function Presets() {
         onSave={handleSavePresetModal}
         initialData={editingPreset}
         savedWatermarks={savedWatermarks}
+        activeImage={activeImage}
+        images={images}
       />
 
       {/* Batch Processing Modal */}
