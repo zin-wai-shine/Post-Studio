@@ -653,10 +653,18 @@ export async function renderWatermarkedImage({
     canvas.toBlob(
       (blob) => {
         if (blob) {
+          try {
+            canvas.width = 0;
+            canvas.height = 0;
+          } catch (e) {}
           resolve(blob);
         } else {
           try {
             const dataUrl = canvas.toDataURL(mimeType, exportOptions.quality ?? 0.92);
+            try {
+              canvas.width = 0;
+              canvas.height = 0;
+            } catch (e) {}
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || mimeType;
             const bstr = atob(arr[1]);
@@ -667,6 +675,10 @@ export async function renderWatermarkedImage({
             }
             resolve(new Blob([u8arr], { type: mime }));
           } catch (fallbackErr) {
+            try {
+              canvas.width = 0;
+              canvas.height = 0;
+            } catch (e) {}
             reject(new Error(`Failed to generate image Blob from canvas: ${fallbackErr.message}`));
           }
         }

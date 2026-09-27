@@ -5,9 +5,18 @@ import './ProcessingModal.css';
 
 export function ProcessingModal({
   isOpen,
-  progress = { current: 0, total: 0, percentage: 0, currentFilename: '' },
+  progress,
+  current,
+  total,
+  percentage,
+  currentFilename,
   onCancel
 }) {
+  const currentCount = progress?.current ?? current ?? 0;
+  const totalCount = progress?.total ?? total ?? 0;
+  const pct = progress?.percentage ?? percentage ?? (totalCount > 0 ? Math.round((currentCount / totalCount) * 100) : 0);
+  const fileText = progress?.currentFilename ?? currentFilename ?? '';
+
   return (
     <Modal
       isOpen={isOpen}
@@ -32,22 +41,20 @@ export function ProcessingModal({
       <div className="processing-wrap">
         <div className="processing-status-row">
           <span className="processing-count">
-            Downloading {progress.current} of {progress.total}
+            Downloading {currentCount} of {totalCount}
           </span>
-          <span className="processing-percent">{progress.percentage}%</span>
+          <span className="processing-percent">{pct}%</span>
         </div>
 
         <div className="processing-bar-bg">
           <div
             className="processing-bar-fill"
-            style={{ width: `${progress.percentage}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
           />
         </div>
 
         <div className="processing-file-row">
-          {progress.currentFilename
-            ? `Downloading: ${progress.currentFilename}`
-            : 'Rendering high-resolution images...'}
+          {fileText || 'Rendering high-resolution images...'}
         </div>
       </div>
     </Modal>

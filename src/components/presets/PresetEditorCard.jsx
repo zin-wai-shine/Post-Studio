@@ -10,10 +10,13 @@ export function PresetEditorCard({
   preset,
   activeImage,
   images = [],
+  selectedStylesCount = 1,
+  watermarkSource = null,
   onEditPreset,
   onUpdatePresetSettings,
   onDownloadSingle,
   onDownloadAll,
+  onDownloadThisPreset,
   isDownloading = false,
   downloadProgress = null
 }) {
@@ -129,7 +132,7 @@ export function PresetEditorCard({
         {activeImage ? (
           <ImagePreview
             activeImage={activeImage}
-            watermarkSource={preset.watermarkPreviewUrl || preset.watermarkDataUrl || null}
+            watermarkSource={watermarkSource || preset.watermarkPreviewUrl || preset.watermarkDataUrl || null}
             settings={preset.settings}
             cropSettings={preset.cropSettings}
             hideTopbar={true}
@@ -172,8 +175,22 @@ export function PresetEditorCard({
             disabled={images.length === 0 || isDownloading}
             icon={<FiDownload size={14} />}
           >
-            Download All ({images.length})
+            {selectedStylesCount > 1
+              ? `Download All (${selectedStylesCount} Styles × ${images.length})`
+              : `Download All (${images.length})`}
           </Button>
+
+          {selectedStylesCount > 1 && onDownloadThisPreset && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => onDownloadThisPreset(preset)}
+              disabled={images.length === 0 || isDownloading}
+              title={`Download only ${preset.prefix} (${images.length} images)`}
+            >
+              Only {preset.prefix} ({images.length})
+            </Button>
+          )}
         </div>
 
         {/* Progress Bar when downloading this preset */}

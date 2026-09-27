@@ -250,6 +250,18 @@ export function Presets() {
     }
   };
 
+  // Helper to resolve active watermark source from savedWatermarks (handles expired blob URLs)
+  const resolveWatermarkForPreset = (preset) => {
+    if (preset.watermarkType !== 'image') return null;
+    if (preset.watermarkId && savedWatermarks && savedWatermarks.length > 0) {
+      const found = savedWatermarks.find((w) => w.id === preset.watermarkId);
+      if (found) {
+        return found.previewUrl || (found.blob ? URL.createObjectURL(found.blob) : found.dataUrl) || null;
+      }
+    }
+    return preset.watermarkPreviewUrl || preset.watermarkDataUrl || null;
+  };
+
   // Download All Images for One Preset
   const handleDownloadAllForPreset = async (preset) => {
     if (images.length === 0) return;
@@ -259,14 +271,23 @@ export function Presets() {
       current: 0,
       total: images.length,
       percentage: 0,
-      currentFilename: `Starting ${preset.prefix} export...`
+      currentFilename: `Starting ${preset.prefix || 'BOL'} export...`
     });
 
     try {
+      const watermarkSource = resolveWatermarkForPreset(preset);
       await batchExportPresetImages({
         images,
         preset,
-        onProgress: (prog) => setBatchProgress(prog),
+        watermarkSource,
+        onProgress: (prog) => {
+          setBatchProgress({
+            current: prog.current,
+            total: prog.total,
+            percentage: prog.percentage,
+            currentFilename: `[${preset.prefix}] ${prog.currentFilename}`
+          });
+        },
         isCancelledRef
       });
 
@@ -299,26 +320,40 @@ export function Presets() {
     setIsProcessingBatch(true);
 
     const totalOps = images.length * selectedPresets.length;
-    let completedOps = 0;
+
+    setBatchProgress({
+      current: 0,
+      total: totalOps,
+      percentage: 0,
+      currentFilename: `Starting download of ${totalOps} images (${selectedPresets.length} styles × ${images.length} photos)...`
+    });
 
     try {
-      for (const preset of selectedPresets) {
+      for (let pIdx = 0; pIdx < selectedPresets.length; pIdx++) {
         if (isCancelledRef.current) break;
+        const preset = selectedPresets[pIdx];
+        const watermarkSource = resolveWatermarkForPreset(preset);
 
         await batchExportPresetImages({
           images,
           preset,
+          watermarkSource,
           onProgress: (prog) => {
-            completedOps++;
+            const currentTotal = pIdx * images.length + prog.current;
             setBatchProgress({
-              current: completedOps,
+              current: currentTotal,
               total: totalOps,
-              percentage: Math.round((completedOps / totalOps) * 100),
-              currentFilename: `[${preset.prefix}] ${prog.currentFilename}`
+              percentage: Math.round((currentTotal / totalOps) * 100),
+              currentFilename: `[${preset.prefix} • Style ${pIdx + 1}/${selectedPresets.length}] ${prog.currentFilename}`
             });
           },
           isCancelledRef
         });
+
+        // Small pause between preset style batches so browser download manager queues smoothly
+        if (!isCancelledRef.current && pIdx < selectedPresets.length - 1) {
+          await new Promise((res) => setTimeout(res, 450));
+        }
       }
 
       if (!isCancelledRef.current) {
@@ -383,7 +418,7 @@ export function Presets() {
     return () => {
       if (setHeaderActions) setHeaderActions(null);
     };
-  }, [setHeaderActions, images.length, selectedPresets.length, isProcessingBatch]);
+  }, [setHeaderActions, images.length, selectedPresets, isProcessingBatch]);
 
   return (
     <div className="presets-page">
@@ -660,11 +695,15 @@ export function Presets() {
                 preset={preset}
                 activeImage={activeImage}
                 images={images}
+                selectedStylesCount={selectedPresets.length}
+                watermarkSource={resolveWatermarkForPreset(preset)}
                 onEditPreset={handleEditPreset}
                 onUpdatePresetSettings={handleUpdatePresetSettings}
                 onDownloadSingle={handleDownloadSingle}
-                onDownloadAll={handleDownloadAllForPreset}
+                onDownloadAll={selectedPresets.length > 1 ? handleDownloadAllSelectedPresets : () => handleDownloadAllForPreset(preset)}
+                onDownloadThisPreset={() => handleDownloadAllForPreset(preset)}
                 isDownloading={isProcessingBatch}
+                downloadProgress={batchProgress}
               />
             ))}
           </div>
@@ -685,8 +724,9 @@ export function Presets() {
       {/* Batch Processing Modal */}
       <ProcessingModal
         isOpen={isProcessingBatch}
+        progress={batchProgress}
         current={batchProgress?.current || 0}
-        total={batchProgress?.total || 1}
+        total={batchProgress?.total || (selectedPresets.length * images.length)}
         percentage={batchProgress?.percentage || 0}
         currentFilename={batchProgress?.currentFilename || 'Processing...'}
         onCancel={handleCancelExport}

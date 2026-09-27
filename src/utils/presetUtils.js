@@ -121,13 +121,25 @@ export async function batchExportPresetImages({
       });
     }
 
-    const blob = await renderWatermarkedImage({
-      sourceImage: item.file || item.previewUrl,
-      watermarkImage: effectiveWatermark,
-      settings: preset.settings,
-      cropSettings: preset.cropSettings,
-      exportOptions: preset.exportSettings
-    });
+    let blob;
+    try {
+      blob = await renderWatermarkedImage({
+        sourceImage: item.file || item.previewUrl,
+        watermarkImage: effectiveWatermark,
+        settings: preset.settings,
+        cropSettings: preset.cropSettings,
+        exportOptions: preset.exportSettings
+      });
+    } catch (renderErr) {
+      console.warn(`Render with watermark failed for ${filename}, attempting text/clean fallback:`, renderErr);
+      blob = await renderWatermarkedImage({
+        sourceImage: item.file || item.previewUrl,
+        watermarkImage: null,
+        settings: { ...preset.settings, type: 'text' },
+        cropSettings: preset.cropSettings,
+        exportOptions: preset.exportSettings
+      });
+    }
 
     if (isCancelledRef?.current) {
       throw new Error('Export cancelled by user.');
@@ -135,7 +147,7 @@ export async function batchExportPresetImages({
 
     triggerDownload(blob, filename);
 
-    // Stagger downloads by 320ms so browser download manager doesn't drop requests
-    await new Promise((res) => setTimeout(res, 320));
+    // Stagger downloads by 380ms so browser download manager doesn't drop requests
+    await new Promise((res) => setTimeout(res, 380));
   }
 }

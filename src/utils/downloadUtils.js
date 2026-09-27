@@ -36,7 +36,7 @@ export function triggerDownload(blob, filename) {
       } catch (e) {
         // ignore
       }
-    }, 15000);
+    }, 2500);
   } catch (err) {
     console.warn('Direct anchor download failed, falling back to FileSaver:', err);
     try {
