@@ -822,4 +822,130 @@
   opacity: 0.75;
 }
 
+/* ─── Font Family Grid ─── */
+.font-family-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.font-family-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: 7px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-subtle);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.font-family-chip:hover {
+  border-color: var(--color-accent);
+  background: rgba(192, 57, 43, 0.07);
+  color: var(--color-accent);
+}
+
+.font-family-chip.active {
+  border-color: var(--color-accent);
+  background: rgba(192, 57, 43, 0.15);
+  color: var(--color-accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+}
+
+/* ─── Text Color Swatches ─── */
+.text-color-section {
+  margin-top: 4px;
+}
+
+.color-swatches-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.color-swatch-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.color-swatch-btn:hover {
+  transform: scale(1.15);
+  border-color: var(--color-accent);
+}
+
+.color-swatch-btn.active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.25);
+  transform: scale(1.1);
+}
+
+.color-swatch-custom {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  cursor: pointer;
+  border: 2px solid var(--color-border) !important;
+  flex-shrink: 0;
+}
+
+/* ─── Quick Layout Preset Buttons ─── */
+.quick-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.quick-layout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 6px;
+  border-radius: 7px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-subtle);
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.quick-layout-btn:hover {
+  border-color: var(--color-accent);
+  background: rgba(192, 57, 43, 0.07);
+  color: var(--color-accent);
+}
+
+.quick-layout-btn.active {
+  border-color: var(--color-accent);
+  background: rgba(192, 57, 43, 0.15);
+  color: var(--color-accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+}
+
+.layout-btn-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
 

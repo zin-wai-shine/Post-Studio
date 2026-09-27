@@ -73,14 +73,44 @@ export const BORDER_STYLES = [
   { id: 'ribbon', label: 'Ribbon Bold' }
 ];
 
+export const REAL_ESTATE_FONTS = [
+  { id: 'Montserrat, sans-serif', name: 'Montserrat', desc: 'Modern & Clean (Top Real Estate)' },
+  { id: 'Cinzel, serif', name: 'Cinzel', desc: 'Luxury Estate / Royal Serif' },
+  { id: 'Playfair Display, serif', name: 'Playfair Display', desc: 'High-End Editorial / Luxury' },
+  { id: 'Inter, sans-serif', name: 'Inter', desc: 'Minimalist Contemporary' },
+  { id: 'Oswald, sans-serif', name: 'Oswald', desc: 'Bold Property Listing Impact' },
+  { id: 'Poppins, sans-serif', name: 'Poppins', desc: 'Geometric Architecture' },
+  { id: 'Pacifico, cursive', name: 'Pacifico', desc: 'Retro Cursive / Signature Accent' },
+  { id: 'Georgia, serif', name: 'Georgia', desc: 'Classic Executive Serif' }
+];
+
+export const WATERMARK_TEXT_COLORS = [
+  { label: 'Pure White', value: '#FFFFFF' },
+  { label: 'Deep Black', value: '#000000' },
+  { label: 'Amber Gold', value: '#D97706' },
+  { label: 'Crimson Red', value: '#C0392B' },
+  { label: 'Cyan Blue', value: '#06B6D4' },
+  { label: 'Emerald Green', value: '#10B981' },
+  { label: 'Purple Accent', value: '#8B5CF6' },
+  { label: 'Bright Yellow', value: '#F59E0B' }
+];
+
+export const QUICK_WATERMARK_LAYOUTS = [
+  { id: 'single-mark', name: 'Single Mark', style: 'single', rotation: 0 },
+  { id: 'top-bottom-0', name: 'Top & Bottom (0°)', style: 'grid', rows: 2, cols: 6, gap: 0.08, shift: false, rotation: 0 },
+  { id: 'top-bottom-45', name: 'Top & Bottom (-45°)', style: 'grid', rows: 2, cols: 6, gap: 0.08, shift: true, rotation: -45 },
+  { id: '5-row-grid-0', name: '5-Row Grid (0°)', style: 'grid', rows: 5, cols: 8, gap: 0.05, shift: false, rotation: 0 },
+  { id: '5-row-cross-45', name: '5-Row Cross (-45°)', style: 'grid', rows: 5, cols: 8, gap: 0.05, shift: true, rotation: -45 }
+];
+
 export const DEFAULT_WATERMARK_SETTINGS = {
   enabled: true, // Master toggle: true to render watermark, false to ignore/close watermark
   type: 'image', // 'image' | 'text'
   watermarkId: null,
   text: 'Post Studio',
-  fontFamily: 'Inter, -apple-system, sans-serif',
-  fontSize: 24,
-  fontWeight: '600',
+  fontFamily: 'Montserrat, sans-serif',
+  fontSize: 28,
+  fontWeight: '700',
   textColor: '#FFFFFF',
   textShadow: true,
   position: {
@@ -90,8 +120,12 @@ export const DEFAULT_WATERMARK_SETTINGS = {
   },
   size: 0.20, // 20% of image width
   opacity: 0.80, // 80%
-  rotation: 0, // degrees
-  style: 'single',
+  rotation: 0, // degrees: -180 to 180
+  style: 'single', // 'single' | 'grid'
+  gridRows: 5,
+  gridCols: 8,
+  gridGap: 0.05,
+  gridShift: true,
   pattern: {
     horizontalGap: 0.15,
     verticalGap: 0.15,

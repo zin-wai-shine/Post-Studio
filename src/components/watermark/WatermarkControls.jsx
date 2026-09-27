@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiImage, FiCrop, FiMove, FiSliders, FiDownload, FiChevronDown, FiChevronUp, FiX } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiImage, FiMove, FiSliders, FiDownload, FiChevronDown, FiChevronUp, FiX, FiGrid } from 'react-icons/fi';
 import { Slider } from '../common/Slider';
 import { Select } from '../common/Select';
 import { PositionGrid } from './PositionGrid';
@@ -7,7 +7,7 @@ import { WatermarkUploader } from './WatermarkUploader';
 import { SavedWatermarks } from './SavedWatermarks';
 import { ExportControls } from './ExportControls';
 import { InfoTooltip } from '../common/Tooltip';
-import { WATERMARK_STYLES, BORDER_STYLES } from '../../constants/watermark';
+import { WATERMARK_STYLES, BORDER_STYLES, REAL_ESTATE_FONTS, WATERMARK_TEXT_COLORS, QUICK_WATERMARK_LAYOUTS } from '../../constants/watermark';
 import './WatermarkControls.css';
 
 const FONT_WEIGHT_OPTIONS = [
@@ -78,7 +78,6 @@ export function WatermarkControls({
   // Putup box is OPEN by default on mobile so user sees the controls clearly
   const [isMobileCollapsed, setIsMobileCollapsed] = useState(false);
 
-  const isSingle = settings.style === 'single';
   const isWatermarkEnabled = settings.enabled !== false;
 
   return (
@@ -309,23 +308,85 @@ export function WatermarkControls({
                     />
                   </div>
 
+                  {/* Font Family — Real Estate Fonts */}
+                  <div className="section-label-row" style={{ marginTop: '10px' }}>
+                    <div className="section-label">Font Style</div>
+                  </div>
+                  <div className="font-family-grid">
+                    {REAL_ESTATE_FONTS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className={`font-family-chip ${settings.fontFamily === f.id ? 'active' : ''}`}
+                        style={{ fontFamily: f.id }}
+                        onClick={() => onUpdateSetting('fontFamily', f.id)}
+                        title={f.desc}
+                      >
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Font Size */}
+                  <Slider
+                    label="Font Size"
+                    value={settings.fontSize || 28}
+                    onChange={(val) => onUpdateSetting('fontSize', val)}
+                    min={10}
+                    max={120}
+                    step={1}
+                    unit="px"
+                    defaultValue={28}
+                    onReset={(val) => onUpdateSetting('fontSize', val)}
+                  />
+
+                  {/* Font Weight */}
                   <Select
                     label="Font Weight"
-                    value={settings.fontWeight || '600'}
+                    value={settings.fontWeight || '700'}
                     onChange={(val) => onUpdateSetting('fontWeight', val)}
                     options={FONT_WEIGHT_OPTIONS}
                   />
 
-                  <div className="color-picker-row">
-                    <span>Text Color</span>
-                    <input
-                      type="color"
-                      value={settings.textColor || '#FFFFFF'}
-                      onChange={(e) => onUpdateSetting('textColor', e.target.value)}
-                      className="color-picker-input"
-                      title="Choose text watermark color"
-                    />
+                  {/* Text Color with quick swatches */}
+                  <div className="text-color-section">
+                    <div className="section-label-row">
+                      <div className="section-label">Text Color</div>
+                    </div>
+                    <div className="color-swatches-row">
+                      {WATERMARK_TEXT_COLORS.map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          className={`color-swatch-btn ${settings.textColor === c.value ? 'active' : ''}`}
+                          style={{ backgroundColor: c.value }}
+                          title={c.label}
+                          onClick={() => onUpdateSetting('textColor', c.value)}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={settings.textColor || '#FFFFFF'}
+                        onChange={(e) => onUpdateSetting('textColor', e.target.value)}
+                        className="color-picker-input color-swatch-custom"
+                        title="Custom color"
+                      />
+                    </div>
                   </div>
+
+                  {/* Text shadow toggle */}
+                  <label className="border-shadow-toggle-row" style={{ marginTop: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={settings.textShadow !== false}
+                      onChange={(e) => onUpdateSetting('textShadow', e.target.checked)}
+                      className="border-shadow-checkbox"
+                    />
+                    <div className="border-shadow-toggle-text">
+                      <span className="border-shadow-title">Text Drop Shadow</span>
+                      <span className="border-shadow-desc">Adds depth and visibility on any background</span>
+                    </div>
+                  </label>
                 </div>
               )}
             </div>
@@ -336,10 +397,55 @@ export function WatermarkControls({
         {/* 3. Position & Style Section */}
         {activeSection === 'position' && (
           <div className="section-pane">
+            {/* Quick Layout Presets */}
             <div className="section-label-row">
-              <div className="section-label">Watermark Style</div>
+              <div className="section-label">Quick Layouts</div>
               <InfoTooltip
-                text="Choose Single to anchor one logo, or Pattern to tile repeating watermarks across the photo."
+                text="Instantly apply a layout pattern — single mark, top & bottom row, or full grid coverage."
+                position="bottom-right"
+              />
+            </div>
+            <div className="quick-layout-grid">
+              {QUICK_WATERMARK_LAYOUTS.map((layout) => {
+                const isActiveLayout =
+                  (layout.style === 'single' && settings.style === 'single') ||
+                  (layout.style === 'grid' &&
+                    settings.style === 'grid' &&
+                    settings.gridRows === layout.rows &&
+                    settings.gridCols === layout.cols &&
+                    settings.rotation === layout.rotation);
+                return (
+                  <button
+                    key={layout.id}
+                    type="button"
+                    className={`quick-layout-btn ${isActiveLayout ? 'active' : ''}`}
+                    onClick={() => {
+                      if (layout.style === 'single') {
+                        onUpdateSetting('style', 'single');
+                        onUpdateSetting('rotation', layout.rotation);
+                      } else {
+                        onUpdateSetting('style', 'grid');
+                        onUpdateSetting('gridRows', layout.rows);
+                        onUpdateSetting('gridCols', layout.cols);
+                        onUpdateSetting('gridGap', layout.gap);
+                        onUpdateSetting('gridShift', layout.shift);
+                        onUpdateSetting('rotation', layout.rotation);
+                      }
+                    }}
+                  >
+                    <FiGrid size={12} className="layout-btn-icon" />
+                    {layout.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="border-section-divider" />
+
+            <div className="section-label-row">
+              <div className="section-label">Layout Mode</div>
+              <InfoTooltip
+                text="Choose Single to anchor one logo, or Pattern/Grid to tile repeating watermarks across the photo."
                 position="bottom-right"
               />
             </div>
@@ -349,7 +455,7 @@ export function WatermarkControls({
               options={WATERMARK_STYLES}
             />
 
-            {isSingle ? (
+            {settings.style === 'single' && (
               <>
                 <PositionGrid
                   currentPreset={settings.position?.preset}
@@ -367,7 +473,59 @@ export function WatermarkControls({
                   onReset={(val) => onUpdateSetting('edgePadding', val / 100)}
                 />
               </>
-            ) : (
+            )}
+
+            {settings.style === 'grid' && (
+              <>
+                <Slider
+                  label="Rows"
+                  value={settings.gridRows ?? 5}
+                  onChange={(val) => onUpdateSetting('gridRows', val)}
+                  min={1}
+                  max={12}
+                  step={1}
+                  unit=""
+                  defaultValue={5}
+                  onReset={(val) => onUpdateSetting('gridRows', val)}
+                />
+                <Slider
+                  label="Columns"
+                  value={settings.gridCols ?? 8}
+                  onChange={(val) => onUpdateSetting('gridCols', val)}
+                  min={1}
+                  max={16}
+                  step={1}
+                  unit=""
+                  defaultValue={8}
+                  onReset={(val) => onUpdateSetting('gridCols', val)}
+                />
+                <Slider
+                  label="Gap Spacing"
+                  value={Math.round((settings.gridGap ?? 0.05) * 100)}
+                  onChange={(val) => onUpdateSetting('gridGap', val / 100)}
+                  min={1}
+                  max={30}
+                  step={1}
+                  unit="%"
+                  defaultValue={5}
+                  onReset={(val) => onUpdateSetting('gridGap', val / 100)}
+                />
+                <label className="border-shadow-toggle-row" style={{ marginTop: '6px' }}>
+                  <input
+                    type="checkbox"
+                    checked={settings.gridShift !== false}
+                    onChange={(e) => onUpdateSetting('gridShift', e.target.checked)}
+                    className="border-shadow-checkbox"
+                  />
+                  <div className="border-shadow-toggle-text">
+                    <span className="border-shadow-title">Offset Alternate Rows</span>
+                    <span className="border-shadow-desc">Stagger odd rows for a natural diagonal feel</span>
+                  </div>
+                </label>
+              </>
+            )}
+
+            {settings.style !== 'single' && settings.style !== 'grid' && (
               <>
                 <Slider
                   label="Pattern Angle"

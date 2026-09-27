@@ -100,19 +100,39 @@ export function ImagePreview({
     };
   }, [updateRenderedDimensions]);
 
+  const [internalImgEl, setInternalImgEl] = useState(null);
+
+  useEffect(() => {
+    if (watermarkSource && typeof watermarkSource === 'string') {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => setInternalImgEl(img);
+      img.src = watermarkSource;
+    } else {
+      setInternalImgEl(null);
+    }
+  }, [watermarkSource]);
+
+  const activeLogoImg = watermarkImgEl || internalImgEl;
+
   // Compute watermark display dimensions inside preview wrap
-  const wmAspect = (watermarkImgEl?.naturalWidth && watermarkImgEl?.naturalHeight)
-    ? (watermarkImgEl.naturalWidth / watermarkImgEl.naturalHeight)
+  const wmAspect = (activeLogoImg?.naturalWidth && activeLogoImg?.naturalHeight)
+    ? (activeLogoImg.naturalWidth / activeLogoImg.naturalHeight)
     : 1;
 
   let displayWmWidth = Math.max(24, Math.round(wrapDims.width * (settings.size || 0.20)));
   let displayWmHeight = Math.max(12, Math.round(displayWmWidth / wmAspect));
 
   if (settings.type === 'text') {
-    const textScale = Math.max(0.6, wrapDims.width / 600);
-    const scaledFontSize = Math.round((settings.fontSize || 24) * textScale);
-    displayWmHeight = Math.round(scaledFontSize * 1.3);
-    displayWmWidth = Math.round((settings.text?.length || 10) * scaledFontSize * 0.6 + 16);
+    const charCount = Math.max(3, settings.text?.length || 8);
+    const baseScale = wrapDims.width * (settings.size || 0.20);
+    const computedFontSize = Math.max(12, Math.round((baseScale / (charCount * 0.52)) * 1.3));
+    const scaledFontSize = settings.fontSize
+      ? Math.round(settings.fontSize * (wrapDims.width / 900))
+      : computedFontSize;
+
+    displayWmHeight = Math.max(14, Math.round(scaledFontSize * 1.3));
+    displayWmWidth = Math.max(24, Math.round(charCount * scaledFontSize * 0.6 + 16));
   }
 
   const paddingX = Math.round(wrapDims.width * (settings.edgePadding ?? 0.03));
@@ -187,6 +207,65 @@ export function ImagePreview({
     ctx.globalAlpha = Math.max(0.05, Math.min(1.0, settings.opacity || 0.80));
 
     const style = settings.style || 'repeated';
+
+    if (style === 'grid') {
+      const rows = settings.gridRows || 5;
+      const columns = settings.gridCols || 8;
+      const gap = settings.gridGap ?? 0.05;
+      const shiftRows = settings.gridShift ?? true;
+      const rotation = settings.rotation || 0;
+
+      const stepY = canvas.height / Math.max(1, rows);
+      const stepX = (canvas.width / Math.max(1, columns)) * (1 + gap);
+
+      for (let r = 0; r < rows; r++) {
+        const y = (rows === 2)
+          ? (r === 0 ? canvas.height * 0.08 : canvas.height * 0.92)
+          : (r + 0.5) * stepY;
+
+        const rowOffset = (shiftRows && r % 2 === 1) ? (stepX / 2) : 0;
+
+        for (let c = -1; c <= columns + 1; c++) {
+          const x = c * stepX + rowOffset;
+          ctx.save();
+          ctx.translate(x, y);
+          if (rotation) {
+            ctx.rotate((rotation * Math.PI) / 180);
+          }
+
+          if (settings.type === 'image' && activeLogoImg) {
+            ctx.drawImage(
+              activeLogoImg,
+              -displayWmWidth / 2,
+              -displayWmHeight / 2,
+              displayWmWidth,
+              displayWmHeight
+            );
+          } else if (settings.type === 'text' && settings.text) {
+            const refFontSize = settings.fontSize
+              ? Math.max(10, Math.round(settings.fontSize * (wrapDims.width / 1080)))
+              : Math.max(11, Math.round(displayWmHeight * 0.65));
+            ctx.font = `${settings.fontWeight || '700'} ${refFontSize}px ${settings.fontFamily || 'Montserrat, sans-serif'}`;
+            ctx.fillStyle = settings.textColor || '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (settings.textShadow !== false) {
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+              ctx.shadowBlur = Math.max(3, refFontSize * 0.15);
+              ctx.shadowOffsetX = 1;
+              ctx.shadowOffsetY = 1;
+            } else {
+              ctx.shadowColor = 'transparent';
+              ctx.shadowBlur = 0;
+            }
+            ctx.fillText(settings.text, 0, 0);
+          }
+          ctx.restore();
+        }
+      }
+      return;
+    }
+
     let densityMultiplier = 1.0;
     let rotation = settings.pattern?.rotation ?? -30;
     let horizontalGap = settings.pattern?.horizontalGap ?? 0.15;
@@ -230,22 +309,31 @@ export function ImagePreview({
           ctx.rotate((settings.rotation * Math.PI) / 180);
         }
 
-        if (settings.type === 'image' && watermarkImgEl) {
+        if (settings.type === 'image' && activeLogoImg) {
           ctx.drawImage(
-            watermarkImgEl,
+            activeLogoImg,
             -displayWmWidth / 2,
             -displayWmHeight / 2,
             displayWmWidth,
             displayWmHeight
           );
         } else if (settings.type === 'text' && settings.text) {
-          const fontSize = Math.max(12, Math.round(displayWmHeight * 0.7));
-          ctx.font = `${settings.fontWeight || '600'} ${fontSize}px ${settings.fontFamily || 'Inter, sans-serif'}`;
+          const refFontSize = settings.fontSize
+            ? Math.max(10, Math.round(settings.fontSize * (wrapDims.width / 1080)))
+            : Math.max(12, Math.round(displayWmHeight * 0.7));
+          ctx.font = `${settings.fontWeight || '700'} ${refFontSize}px ${settings.fontFamily || 'Montserrat, sans-serif'}`;
           ctx.fillStyle = settings.textColor || '#FFFFFF';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-          ctx.shadowBlur = 4;
+          if (settings.textShadow !== false) {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = Math.max(3, refFontSize * 0.15);
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+          } else {
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+          }
           ctx.fillText(settings.text, 0, 0);
         }
         ctx.restore();
@@ -257,7 +345,7 @@ export function ImagePreview({
   }, [
     wrapDims,
     settings,
-    watermarkImgEl,
+    activeLogoImg,
     displayWmWidth,
     displayWmHeight
   ]);
@@ -566,10 +654,16 @@ export function ImagePreview({
                     <span
                       className="watermark-text-preview"
                       style={{
-                        fontFamily: settings.fontFamily || 'Inter, sans-serif',
-                        fontSize: `${Math.max(12, Math.round(displayWmHeight * 0.7))}px`,
-                        fontWeight: settings.fontWeight || '600',
-                        color: settings.textColor || '#FFFFFF'
+                        fontFamily: settings.fontFamily || 'Montserrat, sans-serif',
+                        fontSize: settings.fontSize
+                          ? `${Math.max(10, Math.round(settings.fontSize * (displayWmWidth / 200)))}px`
+                          : `${Math.max(12, Math.round(displayWmHeight * 0.7))}px`,
+                        fontWeight: settings.fontWeight || '700',
+                        color: settings.textColor || '#FFFFFF',
+                        textShadow: settings.textShadow !== false
+                          ? '1px 1px 4px rgba(0,0,0,0.55)'
+                          : 'none',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {settings.text}

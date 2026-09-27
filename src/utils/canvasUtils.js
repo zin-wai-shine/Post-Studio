@@ -60,6 +60,7 @@ function drawSingleWatermarkItem(ctx, {
   fontFamily,
   fontSize,
   fontWeight,
+  textShadow,
   centerX,
   centerY,
   width,
@@ -76,18 +77,64 @@ function drawSingleWatermarkItem(ctx, {
   if (type === 'image' && image) {
     ctx.drawImage(image, -width / 2, -height / 2, width, height);
   } else if (type === 'text' && text) {
-    ctx.font = `${fontWeight || '600'} ${fontSize}px ${fontFamily || 'Inter, sans-serif'}`;
+    ctx.font = `${fontWeight || '700'} ${fontSize}px ${fontFamily || 'Montserrat, sans-serif'}`;
     ctx.fillStyle = textColor || '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Subtle drop shadow for high contrast readability
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 1;
-    ctx.shadowOffsetY = 1;
+    if (textShadow !== false) {
+      // Drop shadow for readability on any background
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = Math.max(3, fontSize * 0.15);
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
 
     ctx.fillText(text, 0, 0);
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Draws a grid / cross structured watermark pattern with custom rows, columns, gap, shift, and rotation
+ */
+function drawGridWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkItem, gridConfig) {
+  const {
+    rows = 5,
+    columns = 8,
+    gap = 0.05,
+    shiftRows = true,
+    rotation = 0
+  } = gridConfig;
+
+  ctx.save();
+
+  const stepY = canvasHeight / Math.max(1, rows);
+  const stepX = (canvasWidth / Math.max(1, columns)) * (1 + gap);
+
+  for (let r = 0; r < rows; r++) {
+    // For 2 rows (Top & Bottom): place near top (7%) and near bottom (93%)
+    const y = (rows === 2)
+      ? (r === 0 ? canvasHeight * 0.08 : canvasHeight * 0.92)
+      : (r + 0.5) * stepY;
+
+    const rowOffset = (shiftRows && r % 2 === 1) ? (stepX / 2) : 0;
+
+    for (let c = -1; c <= columns + 1; c++) {
+      const x = c * stepX + rowOffset;
+      drawSingleWatermarkItem(ctx, {
+        ...watermarkItem,
+        centerX: x,
+        centerY: y,
+        rotationDeg: rotation
+      });
+    }
   }
 
   ctx.restore();
@@ -380,13 +427,26 @@ export async function drawWatermarkLayer(ctx, canvasWidth, canvasHeight, setting
       settings.size || 0.20
     );
   } else {
-    // Text watermark sizing scaled to image resolution
-    const resolutionScale = Math.max(0.5, canvasWidth / 1200);
-    scaledFontSize = Math.round((settings.fontSize || 24) * resolutionScale);
-    ctx.font = `${settings.fontWeight || '600'} ${scaledFontSize}px ${settings.fontFamily || 'Inter, sans-serif'}`;
+    // Text watermark: fontSize from settings scaled to canvas resolution
+    // baseDim used to scale font relative to canvas size (so it looks similar on all resolutions)
+    const baseDim = Math.min(canvasWidth, canvasHeight * 1.5);
+    const refDim = 1080; // Reference resolution
+    const resolutionScale = baseDim / refDim;
+
+    if (settings.fontSize) {
+      // User explicitly set a px size — scale it to current canvas resolution
+      scaledFontSize = Math.max(10, Math.round(settings.fontSize * resolutionScale));
+    } else {
+      // Fallback: derive from size slider (proportion of image)
+      const charCount = Math.max(3, settings.text?.length || 8);
+      const baseScale = baseDim * (settings.size || 0.20);
+      scaledFontSize = Math.max(14, Math.round((baseScale / (charCount * 0.52)) * 1.3));
+    }
+
+    ctx.font = `${settings.fontWeight || '700'} ${scaledFontSize}px ${settings.fontFamily || 'Montserrat, sans-serif'}`;
     const textMetrics = ctx.measureText(settings.text);
     wmDims = {
-      width: Math.round(textMetrics.width + 10),
+      width: Math.round(textMetrics.width + 12),
       height: Math.round(scaledFontSize * 1.3)
     };
   }
@@ -405,6 +465,7 @@ export async function drawWatermarkLayer(ctx, canvasWidth, canvasHeight, setting
     fontFamily: settings.fontFamily,
     fontSize: scaledFontSize,
     fontWeight: settings.fontWeight,
+    textShadow: settings.textShadow !== false,
     width: wmDims.width,
     height: wmDims.height,
     rotationDeg: settings.rotation || 0
@@ -426,7 +487,16 @@ export async function drawWatermarkLayer(ctx, canvasWidth, canvasHeight, setting
     drawSingleWatermarkItem(ctx, {
       ...watermarkItem,
       centerX: pos.centerX,
-      centerY: pos.centerY
+      centerY: pos.centerY,
+      rotationDeg: settings.rotation || 0
+    });
+  } else if (style === 'grid') {
+    drawGridWatermarkPattern(ctx, canvasWidth, canvasHeight, watermarkItem, {
+      rows: settings.gridRows || 5,
+      columns: settings.gridCols || 8,
+      gap: settings.gridGap ?? 0.05,
+      shiftRows: settings.gridShift ?? true,
+      rotation: settings.rotation || 0
     });
   } else {
     // Repeated styles
