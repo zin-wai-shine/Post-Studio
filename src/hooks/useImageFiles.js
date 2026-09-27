@@ -48,6 +48,7 @@ export function useImageFiles() {
           id,
           file,
           name: file.name,
+          originalName: file.name,
           size: file.size,
           width: dims.width,
           height: dims.height,
@@ -61,6 +62,7 @@ export function useImageFiles() {
           id,
           file,
           name: file.name,
+          originalName: file.name,
           size: file.size,
           width: 1200,
           height: 800,
@@ -115,6 +117,29 @@ export function useImageFiles() {
       prev.map((img) =>
         img.id === id ? { ...img, name: newName.trim() } : img
       )
+    );
+  }, []);
+
+  const batchRenameImages = useCallback((nameMapOrUpdater) => {
+    setImages((prev) => {
+      if (typeof nameMapOrUpdater === 'function') {
+        return nameMapOrUpdater(prev);
+      }
+      return prev.map((img) => {
+        if (nameMapOrUpdater && nameMapOrUpdater[img.id] !== undefined) {
+          return { ...img, name: nameMapOrUpdater[img.id] };
+        }
+        return img;
+      });
+    });
+  }, []);
+
+  const resetAllNamesToOriginal = useCallback(() => {
+    setImages((prev) =>
+      prev.map((img) => ({
+        ...img,
+        name: img.originalName || img.file?.name || img.name
+      }))
     );
   }, []);
 
@@ -277,6 +302,8 @@ export function useImageFiles() {
     removeImage,
     clearAllImages,
     renameImage,
+    batchRenameImages,
+    resetAllNamesToOriginal,
     setImageCropFocus,
     enableImageCustomOverrides,
     updateImageCustomSetting,

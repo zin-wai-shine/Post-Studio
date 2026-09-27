@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Watermark } from './pages/Watermark';
+import { ImageRenamer } from './pages/ImageRenamer';
 
 function AppLayout() {
   const location = useLocation();
@@ -18,8 +19,11 @@ function AppLayout() {
     }
   };
 
-  const title = 'Watermark Studio';
-  const subtitle = 'Apply and manage watermarks across multiple images.';
+  const isRename = location.pathname.startsWith('/rename');
+  const title = isRename ? 'Image Renamer' : 'Watermark Studio';
+  const subtitle = isRename
+    ? 'Quickly rename image files and download all with one click.'
+    : 'Apply and manage watermarks across multiple images.';
   const showReset = true;
 
   return (
@@ -28,7 +32,7 @@ function AppLayout() {
       subtitle={subtitle}
       onResetWorkspace={handleResetWorkspace}
       showReset={showReset}
-      headerActions={location.pathname === '/watermark' || location.pathname === '/' ? headerActions : null}
+      headerActions={headerActions}
     >
       <Outlet context={{ registerResetHandler, setHeaderActions }} />
     </DashboardLayout>
@@ -42,6 +46,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/watermark" replace />} />
           <Route path="/watermark" element={<Watermark />} />
+          <Route path="/rename" element={<ImageRenamer />} />
           <Route path="*" element={<Navigate to="/watermark" replace />} />
         </Route>
       </Routes>

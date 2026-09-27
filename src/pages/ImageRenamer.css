@@ -1,0 +1,656 @@
+/* ==========================================================================
+   Image Renamer Page Styles (POFIX STUDIO Theme)
+   ========================================================================== */
+
+.renamer-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  width: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Empty Upload State
+   -------------------------------------------------------------------------- */
+.renamer-empty-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height) - 40px);
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.renamer-empty-card {
+  width: 100%;
+  max-width: 620px;
+}
+
+/* --------------------------------------------------------------------------
+   Workspace Container
+   -------------------------------------------------------------------------- */
+.renamer-content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 32px 100px 32px;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Top Quick Bar
+   -------------------------------------------------------------------------- */
+.renamer-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.renamer-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.renamer-badge-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: var(--color-card-subtle);
+  border: 1px solid var(--color-border-dark);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.renamer-badge-size {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.renamer-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* View Mode Switcher */
+.renamer-view-toggle {
+  display: flex;
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.view-btn.active {
+  background-color: var(--color-card);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Batch Renaming Control Card
+   -------------------------------------------------------------------------- */
+.renamer-tools-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.tools-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.015);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tools-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.tools-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tools-tab:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-hover);
+}
+
+.tools-tab.active {
+  background-color: var(--color-sidebar-active);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.tools-restore-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tools-restore-btn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-dark);
+}
+
+.tools-card-body {
+  padding: 20px;
+}
+
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1.2fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.tool-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.tool-input,
+.tool-select {
+  height: 38px;
+  padding: 0 12px;
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.tool-input:focus,
+.tool-select:focus {
+  border-color: var(--color-main);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.tool-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  height: 38px;
+  user-select: none;
+}
+
+.tool-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+  flex-wrap: wrap;
+}
+
+.tool-preview-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--color-card-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  max-width: 650px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-label {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.preview-val {
+  color: var(--color-success);
+  font-family: monospace;
+}
+
+/* --------------------------------------------------------------------------
+   List / Table View
+   -------------------------------------------------------------------------- */
+.renamer-list-container {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.renamer-list-header {
+  display: grid;
+  grid-template-columns: 80px 2.5fr 1.8fr 1.2fr 80px;
+  align-items: center;
+  padding: 12px 18px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.renamer-list-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.renamer-list-row {
+  display: grid;
+  grid-template-columns: 80px 2.5fr 1.8fr 1.2fr 80px;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background-color 0.15s ease;
+}
+
+.renamer-list-row:last-child {
+  border-bottom: none;
+}
+
+.renamer-list-row:hover {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.col-thumb {
+  display: flex;
+  align-items: center;
+}
+
+.thumb-box {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background-color: #0d0d0d;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.thumb-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-index {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Name Input Group with attached extension */
+.col-name {
+  padding-right: 20px;
+}
+
+.name-input-group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+}
+
+.name-input-group:focus-within {
+  border-color: var(--color-main);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
+}
+
+.name-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.ext-badge {
+  padding: 4px 8px;
+  background-color: var(--color-card-subtle);
+  border-left: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
+  letter-spacing: 0.5px;
+}
+
+.col-orig {
+  overflow: hidden;
+  padding-right: 16px;
+}
+
+.orig-name-text {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.col-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-dims {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.meta-size {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.col-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.item-action-btn {
+  color: var(--color-text-muted);
+  transition: all 0.15s ease;
+}
+
+.item-action-btn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-hover);
+}
+
+.item-action-btn.delete:hover {
+  color: var(--color-danger);
+  background-color: var(--color-danger-bg);
+}
+
+/* --------------------------------------------------------------------------
+   Grid View
+   -------------------------------------------------------------------------- */
+.renamer-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.renamer-grid-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.renamer-grid-card:hover {
+  border-color: var(--color-border-dark);
+}
+
+.grid-card-thumb-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: #0a0a0a;
+  position: relative;
+  overflow: hidden;
+}
+
+.grid-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.grid-card-badge-index {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.grid-card-overlay-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.renamer-grid-card:hover .grid-card-overlay-actions {
+  opacity: 1;
+}
+
+.grid-overlay-btn {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  color: #fff !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.grid-overlay-btn:hover {
+  background-color: #000 !important;
+}
+
+.grid-overlay-btn.delete:hover {
+  background-color: var(--color-danger) !important;
+  color: #fff !important;
+}
+
+.grid-card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.grid-card-footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.grid-orig-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* --------------------------------------------------------------------------
+   Sticky Bottom Bar
+   -------------------------------------------------------------------------- */
+.renamer-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: 64px;
+  background-color: rgba(24, 24, 23, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 35;
+  transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.bottom-bar-left {
+  display: flex;
+  align-items: center;
+}
+
+.bottom-bar-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.bottom-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bottom-download-btn {
+  font-weight: 600;
+  min-width: 160px;
+}
+
+/* Responsive sidebar offset */
+@media (max-width: 900px) {
+  .renamer-bottom-bar {
+    left: 0;
+    padding: 0 16px;
+  }
+
+  .renamer-content-container {
+    padding: 16px 16px 90px 16px;
+  }
+
+  .tool-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .renamer-list-header {
+    grid-template-columns: 60px 1fr 70px;
+  }
+
+  .renamer-list-header .col-orig,
+  .renamer-list-header .col-meta {
+    display: none;
+  }
+
+  .renamer-list-row {
+    grid-template-columns: 60px 1fr 70px;
+  }
+
+  .renamer-list-row .col-orig,
+  .renamer-list-row .col-meta {
+    display: none;
+  }
+}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiDroplet,
+  FiEdit3,
   FiLayers,
   FiLayout,
   FiImage,
@@ -16,6 +17,15 @@ const TOOLS = [
     description: 'Batch watermark property and social media images with custom logos, patterns, and full-resolution export.',
     icon: <FiDroplet />,
     path: '/watermark',
+    active: true,
+    badge: 'Active'
+  },
+  {
+    id: 'renamer',
+    title: 'Image Renamer',
+    description: 'Batch rename image files with custom numbering, prefixes, and instant download.',
+    icon: <FiEdit3 />,
+    path: '/rename',
     active: true,
     badge: 'Active'
   },
