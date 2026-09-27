@@ -81,6 +81,7 @@ export function PresetModal({
   const [gridRows, setGridRows] = useState(5);
   const [gridCols, setGridCols] = useState(8);
   const [gridGap, setGridGap] = useState(0.05);
+  const [gridShift, setGridShift] = useState(true);
   const fileInputRef = useRef(null);
 
   // Sync state when opened or initialData changes
@@ -107,6 +108,7 @@ export function PresetModal({
         setGridRows(wmSettings.gridRows || 5);
         setGridCols(wmSettings.gridCols || 8);
         setGridGap(wmSettings.gridGap ?? 0.05);
+        setGridShift(wmSettings.gridShift !== false);
 
         const crop = initialData.cropSettings || {};
         setCropPreset(crop.enabled ? (crop.preset || '4:5') : 'original');
@@ -136,6 +138,7 @@ export function PresetModal({
         setGridRows(5);
         setGridCols(8);
         setGridGap(0.05);
+        setGridShift(true);
         setCropPreset('4:5');
         setBorderStyle('none');
         setBorderColor('#D97706');
@@ -286,6 +289,7 @@ export function PresetModal({
       gridRows,
       gridCols,
       gridGap,
+      gridShift,
       position: {
         preset: positionKey,
         x: pos.x,
@@ -299,7 +303,7 @@ export function PresetModal({
       }
     };
   }, [watermarkType, watermarkText, watermarkSize, watermarkOpacity, positionKey, borderStyle, borderSize, borderColor,
-      fontFamily, fontSize, fontWeight, textColor, textShadow, wmStyle, wmRotation, gridRows, gridCols, gridGap]);
+      fontFamily, fontSize, fontWeight, textColor, textShadow, wmStyle, wmRotation, gridRows, gridCols, gridGap, gridShift]);
 
   const handleSave = () => {
     const cleanPrefix = (prefix || 'BOL').trim().toUpperCase();
@@ -408,7 +412,7 @@ export function PresetModal({
         gridRows,
         gridCols,
         gridGap,
-        gridShift: true,
+        gridShift,
         position: {
           preset: positionKey,
           x: pos.x,
@@ -677,15 +681,16 @@ export function PresetModal({
               </div>
             </div>
 
-            {/* Watermark Style & Quick Layouts (above position grid) */}
-            <div className="preset-form-group" style={{ marginTop: '10px' }}>
-              <label className="preset-form-label">Layout Style</label>
+            {/* Quick Layouts */}
+            <div className="preset-form-group" style={{ marginTop: '12px' }}>
+              <label className="preset-form-label">Quick Layouts</label>
               <div className="preset-quick-layout-grid">
                 {QUICK_WATERMARK_LAYOUTS.map((layout) => {
                   const isActive =
                     (layout.style === 'single' && wmStyle === 'single') ||
                     (layout.style === 'grid' && wmStyle === 'grid' &&
                       gridRows === layout.rows && gridCols === layout.cols &&
+                      gridShift === layout.shift &&
                       wmRotation === layout.rotation);
                   return (
                     <button
@@ -701,6 +706,7 @@ export function PresetModal({
                           setGridRows(layout.rows);
                           setGridCols(layout.cols);
                           setGridGap(layout.gap);
+                          setGridShift(layout.shift);
                           setWmRotation(layout.rotation);
                         }
                       }}
@@ -713,8 +719,86 @@ export function PresetModal({
               </div>
             </div>
 
+            {/* Layout Mode */}
+            <div className="preset-form-group" style={{ marginTop: '10px' }}>
+              <label className="preset-form-label">Layout Mode</label>
+              <Select
+                value={wmStyle}
+                onChange={(val) => setWmStyle(val)}
+                options={WATERMARK_STYLES}
+              />
+            </div>
+
+            {/* If Single: Position Grid */}
+            {wmStyle === 'single' && (
+              <div className="preset-form-group" style={{ marginTop: '8px' }}>
+                <label className="preset-form-label">Watermark Position</label>
+                <div className="preset-pos-grid">
+                  {['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((k) => (
+                    <div
+                      key={k}
+                      className={`preset-pos-cell ${positionKey === k ? 'active' : ''}`}
+                      onClick={() => setPositionKey(k)}
+                      title={k}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* If Grid: Rows, Columns, Gap Spacing, Offset Alternate Rows */}
+            {wmStyle === 'grid' && (
+              <div className="preset-form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                <Slider
+                  label="Rows"
+                  value={gridRows}
+                  onChange={setGridRows}
+                  min={1}
+                  max={12}
+                  step={1}
+                  unit=""
+                  defaultValue={5}
+                  onReset={setGridRows}
+                />
+                <Slider
+                  label="Columns"
+                  value={gridCols}
+                  onChange={setGridCols}
+                  min={1}
+                  max={16}
+                  step={1}
+                  unit=""
+                  defaultValue={8}
+                  onReset={setGridCols}
+                />
+                <Slider
+                  label="Gap Spacing"
+                  value={Math.round(gridGap * 100)}
+                  onChange={(val) => setGridGap(val / 100)}
+                  min={1}
+                  max={30}
+                  step={1}
+                  unit="%"
+                  defaultValue={5}
+                  onReset={(val) => setGridGap(val / 100)}
+                />
+                <label className="border-shadow-toggle-row" style={{ marginTop: '4px' }}>
+                  <input
+                    type="checkbox"
+                    checked={gridShift}
+                    onChange={(e) => setGridShift(e.target.checked)}
+                    className="border-shadow-checkbox"
+                  />
+                  <div className="border-shadow-toggle-text">
+                    <span className="border-shadow-title">Offset Alternate Rows</span>
+                    <span className="border-shadow-desc">Stagger odd rows for a natural diagonal feel</span>
+                  </div>
+                </label>
+              </div>
+            )}
+
             {/* Rotation */}
-            <div className="preset-form-group" style={{ marginTop: '6px' }}>
+            <div className="preset-form-group" style={{ marginTop: '8px' }}>
               <Slider
                 label="Rotation"
                 value={wmRotation}
@@ -726,21 +810,6 @@ export function PresetModal({
                 onChange={setWmRotation}
                 onReset={setWmRotation}
               />
-            </div>
-
-            {/* Position Selector */}
-            <div className="preset-form-group">
-              <label className="preset-form-label">Watermark Position</label>
-              <div className="preset-pos-grid">
-                {['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((k) => (
-                  <div
-                    key={k}
-                    className={`preset-pos-cell ${positionKey === k ? 'active' : ''}`}
-                    onClick={() => setPositionKey(k)}
-                    title={k}
-                  />
-                ))}
-              </div>
             </div>
           </div>
 

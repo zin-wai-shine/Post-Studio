@@ -518,3 +518,49 @@
   height: 15px;
 }
 
+/* Offset Alternate Rows Toggle Card */
+.preset-modal-controls-pane .border-shadow-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background-color: rgba(192, 57, 43, 0.05);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.preset-modal-controls-pane .border-shadow-toggle-row:hover {
+  background-color: rgba(192, 57, 43, 0.1);
+  border-color: rgba(192, 57, 43, 0.4);
+}
+
+.preset-modal-controls-pane .border-shadow-checkbox {
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--color-accent, #C0392B);
+  width: 15px;
+  height: 15px;
+}
+
+.preset-modal-controls-pane .border-shadow-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preset-modal-controls-pane .border-shadow-title {
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.preset-modal-controls-pane .border-shadow-desc {
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+

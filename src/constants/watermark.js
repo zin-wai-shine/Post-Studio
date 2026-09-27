@@ -11,8 +11,9 @@ export const POSITION_PRESETS = {
 };
 
 export const WATERMARK_STYLES = [
-  { id: 'single', label: 'Single', description: 'One watermark at selected position' },
-  { id: 'repeated', label: 'Repeated', description: 'Evenly repeated across entire image' },
+  { id: 'single', label: 'Single Mark', description: 'One watermark at selected position' },
+  { id: 'grid', label: 'Repeat Grid Pattern', description: 'Multi-row watermark grid layout' },
+  { id: 'repeated', label: 'Repeated Pattern', description: 'Evenly repeated across entire image' },
   { id: 'diagonal', label: 'Diagonal Pattern', description: 'Angled pattern covering image' },
   { id: 'dot-grid', label: 'Dot Grid', description: 'Structured compact watermark grid' },
   { id: 'sparse', label: 'Sparse Pattern', description: 'Subtle repeat with wide spacing' },
