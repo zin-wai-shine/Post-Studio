@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useImageFiles } from '../hooks/useImageFiles';
 import { useWatermarkSettings } from '../hooks/useWatermarkSettings';
+import { useSourceFolder } from '../hooks/useSourceFolder';
 import { CropControls } from '../components/watermark/CropControls';
 import { ImagePreview } from '../components/watermark/ImagePreview';
 import { ImageThumbnailList } from '../components/watermark/ImageThumbnailList';
@@ -60,6 +61,16 @@ export function CropStudio() {
   const [isSlicing, setIsSlicing] = useState(false);
   const isCancelledRef = useRef(false);
   const singleUploaderRef = useRef(null);
+
+  // Source folder: auto-delete originals after cut & download
+  const {
+    isSupported: isSourceFolderSupported,
+    folderName: sourceFolderName,
+    hasHandle: hasSourceHandle,
+    pickFolder: pickSourceFolder,
+    deleteFiles: deleteSourceFiles,
+    clearFolder: clearSourceFolder
+  } = useSourceFolder();
 
   // Auto-clear workspace setting
   const [autoClearAfterDownload, setAutoClearAfterDownload] = useState(() => {
@@ -155,11 +166,26 @@ export function CropStudio() {
       }
 
       // Automatically download all sliced tiles with their unique random FB- names
+      const originalFilename = activeImage.name;
       for (const tile of tiles) {
         const downloadBlob = tile.blob || tile.file;
         const downloadName = tile.filename || tile.name || tile.file?.name;
         triggerDownload(downloadBlob, downloadName);
         await new Promise((res) => setTimeout(res, 250));
+      }
+
+      // Auto-delete original file from source folder if configured
+      if (hasSourceHandle && originalFilename) {
+        try {
+          const { deleted, failed } = await deleteSourceFiles([originalFilename]);
+          if (deleted.length > 0) {
+            console.info(`[Source Folder] Deleted: ${deleted.join(', ')}`);
+          } else if (failed.length > 0) {
+            console.warn(`[Source Folder] Could not delete: ${failed.join(', ')} — file may be in a subfolder or already removed`);
+          }
+        } catch (deleteErr) {
+          console.warn('[Source Folder] Auto-delete failed:', deleteErr);
+        }
       }
 
       // After all tiles are downloaded, clear the entire workspace for the next image
@@ -169,9 +195,10 @@ export function CropStudio() {
       updateGridCropSetting('mode', 'grid');
 
       const sampleBatch = tiles[0]?.filename?.split('-tile')[0] || 'FB';
+      const deleteNote = hasSourceHandle && originalFilename ? ` Original deleted from "${sourceFolderName}".` : '';
       setToast({
         type: 'success',
-        message: `✅ Cut into ${tiles.length} pieces (${sampleBatch}) — all downloaded! Workspace cleared for next image.`
+        message: `✅ Cut into ${tiles.length} pieces (${sampleBatch}) — downloaded!${deleteNote} Ready for next image.`
       });
     } catch (err) {
       console.error(err);
@@ -423,6 +450,11 @@ export function CropStudio() {
             onSliceImage={handleSliceImage}
             isSlicing={isSlicing}
             onTriggerSingleUpload={() => singleUploaderRef.current?.click()}
+            sourceFolderName={sourceFolderName}
+            hasSourceHandle={hasSourceHandle}
+            isSourceFolderSupported={isSourceFolderSupported}
+            onPickSourceFolder={pickSourceFolder}
+            onClearSourceFolder={clearSourceFolder}
           />
         </div>
       </div>

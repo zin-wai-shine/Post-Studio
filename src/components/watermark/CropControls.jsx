@@ -42,7 +42,13 @@ export function CropControls({
   onUpdateGridCropSetting,
   onSliceImage,
   isSlicing = false,
-  onTriggerSingleUpload
+  onTriggerSingleUpload,
+  // Source folder auto-delete props
+  sourceFolderName = null,
+  hasSourceHandle = false,
+  isSourceFolderSupported = false,
+  onPickSourceFolder,
+  onClearSourceFolder
 }) {
   const {
     presets,
@@ -195,6 +201,11 @@ export function CropControls({
           gridCropSettings={gridCropSettings}
           onUpdateGridCropSetting={onUpdateGridCropSetting}
           presets={presets}
+          sourceFolderName={sourceFolderName}
+          hasSourceHandle={hasSourceHandle}
+          isSourceFolderSupported={isSourceFolderSupported}
+          onPickSourceFolder={onPickSourceFolder}
+          onClearSourceFolder={onClearSourceFolder}
         />
       ) : (
         <>
