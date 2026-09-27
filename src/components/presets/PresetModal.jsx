@@ -871,13 +871,29 @@ export function PresetModal({
                       type="color"
                       value={borderColor}
                       onChange={(e) => setBorderColor(e.target.value)}
-                      style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                      style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: '50%' }}
                       title="Custom color"
                     />
                   </div>
                 </div>
               )}
             </div>
+
+            {borderStyle !== 'none' && (
+              <div className="preset-form-group" style={{ marginTop: '10px' }}>
+                <Slider
+                  label="Border Size"
+                  value={borderSize}
+                  min={2}
+                  max={60}
+                  step={1}
+                  unit="px"
+                  defaultValue={12}
+                  onChange={setBorderSize}
+                  onReset={setBorderSize}
+                />
+              </div>
+            )}
           </div>
 
           {/* Section 5: Export Format */}
