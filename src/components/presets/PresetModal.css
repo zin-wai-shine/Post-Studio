@@ -413,3 +413,108 @@
   border-color: #FFFFFF;
   box-shadow: 0 0 0 2px rgba(255,255,255,0.4);
 }
+
+/* Text Watermark Controls */
+.preset-text-wm-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.preset-font-family-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.preset-font-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-subtle);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.preset-font-chip:hover {
+  border-color: var(--color-accent, #C0392B);
+  background: rgba(192, 57, 43, 0.07);
+  color: var(--color-accent, #C0392B);
+}
+
+.preset-font-chip.active {
+  border-color: var(--color-accent, #C0392B);
+  background: rgba(192, 57, 43, 0.15);
+  color: var(--color-accent, #C0392B);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+}
+
+/* Quick Layout Grid */
+.preset-quick-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.preset-quick-layout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card-subtle);
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.preset-quick-layout-btn:hover {
+  border-color: var(--color-accent, #C0392B);
+  background: rgba(192, 57, 43, 0.07);
+  color: var(--color-accent, #C0392B);
+}
+
+.preset-quick-layout-btn.active {
+  border-color: var(--color-accent, #C0392B);
+  background: rgba(192, 57, 43, 0.15);
+  color: var(--color-accent, #C0392B);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+}
+
+/* Text Shadow Toggle */
+.preset-shadow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.preset-shadow-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--color-accent, #C0392B);
+  width: 15px;
+  height: 15px;
+}
+

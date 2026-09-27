@@ -10,10 +10,14 @@ import {
   EXPORT_FORMATS,
   DEFAULT_WATERMARK_SETTINGS,
   DEFAULT_CROP_SETTINGS,
-  DEFAULT_EXPORT_SETTINGS
+  DEFAULT_EXPORT_SETTINGS,
+  REAL_ESTATE_FONTS,
+  WATERMARK_TEXT_COLORS,
+  QUICK_WATERMARK_LAYOUTS,
+  WATERMARK_STYLES
 } from '../../constants/watermark';
 import { generatePresetFilename } from '../../utils/presetUtils';
-import { FiTag, FiImage, FiCrop, FiSliders, FiCheck, FiUploadCloud, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiTag, FiImage, FiCrop, FiSliders, FiCheck, FiUploadCloud, FiEye, FiChevronLeft, FiChevronRight, FiGrid } from 'react-icons/fi';
 import './PresetModal.css';
 
 const PRESET_RATIOS = [
@@ -66,6 +70,17 @@ export function PresetModal({
   const [exportFormat, setExportFormat] = useState('jpeg');
   const [uploadedLogo, setUploadedLogo] = useState(null); // { file, previewUrl, name }
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
+  // Typography & layout
+  const [fontFamily, setFontFamily] = useState('Montserrat, sans-serif');
+  const [fontSize, setFontSize] = useState(32);
+  const [fontWeight, setFontWeight] = useState('700');
+  const [textColor, setTextColor] = useState('#FFFFFF');
+  const [textShadow, setTextShadow] = useState(true);
+  const [wmStyle, setWmStyle] = useState('single');
+  const [wmRotation, setWmRotation] = useState(0);
+  const [gridRows, setGridRows] = useState(5);
+  const [gridCols, setGridCols] = useState(8);
+  const [gridGap, setGridGap] = useState(0.05);
   const fileInputRef = useRef(null);
 
   // Sync state when opened or initialData changes
@@ -82,7 +97,17 @@ export function PresetModal({
         setWatermarkSize(wmSettings.size ?? 0.20);
         setWatermarkOpacity(wmSettings.opacity ?? 0.85);
         setPositionKey(wmSettings.position?.preset || 'bottom-right');
-        
+        setFontFamily(wmSettings.fontFamily || 'Montserrat, sans-serif');
+        setFontSize(wmSettings.fontSize || 32);
+        setFontWeight(wmSettings.fontWeight || '700');
+        setTextColor(wmSettings.textColor || '#FFFFFF');
+        setTextShadow(wmSettings.textShadow !== false);
+        setWmStyle(wmSettings.style || 'single');
+        setWmRotation(wmSettings.rotation || 0);
+        setGridRows(wmSettings.gridRows || 5);
+        setGridCols(wmSettings.gridCols || 8);
+        setGridGap(wmSettings.gridGap ?? 0.05);
+
         const crop = initialData.cropSettings || {};
         setCropPreset(crop.enabled ? (crop.preset || '4:5') : 'original');
 
@@ -101,6 +126,16 @@ export function PresetModal({
         setWatermarkSize(0.20);
         setWatermarkOpacity(0.85);
         setPositionKey('bottom-right');
+        setFontFamily('Montserrat, sans-serif');
+        setFontSize(32);
+        setFontWeight('700');
+        setTextColor('#FFFFFF');
+        setTextShadow(true);
+        setWmStyle('single');
+        setWmRotation(0);
+        setGridRows(5);
+        setGridCols(8);
+        setGridGap(0.05);
         setCropPreset('4:5');
         setBorderStyle('none');
         setBorderColor('#D97706');
@@ -237,11 +272,20 @@ export function PresetModal({
     return {
       ...DEFAULT_WATERMARK_SETTINGS,
       enabled: true,
-      style: 'single',
+      style: wmStyle,
       type: watermarkType,
       text: watermarkText,
       size: watermarkSize,
       opacity: watermarkOpacity,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      textColor,
+      textShadow,
+      rotation: wmRotation,
+      gridRows,
+      gridCols,
+      gridGap,
       position: {
         preset: positionKey,
         x: pos.x,
@@ -254,7 +298,8 @@ export function PresetModal({
         shadowEnabled: true
       }
     };
-  }, [watermarkType, watermarkText, watermarkSize, watermarkOpacity, positionKey, borderStyle, borderSize, borderColor]);
+  }, [watermarkType, watermarkText, watermarkSize, watermarkOpacity, positionKey, borderStyle, borderSize, borderColor,
+      fontFamily, fontSize, fontWeight, textColor, textShadow, wmStyle, wmRotation, gridRows, gridCols, gridGap]);
 
   const handleSave = () => {
     const cleanPrefix = (prefix || 'BOL').trim().toUpperCase();
@@ -353,6 +398,17 @@ export function PresetModal({
         watermarkId,
         size: watermarkSize,
         opacity: watermarkOpacity,
+        fontFamily,
+        fontSize,
+        fontWeight,
+        textColor,
+        textShadow,
+        style: wmStyle,
+        rotation: wmRotation,
+        gridRows,
+        gridCols,
+        gridGap,
+        gridShift: true,
         position: {
           preset: positionKey,
           x: pos.x,
@@ -460,15 +516,95 @@ export function PresetModal({
             </div>
 
             {watermarkType === 'text' ? (
-              <div className="preset-form-group">
-                <label className="preset-form-label">Watermark Text</label>
-                <input
-                  type="text"
-                  className="preset-form-input"
-                  value={watermarkText}
-                  onChange={(e) => setWatermarkText(e.target.value)}
-                  placeholder="e.g. POFIX • BOL"
-                />
+              <div className="preset-text-wm-section">
+                <div className="preset-form-group">
+                  <label className="preset-form-label">Watermark Text</label>
+                  <input
+                    type="text"
+                    className="preset-form-input"
+                    value={watermarkText}
+                    onChange={(e) => setWatermarkText(e.target.value)}
+                    placeholder="e.g. POFIX • BOL"
+                  />
+                </div>
+
+                {/* Font Style */}
+                <label className="preset-form-label" style={{ marginTop: '10px', display: 'block' }}>Font Style</label>
+                <div className="preset-font-family-grid">
+                  {REAL_ESTATE_FONTS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`preset-font-chip ${fontFamily === f.id ? 'active' : ''}`}
+                      style={{ fontFamily: f.id }}
+                      onClick={() => setFontFamily(f.id)}
+                      title={f.desc}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Font Size & Weight */}
+                <div className="preset-form-row" style={{ marginTop: '8px', gap: '10px' }}>
+                  <div className="preset-form-group">
+                    <Slider
+                      label="Font Size"
+                      value={fontSize}
+                      min={12}
+                      max={120}
+                      step={1}
+                      unit="px"
+                      defaultValue={32}
+                      onChange={(val) => setFontSize(val)}
+                      onReset={(val) => setFontSize(val)}
+                    />
+                  </div>
+                  <div className="preset-form-group" style={{ minWidth: '110px' }}>
+                    <Select
+                      label="Weight"
+                      value={fontWeight}
+                      onChange={setFontWeight}
+                      options={[
+                        { id: '400', label: 'Regular' },
+                        { id: '500', label: 'Medium' },
+                        { id: '600', label: 'Semi-Bold' },
+                        { id: '700', label: 'Bold' }
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Text Color */}
+                <label className="preset-form-label" style={{ marginTop: '8px', display: 'block' }}>Text Color</label>
+                <div className="preset-color-chips" style={{ marginTop: '6px' }}>
+                  {WATERMARK_TEXT_COLORS.map((c) => (
+                    <div
+                      key={c.value}
+                      className={`preset-color-chip ${textColor === c.value ? 'active' : ''}`}
+                      style={{ backgroundColor: c.value }}
+                      onClick={() => setTextColor(c.value)}
+                      title={c.label}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => setTextColor(e.target.value)}
+                    style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: '50%' }}
+                    title="Custom color"
+                  />
+                </div>
+
+                {/* Text Shadow toggle */}
+                <label className="preset-shadow-toggle" style={{ marginTop: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={textShadow}
+                    onChange={(e) => setTextShadow(e.target.checked)}
+                  />
+                  <span>Text Drop Shadow</span>
+                </label>
               </div>
             ) : (
               <div className="preset-form-group">
@@ -539,6 +675,57 @@ export function PresetModal({
                   onChange={(val) => setWatermarkOpacity(val / 100)}
                 />
               </div>
+            </div>
+
+            {/* Watermark Style & Quick Layouts (above position grid) */}
+            <div className="preset-form-group" style={{ marginTop: '10px' }}>
+              <label className="preset-form-label">Layout Style</label>
+              <div className="preset-quick-layout-grid">
+                {QUICK_WATERMARK_LAYOUTS.map((layout) => {
+                  const isActive =
+                    (layout.style === 'single' && wmStyle === 'single') ||
+                    (layout.style === 'grid' && wmStyle === 'grid' &&
+                      gridRows === layout.rows && gridCols === layout.cols &&
+                      wmRotation === layout.rotation);
+                  return (
+                    <button
+                      key={layout.id}
+                      type="button"
+                      className={`preset-quick-layout-btn ${isActive ? 'active' : ''}`}
+                      onClick={() => {
+                        if (layout.style === 'single') {
+                          setWmStyle('single');
+                          setWmRotation(layout.rotation);
+                        } else {
+                          setWmStyle('grid');
+                          setGridRows(layout.rows);
+                          setGridCols(layout.cols);
+                          setGridGap(layout.gap);
+                          setWmRotation(layout.rotation);
+                        }
+                      }}
+                    >
+                      <FiGrid size={11} style={{ opacity: 0.7, flexShrink: 0 }} />
+                      {layout.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Rotation */}
+            <div className="preset-form-group" style={{ marginTop: '6px' }}>
+              <Slider
+                label="Rotation"
+                value={wmRotation}
+                min={-180}
+                max={180}
+                step={5}
+                unit="°"
+                defaultValue={0}
+                onChange={setWmRotation}
+                onReset={setWmRotation}
+              />
             </div>
 
             {/* Position Selector */}
