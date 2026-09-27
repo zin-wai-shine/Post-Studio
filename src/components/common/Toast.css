@@ -1,61 +1,90 @@
-/* Apple Notification Toast Note */
-.apple-noti-toast {
+/* Modern Studio Toast Notification */
+.modern-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 99999;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  min-width: 320px;
+  min-width: 290px;
   max-width: 440px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(28, 28, 30, 0.88);
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: rgba(20, 20, 22, 0.94);
   backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 
-    0 16px 36px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 0.5px 0.5px rgba(255, 255, 255, 0.2);
+    0 16px 36px rgba(0, 0, 0, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.35);
   color: #FFFFFF;
   user-select: none;
-  animation: apple-noti-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transition: opacity 0.25s ease, transform 0.25s ease;
   pointer-events: auto;
+  overflow: hidden;
 }
 
-.apple-noti-toast.exiting {
-  animation: apple-noti-slide-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.modern-toast.exiting {
+  animation: toast-slide-out 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* App Icon Badge (Apple Squircle) */
-.apple-noti-icon-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+/* Success Glow */
+.modern-toast.success {
+  border-color: rgba(52, 199, 89, 0.38);
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(52, 199, 89, 0.15);
+}
+
+/* Error Glow */
+.modern-toast.error {
+  border-color: rgba(239, 68, 68, 0.38);
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(239, 68, 68, 0.15);
+}
+
+/* Info Glow */
+.modern-toast.info {
+  border-color: rgba(59, 130, 246, 0.38);
+  box-shadow: 
+    0 16px 36px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(59, 130, 246, 0.15);
+}
+
+/* Icon Badges */
+.toast-icon-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 1px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
-.apple-noti-toast.success .apple-noti-icon-badge {
-  background: linear-gradient(135deg, #34C759 0%, #28A745 100%);
-  color: #FFFFFF;
+.toast-icon-badge.success {
+  background: rgba(52, 199, 89, 0.18);
+  color: #4ADE80;
+  border: 1px solid rgba(52, 199, 89, 0.35);
 }
 
-.apple-noti-toast.error .apple-noti-icon-badge {
-  background: linear-gradient(135deg, #FF453A 0%, #D93025 100%);
-  color: #FFFFFF;
+.toast-icon-badge.error {
+  background: rgba(239, 68, 68, 0.18);
+  color: #F87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
-.apple-noti-toast.info .apple-noti-icon-badge {
-  background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
-  color: #FFFFFF;
+.toast-icon-badge.info {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.35);
 }
 
-/* Notification Body */
-.apple-noti-body {
+/* Content */
+.toast-content {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -63,53 +92,28 @@
   min-width: 0;
 }
 
-.apple-noti-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 1px;
-}
-
-.apple-noti-app {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-}
-
-.apple-noti-dot {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.apple-noti-time {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.apple-noti-title {
+.toast-title {
   font-size: 13px;
   font-weight: 600;
   color: #FFFFFF;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
-.apple-noti-message {
+.toast-message {
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.4;
   word-break: break-word;
 }
 
-/* Apple Dismiss Button */
-.apple-noti-close {
-  background: rgba(255, 255, 255, 0.08);
+/* Close Button */
+.toast-close-btn {
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.45);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,34 +121,59 @@
   padding: 0;
   flex-shrink: 0;
   transition: all 0.15s ease;
-  margin-top: 1px;
 }
 
-.apple-noti-close:hover {
-  background: rgba(255, 255, 255, 0.16);
+.toast-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
   color: #FFFFFF;
 }
 
+/* Progress indicator bar at bottom */
+.toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5px;
+  width: 100%;
+  animation: toast-progress linear forwards;
+}
+
+.modern-toast.success .toast-progress-bar {
+  background: linear-gradient(90deg, #34C759, #4ADE80);
+}
+
+.modern-toast.error .toast-progress-bar {
+  background: linear-gradient(90deg, #EF4444, #F87171);
+}
+
+.modern-toast.info .toast-progress-bar {
+  background: linear-gradient(90deg, #3B82F6, #60A5FA);
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
 /* Animations */
-@keyframes apple-noti-slide-in {
+@keyframes toast-slide-in {
   0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-slide-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
     opacity: 0;
     transform: translateY(-16px) scale(0.96);
   }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
-
-@keyframes apple-noti-slide-out {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-14px) scale(0.95);
-  }
-}
-

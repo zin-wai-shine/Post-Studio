@@ -35,8 +35,8 @@ function AppLayout() {
     title = 'Ready Presets Studio';
     subtitle = 'Save preset styles, compare side-by-side, and batch export with custom prefix.';
   } else if (isCrop) {
-    title = 'Crop & Size Studio';
-    subtitle = 'Crop, standardize resolutions, and slice photos into social media grids.';
+    title = 'Crop & Cut Studio';
+    subtitle = 'Crop, standardize resolutions, and cut/slice photos into social media grids.';
   }
 
   const showReset = true;

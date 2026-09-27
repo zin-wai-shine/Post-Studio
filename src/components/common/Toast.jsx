@@ -46,41 +46,39 @@ export function Toast({
 
   if (!message) return null;
 
-  const defaultTitle = type === 'success' ? 'Completed' : (type === 'error' ? 'Error' : 'Notification');
-  const displayTitle = title || defaultTitle;
-
   return (
     <div
-      className={`apple-noti-toast ${type} ${isExiting ? 'exiting' : ''} ${className}`}
+      className={`modern-toast ${type} ${isExiting ? 'exiting' : ''} ${className}`}
       role="alert"
     >
-      <div className="apple-noti-icon-badge">
-        {type === 'success' && <FiCheck size={14} className="apple-icon success" />}
-        {type === 'error' && <FiAlertTriangle size={13} className="apple-icon error" />}
-        {type === 'info' && <FiInfo size={13} className="apple-icon info" />}
+      <div className={`toast-icon-badge ${type}`}>
+        {type === 'success' && <FiCheck size={15} />}
+        {type === 'error' && <FiAlertTriangle size={15} />}
+        {type === 'info' && <FiInfo size={15} />}
       </div>
 
-      <div className="apple-noti-body">
-        <div className="apple-noti-header">
-          <span className="apple-noti-app">POFIX STUDIO</span>
-          <span className="apple-noti-dot">•</span>
-          <span className="apple-noti-time">now</span>
-        </div>
-        <div className="apple-noti-title">{displayTitle}</div>
-        <div className="apple-noti-message">{message}</div>
+      <div className="toast-content">
+        {title && <div className="toast-title">{title}</div>}
+        <div className="toast-message">{message}</div>
       </div>
 
       {onClose && (
         <button
           type="button"
-          className="apple-noti-close"
+          className="toast-close-btn"
           onClick={handleDismiss}
           aria-label="Dismiss notification"
         >
-          <FiX size={12} />
+          <FiX size={14} />
         </button>
+      )}
+
+      {duration > 0 && (
+        <div
+          className="toast-progress-bar"
+          style={{ animationDuration: `${duration}ms` }}
+        />
       )}
     </div>
   );
 }
-

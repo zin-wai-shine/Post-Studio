@@ -392,7 +392,7 @@ export function CropStudio() {
       <div className="crop-controls-sidebar">
         <div className="crop-controls-header">
           <span className="crop-controls-title">
-            <FiCrop size={16} /> Crop & Size Controls
+            <FiScissors size={16} /> Crop & Cut Controls
           </span>
         </div>
 
