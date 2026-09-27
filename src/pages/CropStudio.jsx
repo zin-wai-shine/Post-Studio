@@ -154,9 +154,11 @@ export function CropStudio() {
         throw new Error('No grid tiles generated.');
       }
 
-      // Automatically download all sliced tiles
+      // Automatically download all sliced tiles with their unique random FB- names
       for (const tile of tiles) {
-        triggerDownload(tile.blob, tile.filename);
+        const downloadBlob = tile.blob || tile.file;
+        const downloadName = tile.filename || tile.name || tile.file?.name;
+        triggerDownload(downloadBlob, downloadName);
         await new Promise((res) => setTimeout(res, 250));
       }
 
@@ -182,9 +184,10 @@ export function CropStudio() {
       // Switch to standard view mode so the cut pieces are displayed
       updateGridCropSetting('mode', 'standard');
 
+      const sampleBatch = tiles[0]?.filename?.split('-tile')[0] || 'FB';
       setToast({
         type: 'success',
-        message: `Cut into ${tiles.length} pieces! Downloaded & displaying cut tiles in workspace.`
+        message: `Cut into ${tiles.length} pieces (${sampleBatch})! Downloaded with FB- unique names & added to workspace.`
       });
     } catch (err) {
       console.error(err);
@@ -203,7 +206,11 @@ export function CropStudio() {
       const targetExt = exportSettings.format === 'jpeg' ? '.jpg' :
                         exportSettings.format === 'png' ? '.png' :
                         exportSettings.format === 'webp' ? '.webp' : ext || '.jpg';
-      const filename = `${nameWithoutExt}-cropped${targetExt}`;
+      
+      const isFbCut = activeImage.isGridTile || activeImage.name?.startsWith('FB-');
+      const filename = isFbCut
+        ? `${nameWithoutExt}${targetExt}`
+        : `${nameWithoutExt}-cropped${targetExt}`;
 
       const blob = await renderWatermarkedImage({
         sourceImage: activeImage.file || activeImage.previewUrl,
@@ -243,7 +250,11 @@ export function CropStudio() {
         const targetExt = exportSettings.format === 'jpeg' ? '.jpg' :
                           exportSettings.format === 'png' ? '.png' :
                           exportSettings.format === 'webp' ? '.webp' : ext || '.jpg';
-        const filename = `${nameWithoutExt}-cropped${targetExt}`;
+        
+        const isFbCut = img.isGridTile || img.name?.startsWith('FB-');
+        const filename = isFbCut
+          ? `${nameWithoutExt}${targetExt}`
+          : `${nameWithoutExt}-cropped${targetExt}`;
 
         setExportProgress({
           current: i + 1,

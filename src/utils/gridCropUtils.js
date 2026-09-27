@@ -106,6 +106,22 @@ export function computeGridCropRect(naturalWidth, naturalHeight, targetAspect = 
 }
 
 /**
+ * Generates a unique random batch identifier starting with FB-
+ * Pattern: FB-[6 digits]-[4 uppercase alphanumeric chars]
+ * Example: FB-739281-XK92
+ * @returns {string}
+ */
+export function generateFbCutBatchCode() {
+  const digits = Math.floor(100000 + Math.random() * 900000);
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let rand = '';
+  for (let i = 0; i < 4; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `FB-${digits}-${rand}`;
+}
+
+/**
  * Slices a source image into discrete image files based on selected grid layout and optional target crop size
  * @param {HTMLImageElement|File|Blob|string} sourceImage 
  * @param {string} layoutId 
@@ -123,7 +139,9 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     quality = 0.95,
     useWatermark = true,
     watermarkImage = null,
-    watermarkSettings = null
+    watermarkSettings = null,
+    batchCode = null,
+    format = 'jpeg'
   } = options;
   const layout = getLayoutConfig(layoutId);
 
@@ -138,8 +156,8 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
     throw new Error('Unable to read source image dimensions for grid slice.');
   }
 
-  const { base: rawBaseName } = parseFilename(baseFilename);
-  const cleanBaseName = rawBaseName.replace(/[-_]grid[-_]\d+.*$/i, ''); // Strip previous grid suffix if any
+  // Generate unique random batch code starting with FB- (e.g. FB-839214-XK92)
+  const uniqueBatchCode = batchCode || generateFbCutBatchCode();
 
   // Prepare source drawable: composite watermark if enabled
   let sourceDrawable = img;
@@ -238,7 +256,9 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       );
     });
 
-    const tileFileName = `${cleanBaseName}-tile${tile.id}-${tile.key}.jpg`;
+    const ext = format === 'png' ? 'png' : format === 'webp' ? 'webp' : 'jpg';
+    const tileSuffix = tile.key ? `-tile${tile.id}-${tile.key}` : `-tile${tile.id}`;
+    const tileFileName = `${uniqueBatchCode}${tileSuffix}.${ext}`;
     const tileFile = new File([blob], tileFileName, { type: mimeType });
     const previewUrl = URL.createObjectURL(tileFile);
 
@@ -246,6 +266,8 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       id: `grid_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
       file: tileFile,
       name: tileFileName,
+      filename: tileFileName,
+      blob,
       size: tileFile.size,
       width: canvasWidth,
       height: canvasHeight,
@@ -258,7 +280,8 @@ export async function sliceImageIntoGridTiles(sourceImage, layoutId = 'four-squa
       layoutId: layout.id,
       layoutName: layout.name,
       focusKey: tileFocusKey,
-      targetPreset: targetCropPreset
+      targetPreset: targetCropPreset,
+      batchCode: uniqueBatchCode
     };
 
     tileResults.push(tileItem);
