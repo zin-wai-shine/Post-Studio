@@ -28,6 +28,40 @@ import {
 } from 'react-icons/fi';
 import './ImageRenamer.css';
 
+// ─── BDO Naming Helpers ───────────────────────────────────────────────────────
+
+/**
+ * Generates a 6-digit random number string, zero-padded.
+ * @returns {string} e.g. "482951"
+ */
+function randomDigits6() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+/**
+ * Generates a 4-character random UPPERCASE letter string.
+ * @returns {string} e.g. "XKQM"
+ */
+function randomCaps4() {
+  const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += LETTERS.charAt(Math.floor(Math.random() * LETTERS.length));
+  }
+  return result;
+}
+
+/**
+ * Generates a unique BDO filename: BDO-{6digits}-{4CAPS}{ext}
+ * @param {string} ext  e.g. ".jpg"
+ * @returns {string} e.g. "BDO-482951-XKQM.jpg"
+ */
+function generateBdoName(ext) {
+  return `BDO-${randomDigits6()}-${randomCaps4()}${ext}`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export function ImageRenamer() {
   const { registerResetHandler, setHeaderActions } = useOutletContext?.() || {};
 
@@ -61,13 +95,19 @@ export function ImageRenamer() {
   // Batch rename tool tab: 'sequence' | 'prefix-suffix' | 'replace' | 'casing'
   const [activeTab, setActiveTab] = useState('sequence');
 
-  // Sequence state
-  const [baseName, setBaseName] = useState('Photo');
+  // Sequence state — default to BDO pattern
+  const [baseName, setBaseName] = useState('');
   const [startNum, setStartNum] = useState(1);
-  const [paddingDigits, setPaddingDigits] = useState(2);
-  const [separator, setSeparator] = useState('_');
-  const [seqPrefix, setSeqPrefix] = useState('');
+  const [paddingDigits, setPaddingDigits] = useState(6);
+  const [separator, setSeparator] = useState('-');
+  const [seqPrefix, setSeqPrefix] = useState('BDO-');
   const [seqSuffix, setSeqSuffix] = useState('');
+
+  // BDO mode: auto-generate a unique random name per image (true = BDO, false = sequential numbering)
+  const [bdoMode, setBdoMode] = useState(true);
+
+  // Track the last count of images so we only auto-apply on new additions
+  const prevImageCountRef = useRef(0);
 
   // Prefix & Suffix state
   const [customPrefix, setCustomPrefix] = useState('');
@@ -106,6 +146,20 @@ export function ImageRenamer() {
       });
     }
   }, [registerResetHandler, images.length]);
+
+  // Auto-apply BDO naming whenever images are added (count increases)
+  useEffect(() => {
+    if (images.length > prevImageCountRef.current) {
+      // New images were added — apply BDO names to ALL current images
+      const nameMap = {};
+      images.forEach((img) => {
+        const { ext } = parseFilename(img.name);
+        nameMap[img.id] = generateBdoName(ext);
+      });
+      batchRenameImages(nameMap);
+    }
+    prevImageCountRef.current = images.length;
+  }, [images.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle uploading files
   const handleFilesSelected = async (fileList) => {
@@ -237,26 +291,39 @@ export function ImageRenamer() {
     renameImage(id, newFullName);
   };
 
-  // Batch: Apply Sequential Renaming
+  // Batch: Apply BDO or Sequential Renaming
   const handleApplySequence = () => {
     if (images.length === 0) return;
-    const start = parseInt(startNum, 10) || 1;
-    const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
 
-    const nameMap = {};
-    images.forEach((img, index) => {
-      const { ext } = parseFilename(img.name);
-      const numStr = String(start + index).padStart(pad, '0');
-      const middle = baseName.trim() ? `${baseName.trim()}${separator}${numStr}` : numStr;
-      const finalBase = `${seqPrefix.trim()}${middle}${seqSuffix.trim()}`;
-      nameMap[img.id] = `${finalBase}${ext}`;
-    });
-
-    batchRenameImages(nameMap);
-    setToast({
-      type: 'success',
-      message: `Applied sequential numbering to ${images.length} images.`
-    });
+    if (bdoMode) {
+      // Generate a fresh unique BDO name per image
+      const nameMap = {};
+      images.forEach((img) => {
+        const { ext } = parseFilename(img.name);
+        nameMap[img.id] = generateBdoName(ext);
+      });
+      batchRenameImages(nameMap);
+      setToast({
+        type: 'success',
+        message: `Applied BDO naming to ${images.length} images.`
+      });
+    } else {
+      const start = parseInt(startNum, 10) || 1;
+      const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
+      const nameMap = {};
+      images.forEach((img, index) => {
+        const { ext } = parseFilename(img.name);
+        const numStr = String(start + index).padStart(pad, '0');
+        const middle = baseName.trim() ? `${baseName.trim()}${separator}${numStr}` : numStr;
+        const finalBase = `${seqPrefix.trim()}${middle}${seqSuffix.trim()}`;
+        nameMap[img.id] = `${finalBase}${ext}`;
+      });
+      batchRenameImages(nameMap);
+      setToast({
+        type: 'success',
+        message: `Applied sequential numbering to ${images.length} images.`
+      });
+    }
   };
 
   // Batch: Apply Prefix & Suffix
@@ -363,17 +430,20 @@ export function ImageRenamer() {
     });
   };
 
-  // Sequential preview string
+  // Sequential / BDO preview string
   const sequencePreview = useMemo(() => {
+    const sampleExt = images.length > 0 ? parseFilename(images[0].name).ext || '.jpg' : '.jpg';
+    if (bdoMode) {
+      return `BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}, BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}...`;
+    }
     const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
     const start = parseInt(startNum, 10) || 1;
     const num1 = String(start).padStart(pad, '0');
     const num2 = String(start + 1).padStart(pad, '0');
     const mid1 = baseName.trim() ? `${baseName.trim()}${separator}${num1}` : num1;
     const mid2 = baseName.trim() ? `${baseName.trim()}${separator}${num2}` : num2;
-    const sampleExt = images.length > 0 ? parseFilename(images[0].name).ext || '.jpg' : '.jpg';
     return `${seqPrefix.trim()}${mid1}${seqSuffix.trim()}${sampleExt}, ${seqPrefix.trim()}${mid2}${seqSuffix.trim()}${sampleExt}...`;
-  }, [baseName, startNum, paddingDigits, separator, seqPrefix, seqSuffix, images]);
+  }, [bdoMode, baseName, startNum, paddingDigits, separator, seqPrefix, seqSuffix, images]);
 
   // Find & Replace match count
   const matchCount = useMemo(() => {
@@ -679,60 +749,91 @@ export function ImageRenamer() {
             </div>
 
             <div className="tools-card-body">
-              {/* Tab 1: Sequential Numbering */}
+              {/* Tab 1: BDO / Sequential Numbering */}
               {activeTab === 'sequence' && (
                 <div className="tool-panel">
-                  <div className="tool-form-grid">
-                    <div className="tool-field">
-                      <label>Base Name</label>
-                      <input
-                        type="text"
-                        className="tool-input"
-                        placeholder="e.g. Photo or Villa"
-                        value={baseName}
-                        onChange={(e) => setBaseName(e.target.value)}
-                      />
-                    </div>
 
-                    <div className="tool-field">
-                      <label>Start From</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="tool-input"
-                        value={startNum}
-                        onChange={(e) => setStartNum(e.target.value)}
-                      />
+                  {/* BDO mode toggle row */}
+                  <div className="bdo-mode-toggle-row">
+                    <div className="bdo-mode-left">
+                      <div className={`bdo-mode-badge ${bdoMode ? 'on' : 'off'}`}>
+                        {bdoMode ? 'BDO' : 'SEQ'}
+                      </div>
+                      <div className="bdo-mode-info">
+                        <span className="bdo-mode-title">
+                          {bdoMode ? 'BDO Auto-Naming' : 'Sequential Numbering'}
+                        </span>
+                        <span className="bdo-mode-desc">
+                          {bdoMode
+                            ? 'Each image gets a unique BDO-{6digit}-{4CAPS} name · Auto-applied on upload'
+                            : 'Images named in order: Prefix + BaseName + Number + Suffix'}
+                        </span>
+                      </div>
                     </div>
-
-                    <div className="tool-field">
-                      <label>Padding Digits</label>
-                      <select
-                        className="tool-select"
-                        value={paddingDigits}
-                        onChange={(e) => setPaddingDigits(Number(e.target.value))}
-                      >
-                        <option value="1">1 (1, 2, 3)</option>
-                        <option value="2">2 (01, 02, 03)</option>
-                        <option value="3">3 (001, 002, 003)</option>
-                        <option value="4">4 (0001, 0002)</option>
-                      </select>
-                    </div>
-
-                    <div className="tool-field">
-                      <label>Separator</label>
-                      <select
-                        className="tool-select"
-                        value={separator}
-                        onChange={(e) => setSeparator(e.target.value)}
-                      >
-                        <option value="_">Underscore ( _ )</option>
-                        <option value="-">Hyphen ( - )</option>
-                        <option value=" ">Space ( )</option>
-                        <option value="">None</option>
-                      </select>
-                    </div>
+                    <button
+                      type="button"
+                      className={`bdo-toggle-switch ${bdoMode ? 'active' : ''}`}
+                      onClick={() => setBdoMode((v) => !v)}
+                      title={bdoMode ? 'Switch to custom sequential numbering' : 'Switch to BDO auto-naming'}
+                    >
+                      <span className="bdo-toggle-thumb" />
+                    </button>
                   </div>
+
+                  {/* Manual fields — only show in sequential mode */}
+                  {!bdoMode && (
+                    <div className="tool-form-grid">
+                      <div className="tool-field">
+                        <label>Base Name</label>
+                        <input
+                          type="text"
+                          className="tool-input"
+                          placeholder="e.g. Photo or Villa"
+                          value={baseName}
+                          onChange={(e) => setBaseName(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="tool-field">
+                        <label>Start From</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="tool-input"
+                          value={startNum}
+                          onChange={(e) => setStartNum(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="tool-field">
+                        <label>Padding Digits</label>
+                        <select
+                          className="tool-select"
+                          value={paddingDigits}
+                          onChange={(e) => setPaddingDigits(Number(e.target.value))}
+                        >
+                          <option value="1">1 (1, 2, 3)</option>
+                          <option value="2">2 (01, 02, 03)</option>
+                          <option value="3">3 (001, 002, 003)</option>
+                          <option value="4">4 (0001, 0002)</option>
+                        </select>
+                      </div>
+
+                      <div className="tool-field">
+                        <label>Separator</label>
+                        <select
+                          className="tool-select"
+                          value={separator}
+                          onChange={(e) => setSeparator(e.target.value)}
+                        >
+                          <option value="_">Underscore ( _ )</option>
+                          <option value="-">Hyphen ( - )</option>
+                          <option value=" ">Space ( )</option>
+                          <option value="">None</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="tool-bottom-row">
                     <div className="tool-preview-pill">
@@ -746,7 +847,7 @@ export function ImageRenamer() {
                       onClick={handleApplySequence}
                       iconLeft={<FiCheck size={13} />}
                     >
-                      Apply Numbering to All
+                      {bdoMode ? 'Regenerate BDO Names' : 'Apply Numbering to All'}
                     </Button>
                   </div>
                 </div>
