@@ -229,8 +229,10 @@ export function ImageRenamer() {
 
       setToast({
         type: 'success',
-        message: `Successfully downloaded all ${total} renamed images!`
+        message: `Downloaded all ${total} images! Workspace cleared.`
       });
+      // Auto-clear uploaded images after successful download
+      clearAllImages();
     } catch (err) {
       if (!isCancelledRef.current) {
         setToast({ type: 'error', message: err.message || 'Failed to download images.' });
@@ -238,7 +240,7 @@ export function ImageRenamer() {
     } finally {
       setIsDownloading(false);
     }
-  }, [images, isDownloading, isZipping]);
+  }, [images, isDownloading, isZipping, clearAllImages]);
 
   // ZIP Archive Download All
   const handleDownloadZip = useCallback(async () => {
@@ -256,15 +258,17 @@ export function ImageRenamer() {
 
       setToast({
         type: 'success',
-        message: `Successfully exported ${images.length} images to ZIP archive.`
+        message: `Exported ${images.length} images to ZIP! Workspace cleared.`
       });
+      // Auto-clear uploaded images after successful ZIP export
+      clearAllImages();
     } catch (err) {
       console.error('Failed to generate ZIP:', err);
       setToast({ type: 'error', message: 'Failed to generate ZIP archive.' });
     } finally {
       setIsZipping(false);
     }
-  }, [images, isDownloading, isZipping]);
+  }, [images, isDownloading, isZipping, clearAllImages]);
 
   // Cancel sequential download
   const handleCancelDownload = () => {
