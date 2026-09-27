@@ -162,32 +162,16 @@ export function CropStudio() {
         await new Promise((res) => setTimeout(res, 250));
       }
 
-      // Convert tiles to File objects with tile metadata and add to workspace
-      const tileFiles = tiles.map((t, idx) => {
-        t.file.isGridTile = true;
-        t.file.tileIndex = idx + 1;
-        t.file.totalTiles = tiles.length;
-        t.file.tileLabel = t.tile?.label || `Tile ${idx + 1}`;
-        return t.file;
-      });
+      // After all tiles are downloaded, clear the entire workspace for the next image
+      clearAllImages();
 
-      const added = await addImages(tileFiles);
-
-      // Remove only the original unsliced image so only cut pieces remain
-      removeImage(originalImageId);
-
-      // Set active image to the first cut tile
-      if (added && added.length > 0) {
-        setActiveImageId(added[0].id);
-      }
-
-      // Switch to standard view mode so the cut pieces are displayed
-      updateGridCropSetting('mode', 'standard');
+      // Stay in Social Grid Slices mode so user can upload the next image
+      updateGridCropSetting('mode', 'grid');
 
       const sampleBatch = tiles[0]?.filename?.split('-tile')[0] || 'FB';
       setToast({
         type: 'success',
-        message: `Cut into ${tiles.length} pieces (${sampleBatch})! Downloaded with FB- unique names & added to workspace.`
+        message: `✅ Cut into ${tiles.length} pieces (${sampleBatch}) — all downloaded! Workspace cleared for next image.`
       });
     } catch (err) {
       console.error(err);
