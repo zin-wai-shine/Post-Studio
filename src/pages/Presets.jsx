@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useImageFiles } from '../hooks/useImageFiles';
 import { useSavedPresets } from '../hooks/useSavedPresets';
 import { useSavedWatermarks } from '../hooks/useSavedWatermarks';
+import { useSourceFolder } from '../hooks/useSourceFolder';
 import { PresetEditorCard } from '../components/presets/PresetEditorCard';
 import { PresetModal } from '../components/presets/PresetModal';
 import { ImageUploader } from '../components/watermark/ImageUploader';
@@ -10,6 +11,7 @@ import { ProcessingModal } from '../components/watermark/ProcessingModal';
 import { Button } from '../components/common/Button';
 import { IconButton } from '../components/common/IconButton';
 import { Toast } from '../components/common/Toast';
+import { SourcePathControls } from '../components/common/SourcePathControls';
 import {
   exportPresetImage,
   batchExportPresetImages,
@@ -53,6 +55,9 @@ export function Presets() {
   } = useSavedPresets();
 
   const { savedWatermarks } = useSavedWatermarks();
+
+  // Source folder: auto-delete originals after export
+  const sourceFolder = useSourceFolder();
 
   // Selected presets IDs to apply & compare side-by-side
   const [selectedPresetIds, setSelectedPresetIds] = useState([]);
@@ -291,16 +296,26 @@ export function Presets() {
         isCancelledRef
       });
 
+      // Auto-delete originals from source folder
+      let deleteNote = '';
+      if (images.length > 0) {
+        const originals = images.map((img) => img.originalName || img.name);
+        const deleteResult = await sourceFolder.deleteFiles(originals);
+        if (deleteResult.deleted && deleteResult.deleted.length > 0) {
+          deleteNote = ` ${deleteResult.deleted.length} original(s) deleted from "${deleteResult.folderPath || sourceFolder.folderPath}".`;
+        }
+      }
+
       if (autoClearAfterDownload) {
         clearAllImages();
         setToast({
           type: 'success',
-          message: `Downloaded ${images.length} images for ${preset.name}. Workspace auto-cleared.`
+          message: `Downloaded ${images.length} images for ${preset.name}.${deleteNote} Workspace auto-cleared.`
         });
       } else {
         setToast({
           type: 'success',
-          message: `Successfully downloaded ${images.length} images for ${preset.name}!`
+          message: `Successfully downloaded ${images.length} images for ${preset.name}!${deleteNote}`
         });
       }
     } catch (err) {
@@ -357,16 +372,26 @@ export function Presets() {
       }
 
       if (!isCancelledRef.current) {
+        // Auto-delete originals from source folder
+        let deleteNote = '';
+        if (images.length > 0) {
+          const originals = images.map((img) => img.originalName || img.name);
+          const deleteResult = await sourceFolder.deleteFiles(originals);
+          if (deleteResult.deleted && deleteResult.deleted.length > 0) {
+            deleteNote = ` ${deleteResult.deleted.length} original(s) deleted from "${deleteResult.folderPath || sourceFolder.folderPath}".`;
+          }
+        }
+
         if (autoClearAfterDownload) {
           clearAllImages();
           setToast({
             type: 'success',
-            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles! Workspace auto-cleared.`
+            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles!${deleteNote} Workspace auto-cleared.`
           });
         } else {
           setToast({
             type: 'success',
-            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles!`
+            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles!${deleteNote}`
           });
         }
       }
@@ -496,6 +521,21 @@ export function Presets() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Auto-Delete Source Path Controls */}
+      <div style={{ padding: '12px 24px 0' }}>
+        <SourcePathControls
+          folderPath={sourceFolder.folderPath}
+          onSetFolderPath={sourceFolder.setFolderPath}
+          isEnabled={sourceFolder.isEnabled}
+          onToggleEnabled={sourceFolder.setIsEnabled}
+          isConnected={sourceFolder.isConnected}
+          isChecking={sourceFolder.isChecking}
+          lastCheckError={sourceFolder.lastCheckError}
+          systemInfo={sourceFolder.systemInfo}
+          onVerifyPath={sourceFolder.verifyPath}
+        />
       </div>
 
       {/* Image Thumbnails Strip (When Images Uploaded) */}

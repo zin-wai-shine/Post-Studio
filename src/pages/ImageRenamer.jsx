@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useImageFiles } from '../hooks/useImageFiles';
+import { useSourceFolder } from '../hooks/useSourceFolder';
 import { ImageUploader } from '../components/watermark/ImageUploader';
 import { ProcessingModal } from '../components/watermark/ProcessingModal';
 import { Modal } from '../components/common/Modal';
 import { Button } from '../components/common/Button';
 import { IconButton } from '../components/common/IconButton';
 import { Toast } from '../components/common/Toast';
+import { SourcePathControls } from '../components/common/SourcePathControls';
 import { triggerDownload } from '../utils/downloadUtils';
 import { parseFilename, formatBytes } from '../utils/imageUtils';
 import JSZip from 'jszip';
@@ -75,6 +77,9 @@ export function ImageRenamer() {
     resetAllNamesToOriginal,
     isProcessingUpload
   } = useImageFiles();
+
+  // Source folder: auto-delete originals after rename & download
+  const sourceFolder = useSourceFolder();
 
   // View mode
   const [viewMode, setViewMode] = useState(() => {
@@ -231,6 +236,15 @@ export function ImageRenamer() {
         type: 'success',
         message: `Downloaded all ${total} images! Workspace cleared.`
       });
+      // Auto-delete originals from source folder
+      const originals = images.map((img) => img.originalName || img.name);
+      const deleteResult = await sourceFolder.deleteFiles(originals);
+      if (deleteResult.deleted && deleteResult.deleted.length > 0) {
+        setToast({
+          type: 'success',
+          message: `Downloaded all ${total} images! ${deleteResult.deleted.length} original(s) deleted from "${deleteResult.folderPath || sourceFolder.folderPath}". Workspace cleared.`
+        });
+      }
       // Auto-clear uploaded images after successful download
       clearAllImages();
     } catch (err) {
@@ -1152,6 +1166,22 @@ export function ImageRenamer() {
                 })}
               </div>
             )}
+          </div>
+
+          {/* Auto-Delete Source Path Controls */}
+          <div style={{ padding: '0 0 8px' }}>
+            <SourcePathControls
+              folderPath={sourceFolder.folderPath}
+              onSetFolderPath={sourceFolder.setFolderPath}
+              isEnabled={sourceFolder.isEnabled}
+              onToggleEnabled={sourceFolder.setIsEnabled}
+              isConnected={sourceFolder.isConnected}
+              isChecking={sourceFolder.isChecking}
+              lastCheckError={sourceFolder.lastCheckError}
+              systemInfo={sourceFolder.systemInfo}
+              onVerifyPath={sourceFolder.verifyPath}
+              compact={true}
+            />
           </div>
 
           {/* Sticky Bottom Bar for instant access to Download All */}

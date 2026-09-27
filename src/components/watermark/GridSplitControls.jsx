@@ -1,9 +1,10 @@
 import React from 'react';
-import { FiScissors, FiUploadCloud, FiImage, FiTarget, FiZap, FiEye, FiEyeOff, FiFolder, FiX, FiTrash2, FiCheck } from 'react-icons/fi';
+import { FiScissors, FiUploadCloud, FiImage, FiTarget, FiZap, FiEye, FiEyeOff } from 'react-icons/fi';
 import { SOCIAL_GRID_LAYOUTS, FOCUS_POSITIONS, getAutoTileFocusMap } from '../../constants/watermark';
 import { Button } from '../common/Button';
 import { Select } from '../common/Select';
 import { InfoTooltip } from '../common/Tooltip';
+import { SourcePathControls } from '../common/SourcePathControls';
 import './GridSplitControls.css';
 
 const FOCUS_CELLS = [
@@ -43,12 +44,7 @@ export function GridSplitControls({
   gridCropSettings = {},
   onUpdateGridCropSetting,
   presets = [],
-  // Source folder (auto-delete originals after cut)
-  sourceFolderName = null,
-  hasSourceHandle = false,
-  isSourceFolderSupported = false,
-  onPickSourceFolder,
-  onClearSourceFolder
+  sourceFolderProps = {}
 }) {
   const currentLayout = SOCIAL_GRID_LAYOUTS.find((l) => l.id === activeLayout) || SOCIAL_GRID_LAYOUTS[3];
 
@@ -427,66 +423,19 @@ export function GridSplitControls({
 
       {/* Slicing Action Box */}
       <div className="grid-slice-action-box">
-        {/* Source Folder Row */}
-        {isSourceFolderSupported && (
-          <div className="source-folder-row">
-            <div className="source-folder-label">
-              <FiTrash2 size={12} className="source-folder-icon" />
-              <span>Auto-Delete Source</span>
-              {sourceFolderName && (
-                <span className="source-folder-status-badge">
-                  {hasSourceHandle ? (
-                    <><FiCheck size={10} /> Active</>
-                  ) : (
-                    'Needs Re-pick'
-                  )}
-                </span>
-              )}
-            </div>
-            {sourceFolderName ? (
-              <div className="source-folder-picked">
-                <span className="source-folder-path" title={sourceFolderName}>
-                  <FiFolder size={12} />
-                  {sourceFolderName}
-                </span>
-                <button
-                  type="button"
-                  className="source-folder-clear-btn"
-                  onClick={onClearSourceFolder}
-                  title="Remove source folder"
-                >
-                  <FiX size={12} />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="source-folder-pick-btn"
-                onClick={onPickSourceFolder}
-              >
-                <FiFolder size={12} />
-                <span>Set Delete Folder</span>
-              </button>
-            )}
-            {sourceFolderName && !hasSourceHandle && (
-              <button
-                type="button"
-                className="source-folder-pick-btn source-folder-repick-btn"
-                onClick={onPickSourceFolder}
-              >
-                <FiFolder size={12} />
-                <span>Re-connect Folder</span>
-              </button>
-            )}
-            <p className="source-folder-hint">
-              {sourceFolderName
-                ? hasSourceHandle
-                  ? `After cut, originals will be deleted from "${sourceFolderName}"`
-                  : 'Re-connect folder to enable auto-delete (page was refreshed)'
-                : 'Pick a folder — originals auto-delete after each cut & download'}
-            </p>
-          </div>
-        )}
+        {/* Source Folder Auto-Delete Path Controls */}
+        <SourcePathControls
+          folderPath={sourceFolderProps.folderPath}
+          onSetFolderPath={sourceFolderProps.setFolderPath}
+          isEnabled={sourceFolderProps.isEnabled}
+          onToggleEnabled={sourceFolderProps.setIsEnabled}
+          isConnected={sourceFolderProps.isConnected}
+          isChecking={sourceFolderProps.isChecking}
+          lastCheckError={sourceFolderProps.lastCheckError}
+          systemInfo={sourceFolderProps.systemInfo}
+          onVerifyPath={sourceFolderProps.verifyPath}
+          compact={true}
+        />
 
         {activeImage ? (
           <>

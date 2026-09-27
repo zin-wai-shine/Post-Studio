@@ -63,14 +63,7 @@ export function CropStudio() {
   const singleUploaderRef = useRef(null);
 
   // Source folder: auto-delete originals after cut & download
-  const {
-    isSupported: isSourceFolderSupported,
-    folderName: sourceFolderName,
-    hasHandle: hasSourceHandle,
-    pickFolder: pickSourceFolder,
-    deleteFiles: deleteSourceFiles,
-    clearFolder: clearSourceFolder
-  } = useSourceFolder();
+  const sourceFolder = useSourceFolder();
 
   // Auto-clear workspace setting
   const [autoClearAfterDownload, setAutoClearAfterDownload] = useState(() => {
@@ -175,13 +168,15 @@ export function CropStudio() {
       }
 
       // Auto-delete original file from source folder if configured
-      if (hasSourceHandle && originalFilename) {
+      let deleteNote = '';
+      if (originalFilename) {
         try {
-          const { deleted, failed } = await deleteSourceFiles([originalFilename]);
-          if (deleted.length > 0) {
-            console.info(`[Source Folder] Deleted: ${deleted.join(', ')}`);
-          } else if (failed.length > 0) {
-            console.warn(`[Source Folder] Could not delete: ${failed.join(', ')} — file may be in a subfolder or already removed`);
+          const deleteResult = await sourceFolder.deleteFiles([originalFilename]);
+          if (deleteResult.deleted && deleteResult.deleted.length > 0) {
+            deleteNote = ` Original deleted from "${deleteResult.folderPath || sourceFolder.folderPath}".`;
+            console.info(`[Source Folder] Deleted: ${deleteResult.deleted.join(', ')}`);
+          } else if (deleteResult.failed && deleteResult.failed.length > 0) {
+            console.warn(`[Source Folder] Could not delete: ${deleteResult.failed.join(', ')}`);
           }
         } catch (deleteErr) {
           console.warn('[Source Folder] Auto-delete failed:', deleteErr);
@@ -195,7 +190,6 @@ export function CropStudio() {
       updateGridCropSetting('mode', 'grid');
 
       const sampleBatch = tiles[0]?.filename?.split('-tile')[0] || 'FB';
-      const deleteNote = hasSourceHandle && originalFilename ? ` Original deleted from "${sourceFolderName}".` : '';
       setToast({
         type: 'success',
         message: `✅ Cut into ${tiles.length} pieces (${sampleBatch}) — downloaded!${deleteNote} Ready for next image.`
@@ -450,11 +444,7 @@ export function CropStudio() {
             onSliceImage={handleSliceImage}
             isSlicing={isSlicing}
             onTriggerSingleUpload={() => singleUploaderRef.current?.click()}
-            sourceFolderName={sourceFolderName}
-            hasSourceHandle={hasSourceHandle}
-            isSourceFolderSupported={isSourceFolderSupported}
-            onPickSourceFolder={pickSourceFolder}
-            onClearSourceFolder={clearSourceFolder}
+            sourceFolderProps={sourceFolder}
           />
         </div>
       </div>

@@ -1,124 +1,214 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
-const STORAGE_KEY = 'pofix_source_folder_name';
+const STORAGE_PATH_KEY = 'pofix_source_folder_path';
+const STORAGE_ENABLED_KEY = 'pofix_auto_delete_enabled';
+
+// Resolve base API URL (handles localhost as well as deployed frontends communicating with local dev server)
+function getApiBaseUrl() {
+  if (typeof window === 'undefined') return '';
+  // If already on localhost:5173 or relative
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return '';
+  }
+  // If hosted on Netlify, attempt connecting to the local helper on 5173
+  return 'http://localhost:5173';
+}
 
 /**
- * Manages a user-selected "source folder" via the File System Access API.
- * - Asks the user to pick a folder once (showDirectoryPicker).
- * - Remembers the folder display name in localStorage.
- * - After processing, can delete original files by filename from that folder.
- *
- * NOTE: The File System Access API is supported in Chrome/Edge (desktop).
- * Firefox and Safari do not support showDirectoryPicker.
+ * Hook to manage the user's configured source folder path for auto-deleting
+ * uploaded original files after cutting, presets export, or renaming.
  */
 export function useSourceFolder() {
-  const dirHandleRef = useRef(null);
-
-  const [folderName, setFolderName] = useState(() => {
+  const [folderPath, setFolderPathState] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || null;
+      return localStorage.getItem(STORAGE_PATH_KEY) || '';
     } catch {
-      return null;
+      return '';
     }
   });
 
-  const [isSupported] = useState(() =>
-    typeof window !== 'undefined' && 'showDirectoryPicker' in window
-  );
-
-  const [status, setStatus] = useState('idle'); // 'idle' | 'picking' | 'ready' | 'error'
-
-  // Persist folder name to localStorage whenever it changes
-  useEffect(() => {
+  const [isEnabled, setIsEnabledState] = useState(() => {
     try {
-      if (folderName) {
-        localStorage.setItem(STORAGE_KEY, folderName);
+      const val = localStorage.getItem(STORAGE_ENABLED_KEY);
+      return val !== null ? val === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [systemInfo, setSystemInfo] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [lastCheckError, setLastCheckError] = useState(null);
+
+  const setFolderPath = useCallback((newPath) => {
+    const trimmed = (newPath || '').trim();
+    setFolderPathState(trimmed);
+    try {
+      if (trimmed) {
+        localStorage.setItem(STORAGE_PATH_KEY, trimmed);
       } else {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_PATH_KEY);
       }
     } catch {
       // ignore
     }
-  }, [folderName]);
+  }, []);
 
-  /**
-   * Opens the directory picker dialog. User grants read+write permission.
-   * The handle is stored in memory for the session.
-   */
-  const pickFolder = useCallback(async () => {
-    if (!isSupported) {
-      return { success: false, error: 'File System Access API not supported in this browser. Use Chrome or Edge.' };
-    }
-
-    setStatus('picking');
+  const setIsEnabled = useCallback((enabled) => {
+    setIsEnabledState(Boolean(enabled));
     try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-      dirHandleRef.current = handle;
-      setFolderName(handle.name);
-      setStatus('ready');
-      return { success: true, name: handle.name };
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        setStatus(dirHandleRef.current ? 'ready' : 'idle');
-        return { success: false, error: 'Cancelled' };
-      }
-      setStatus('error');
-      return { success: false, error: err.message };
+      localStorage.setItem(STORAGE_ENABLED_KEY, enabled ? 'true' : 'false');
+    } catch {
+      // ignore
     }
-  }, [isSupported]);
+  }, []);
+
+  // Fetch local system information (Downloads directory, Desktop directory, username)
+  const fetchSystemInfo = useCallback(async () => {
+    const baseUrl = getApiBaseUrl();
+    try {
+      const res = await fetch(`${baseUrl}/api/system-info`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSystemInfo(data);
+          // If no folder path configured yet, automatically default to the Downloads directory
+          setFolderPathState((prev) => {
+            if (!prev && data.downloadsDir) {
+              try {
+                localStorage.setItem(STORAGE_PATH_KEY, data.downloadsDir);
+              } catch {
+                // ignore
+              }
+              return data.downloadsDir;
+            }
+            return prev;
+          });
+          return data;
+        }
+      }
+    } catch (err) {
+      // Dev server might not be running on that port
+    }
+    return null;
+  }, []);
+
+  // Check if current path exists and is accessible
+  const verifyPath = useCallback(async (pathToVerify) => {
+    const targetPath = pathToVerify !== undefined ? pathToVerify : folderPath;
+    if (!targetPath) {
+      setIsConnected(false);
+      setLastCheckError(null);
+      return { success: false, exists: false };
+    }
+
+    setIsChecking(true);
+    setLastCheckError(null);
+    const baseUrl = getApiBaseUrl();
+
+    try {
+      const res = await fetch(`${baseUrl}/api/check-path`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath: targetPath })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success && data.exists) {
+        setIsConnected(true);
+        setLastCheckError(null);
+        return { success: true, exists: true, resolvedPath: data.resolvedPath, fileCount: data.fileCount };
+      } else {
+        setIsConnected(false);
+        const errMsg = data.error || 'Folder not found on computer';
+        setLastCheckError(errMsg);
+        return { success: false, exists: false, error: errMsg };
+      }
+    } catch (err) {
+      setIsConnected(false);
+      setLastCheckError(err.message);
+      return { success: false, exists: false, error: err.message };
+    } finally {
+      setIsChecking(false);
+    }
+  }, [folderPath]);
+
+  // Initial load: get system info and verify path
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const sys = await fetchSystemInfo();
+      if (!mounted) return;
+      const initialPath = folderPath || sys?.downloadsDir || '';
+      if (initialPath) {
+        verifyPath(initialPath);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [fetchSystemInfo, folderPath, verifyPath]);
 
   /**
-   * Deletes files by their original filenames from the selected source folder.
-   * Returns { deleted: string[], failed: string[] }
+   * Delete files from the configured folder path.
+   * Accepts an array of original filenames.
    */
   const deleteFiles = useCallback(async (filenames = []) => {
-    if (!dirHandleRef.current) {
-      return { deleted: [], failed: filenames, error: 'No source folder selected.' };
-    }
-    if (!filenames.length) {
-      return { deleted: [], failed: [] };
+    if (!isEnabled || !folderPath || !filenames.length) {
+      return { success: false, deleted: [], failed: filenames, reason: 'disabled or no path' };
     }
 
-    const deleted = [];
-    const failed = [];
+    const baseUrl = getApiBaseUrl();
+    try {
+      const res = await fetch(`${baseUrl}/api/delete-files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folderPath,
+          filenames
+        })
+      });
 
-    for (const name of filenames) {
-      try {
-        // Try to get the file handle in the root of the folder
-        const fileHandle = await dirHandleRef.current.getFileHandle(name, { create: false });
-        await fileHandle.remove();
-        deleted.push(name);
-      } catch (err) {
-        // File might be in a subfolder or not found — skip silently
-        failed.push(name);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
+
+      const data = await res.json();
+      return {
+        success: data.success,
+        deleted: data.deleted || [],
+        failed: data.failed || [],
+        folderPath: data.folderPath || folderPath
+      };
+    } catch (err) {
+      console.warn('[useSourceFolder] Failed to delete files via local API:', err);
+      return {
+        success: false,
+        deleted: [],
+        failed: filenames,
+        error: err.message
+      };
     }
-
-    return { deleted, failed };
-  }, []);
-
-  /**
-   * Clears the stored folder (name from localStorage + handle from memory).
-   */
-  const clearFolder = useCallback(() => {
-    dirHandleRef.current = null;
-    setFolderName(null);
-    setStatus('idle');
-  }, []);
-
-  /**
-   * Returns true if the handle is currently available in memory.
-   * (Handles don't persist across page reloads — user must re-pick after refresh.)
-   */
-  const hasHandle = Boolean(dirHandleRef.current);
+  }, [folderPath, isEnabled]);
 
   return {
-    isSupported,
-    folderName,
-    hasHandle,
-    status,
-    pickFolder,
-    deleteFiles,
-    clearFolder
+    folderPath,
+    setFolderPath,
+    isEnabled,
+    setIsEnabled,
+    isConnected,
+    isChecking,
+    lastCheckError,
+    systemInfo,
+    verifyPath,
+    deleteFiles
   };
 }
