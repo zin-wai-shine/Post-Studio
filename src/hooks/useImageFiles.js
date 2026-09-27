@@ -53,7 +53,11 @@ export function useImageFiles() {
           width: dims.width,
           height: dims.height,
           aspectRatio: dims.aspectRatio,
-          previewUrl
+          previewUrl,
+          isGridTile: Boolean(file.isGridTile),
+          tileIndex: file.tileIndex,
+          totalTiles: file.totalTiles,
+          tileLabel: file.tileLabel
         });
       } catch (err) {
         console.warn(`Failed to read dimensions for ${file.name}:`, err);
@@ -67,7 +71,11 @@ export function useImageFiles() {
           width: 1200,
           height: 800,
           aspectRatio: 1.5,
-          previewUrl
+          previewUrl,
+          isGridTile: Boolean(file.isGridTile),
+          tileIndex: file.tileIndex,
+          totalTiles: file.totalTiles,
+          tileLabel: file.tileLabel
         });
       }
     }

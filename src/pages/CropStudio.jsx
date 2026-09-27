@@ -128,6 +128,7 @@ export function CropStudio() {
     setIsSlicing(true);
 
     try {
+      const originalImageId = activeImage.id;
       const layoutId = gridCropSettings?.activeLayout || 'four-squares';
       const focus = gridCropSettings?.gridFocus || 'center';
       const targetCropPreset = gridCropSettings?.targetCropPreset || 'original';
@@ -159,14 +160,32 @@ export function CropStudio() {
         await new Promise((res) => setTimeout(res, 250));
       }
 
-      setToast({
-        type: 'success',
-        message: `Successfully sliced and downloaded ${tiles.length} social grid tiles!`
+      // Convert tiles to File objects with tile metadata and add to workspace
+      const tileFiles = tiles.map((t, idx) => {
+        t.file.isGridTile = true;
+        t.file.tileIndex = idx + 1;
+        t.file.totalTiles = tiles.length;
+        t.file.tileLabel = t.tile?.label || `Tile ${idx + 1}`;
+        return t.file;
       });
 
-      if (autoClearAfterDownload) {
-        removeImage(activeImage.id);
+      const added = await addImages(tileFiles);
+
+      // Remove only the original unsliced image so only cut pieces remain
+      removeImage(originalImageId);
+
+      // Set active image to the first cut tile
+      if (added && added.length > 0) {
+        setActiveImageId(added[0].id);
       }
+
+      // Switch to standard view mode so the cut pieces are displayed
+      updateGridCropSetting('mode', 'standard');
+
+      setToast({
+        type: 'success',
+        message: `Cut into ${tiles.length} pieces! Downloaded & displaying cut tiles in workspace.`
+      });
     } catch (err) {
       console.error(err);
       setToast({ type: 'error', message: err.message || 'Grid slicing failed.' });
