@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'rea
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Watermark } from './pages/Watermark';
 import { ImageRenamer } from './pages/ImageRenamer';
+import { Presets } from './pages/Presets';
 
 function AppLayout() {
   const location = useLocation();
@@ -20,10 +21,19 @@ function AppLayout() {
   };
 
   const isRename = location.pathname.startsWith('/rename');
-  const title = isRename ? 'Image Renamer' : 'Watermark Studio';
-  const subtitle = isRename
-    ? 'Quickly rename image files and download all with one click.'
-    : 'Apply and manage watermarks across multiple images.';
+  const isPresets = location.pathname.startsWith('/presets');
+
+  let title = 'Watermark Studio';
+  let subtitle = 'Apply and manage watermarks across multiple images.';
+
+  if (isRename) {
+    title = 'Image Renamer';
+    subtitle = 'Quickly rename image files and download all with one click.';
+  } else if (isPresets) {
+    title = 'Ready Presets Studio';
+    subtitle = 'Save preset styles, compare side-by-side, and batch export with custom prefix.';
+  }
+
   const showReset = true;
 
   return (
@@ -46,6 +56,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/watermark" replace />} />
           <Route path="/watermark" element={<Watermark />} />
+          <Route path="/presets" element={<Presets />} />
           <Route path="/rename" element={<ImageRenamer />} />
           <Route path="*" element={<Navigate to="/watermark" replace />} />
         </Route>

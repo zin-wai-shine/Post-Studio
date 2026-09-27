@@ -9,13 +9,15 @@ import { ImageThumbnailList } from '../components/watermark/ImageThumbnailList';
 import { ImageUploader } from '../components/watermark/ImageUploader';
 import { WatermarkControls } from '../components/watermark/WatermarkControls';
 import { ProcessingModal } from '../components/watermark/ProcessingModal';
+import { PresetModal } from '../components/presets/PresetModal';
+import { useSavedPresets } from '../hooks/useSavedPresets';
 import { Toast } from '../components/common/Toast';
 import { Modal } from '../components/common/Modal';
 import { Button } from '../components/common/Button';
 import { loadImage } from '../utils/imageUtils';
 import { sliceImageIntoGridTiles } from '../utils/gridCropUtils';
 import { generateRandomBatchPrefix } from '../utils/downloadUtils';
-import { FiDownload, FiArchive, FiRotateCcw } from 'react-icons/fi';
+import { FiDownload, FiArchive, FiRotateCcw, FiLayers } from 'react-icons/fi';
 import { Select } from '../components/common/Select';
 import { EXPORT_FORMATS, FOCUS_POSITIONS, POSITION_PRESETS, CROP_PRESETS } from '../constants/watermark';
 import './Watermark.css';
@@ -70,6 +72,9 @@ export function Watermark() {
     removeWatermark,
     editWatermarkName
   } = useSavedWatermarks();
+
+  const { addPreset } = useSavedPresets();
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
 
   const {
     isExportingSingle,
@@ -685,6 +690,16 @@ const HEADER_FORMAT_OPTIONS = [
           {isExportingBatch ? 'Downloading...' : `Download All (${images.length})`}
         </Button>
 
+        <Button
+          variant="secondary"
+          size="sm"
+          iconLeft={<FiLayers size={13} />}
+          onClick={() => setIsPresetModalOpen(true)}
+          title="Save this watermark & crop setup as a reusable Preset"
+        >
+          Save as Preset
+        </Button>
+
         <span className="header-action-divider" />
 
         <Button
@@ -891,6 +906,30 @@ const HEADER_FORMAT_OPTIONS = [
           Your saved watermark library in IndexedDB will remain intact.
         </p>
       </Modal>
+
+      {/* Preset Modal */}
+      <PresetModal
+        isOpen={isPresetModalOpen}
+        onClose={() => setIsPresetModalOpen(false)}
+        onSave={async (presetData) => {
+          try {
+            await addPreset(presetData);
+            setToast({
+              type: 'success',
+              message: `Preset "${presetData.name}" saved! Available in Presets Studio.`
+            });
+          } catch (err) {
+            setToast({ type: 'error', message: 'Failed to save preset.' });
+          }
+        }}
+        initialData={{
+          prefix: batchPrefix || 'BOL',
+          settings: effectiveSettings,
+          cropSettings: effectiveCropSettings,
+          exportSettings: exportSettings
+        }}
+        savedWatermarks={savedWatermarks}
+      />
     </div>
   );
 }

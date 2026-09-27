@@ -1,6 +1,7 @@
 const DB_NAME = 'postStudioDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'watermarks';
+const PRESETS_STORE_NAME = 'presets';
 
 let dbPromise = null;
 
@@ -19,6 +20,9 @@ function getDB() {
       const db = event.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(PRESETS_STORE_NAME)) {
+        db.createObjectStore(PRESETS_STORE_NAME, { keyPath: 'id' });
       }
     };
 
@@ -164,3 +168,136 @@ export async function clearWatermarks() {
     request.onerror = () => reject(request.error || new Error('Failed to clear watermarks.'));
   });
 }
+
+/**
+ * Save a preset configuration to IndexedDB
+ * @param {Object} preset
+ * @returns {Promise<Object>}
+ */
+export async function savePreset(preset) {
+  const db = await getDB();
+  const id = preset.id || `preset_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const record = {
+    ...preset,
+    id,
+    prefix: (preset.prefix || 'BOL').toUpperCase().trim(),
+    createdAt: preset.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const request = store.put(record);
+
+    request.onsuccess = () => resolve(record);
+    request.onerror = () => reject(request.error || new Error('Failed to save preset.'));
+  });
+}
+
+/**
+ * Get all saved presets from IndexedDB
+ * @returns {Promise<Array>}
+ */
+export async function getPresets() {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const results = request.result || [];
+      results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      resolve(results);
+    };
+    request.onerror = () => reject(request.error || new Error('Failed to retrieve presets.'));
+  });
+}
+
+/**
+ * Get a single preset by ID
+ * @param {string} id
+ * @returns {Promise<Object|null>}
+ */
+export async function getPreset(id) {
+  if (!id) return null;
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error || new Error(`Failed to retrieve preset ${id}.`));
+  });
+}
+
+/**
+ * Update an existing preset
+ * @param {string} id
+ * @param {Object} updates
+ * @returns {Promise<Object>}
+ */
+export async function updatePreset(id, updates) {
+  if (!id) throw new Error('Preset ID is required.');
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const getRequest = store.get(id);
+
+    getRequest.onsuccess = () => {
+      const record = getRequest.result;
+      if (!record) {
+        reject(new Error(`Preset ${id} not found.`));
+        return;
+      }
+      const updatedRecord = {
+        ...record,
+        ...updates,
+        prefix: updates.prefix ? updates.prefix.toUpperCase().trim() : record.prefix,
+        updatedAt: new Date().toISOString()
+      };
+      const putRequest = store.put(updatedRecord);
+      putRequest.onsuccess = () => resolve(updatedRecord);
+      putRequest.onerror = () => reject(putRequest.error || new Error('Failed to update preset.'));
+    };
+    getRequest.onerror = () => reject(getRequest.error || new Error('Failed to fetch preset.'));
+  });
+}
+
+/**
+ * Delete a preset from IndexedDB
+ * @param {string} id
+ * @returns {Promise<boolean>}
+ */
+export async function deletePreset(id) {
+  if (!id) return false;
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const request = store.delete(id);
+
+    request.onsuccess = () => resolve(true);
+    request.onerror = () => reject(request.error || new Error(`Failed to delete preset ${id}.`));
+  });
+}
+
+/**
+ * Clear all presets from IndexedDB
+ * @returns {Promise<boolean>}
+ */
+export async function clearPresets() {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([PRESETS_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(PRESETS_STORE_NAME);
+    const request = store.clear();
+
+    request.onsuccess = () => resolve(true);
+    request.onerror = () => reject(request.error || new Error('Failed to clear presets.'));
+  });
+}
+

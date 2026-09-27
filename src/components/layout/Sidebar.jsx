@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FiDroplet, FiEdit3, FiX } from 'react-icons/fi';
+import { FiDroplet, FiLayers, FiEdit3, FiX } from 'react-icons/fi';
 import { IconButton } from '../common/IconButton';
 import './Sidebar.css';
 
@@ -38,6 +38,14 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
             >
               <span className="nav-icon"><FiDroplet /></span>
               <span className="nav-label">Watermark</span>
+            </NavLink>
+            <NavLink
+              to="/presets"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={onCloseMobile}
+            >
+              <span className="nav-icon"><FiLayers /></span>
+              <span className="nav-label">Presets</span>
             </NavLink>
             <NavLink
               to="/rename"
