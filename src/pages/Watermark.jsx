@@ -102,20 +102,8 @@ export function Watermark() {
   });
   const uploaderTriggerRef = useRef(null);
   const singleUploaderRef = useRef(null);
-  const [activeSection, setActiveSection] = useState(() => {
-    return searchParams.get('mode') === 'grid' || searchParams.get('tab') === 'crop'
-      ? 'crop'
-      : 'watermark';
-  });
+  const [activeSection, setActiveSection] = useState('watermark');
   const [isSlicing, setIsSlicing] = useState(false);
-
-  // Auto-activate grid mode if URL has ?mode=grid
-  useEffect(() => {
-    if (searchParams.get('mode') === 'grid') {
-      updateGridCropSetting('mode', 'grid');
-      setActiveSection('crop');
-    }
-  }, [searchParams, updateGridCropSetting]);
 
   const handleToggleAutoClear = (checked) => {
     setAutoClearAfterDownload(checked);

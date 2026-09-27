@@ -6,7 +6,6 @@ import { PositionGrid } from './PositionGrid';
 import { WatermarkUploader } from './WatermarkUploader';
 import { SavedWatermarks } from './SavedWatermarks';
 import { ExportControls } from './ExportControls';
-import { CropControls } from './CropControls';
 import { InfoTooltip } from '../common/Tooltip';
 import { WATERMARK_STYLES, BORDER_STYLES } from '../../constants/watermark';
 import './WatermarkControls.css';
@@ -20,7 +19,6 @@ const FONT_WEIGHT_OPTIONS = [
 
 const SECTIONS = [
   { id: 'watermark', label: 'Watermark', shortLabel: 'Logo/Text', icon: <FiImage className="tab-nav-icon" /> },
-  { id: 'crop', label: 'Crop & Size', shortLabel: 'Crop', icon: <FiCrop className="tab-nav-icon" /> },
   { id: 'position', label: 'Position', shortLabel: 'Position', icon: <FiMove className="tab-nav-icon" /> },
   { id: 'appearance', label: 'Appearance', shortLabel: 'Style', icon: <FiSliders className="tab-nav-icon" /> },
   { id: 'export', label: 'Export', shortLabel: 'Export', icon: <FiDownload className="tab-nav-icon" /> }
@@ -334,22 +332,6 @@ export function WatermarkControls({
           </div>
         )}
 
-        {/* 2. Crop & Standardize Size Section */}
-        {activeSection === 'crop' && (
-          <CropControls
-            cropSettings={cropSettings}
-            onUpdateCropSetting={onUpdateCropSetting}
-            onSetCropPreset={onSetCropPreset}
-            onSetCropFocus={onSetCropFocus}
-            totalImagesCount={totalImagesCount}
-            activeImage={activeImage}
-            gridCropSettings={gridCropSettings}
-            onUpdateGridCropSetting={onUpdateGridCropSetting}
-            onSliceImage={onSliceImage}
-            isSlicing={isSlicing}
-            onTriggerSingleUpload={onTriggerSingleUpload}
-          />
-        )}
 
         {/* 3. Position & Style Section */}
         {activeSection === 'position' && (

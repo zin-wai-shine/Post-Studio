@@ -4,6 +4,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Watermark } from './pages/Watermark';
 import { ImageRenamer } from './pages/ImageRenamer';
 import { Presets } from './pages/Presets';
+import { CropStudio } from './pages/CropStudio';
 
 function AppLayout() {
   const location = useLocation();
@@ -22,6 +23,7 @@ function AppLayout() {
 
   const isRename = location.pathname.startsWith('/rename');
   const isPresets = location.pathname.startsWith('/presets');
+  const isCrop = location.pathname.startsWith('/crop');
 
   let title = 'Watermark Studio';
   let subtitle = 'Apply and manage watermarks across multiple images.';
@@ -32,6 +34,9 @@ function AppLayout() {
   } else if (isPresets) {
     title = 'Ready Presets Studio';
     subtitle = 'Save preset styles, compare side-by-side, and batch export with custom prefix.';
+  } else if (isCrop) {
+    title = 'Crop & Size Studio';
+    subtitle = 'Crop, standardize resolutions, and slice photos into social media grids.';
   }
 
   const showReset = true;
@@ -57,6 +62,7 @@ export function App() {
           <Route path="/" element={<Navigate to="/watermark" replace />} />
           <Route path="/watermark" element={<Watermark />} />
           <Route path="/presets" element={<Presets />} />
+          <Route path="/crop" element={<CropStudio />} />
           <Route path="/rename" element={<ImageRenamer />} />
           <Route path="*" element={<Navigate to="/watermark" replace />} />
         </Route>
