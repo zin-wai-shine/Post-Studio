@@ -10,7 +10,7 @@ import { IconButton } from '../components/common/IconButton';
 import { Toast } from '../components/common/Toast';
 import { SourcePathControls } from '../components/common/SourcePathControls';
 import { triggerDownload } from '../utils/downloadUtils';
-import { parseFilename, formatBytes } from '../utils/imageUtils';
+import { parseFilename, formatBytes, getProcessedImageBlob, isHeicFile } from '../utils/imageUtils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
@@ -18,7 +18,6 @@ import {
   FiArchive,
   FiRotateCcw,
   FiTrash2,
-  FiEdit3,
   FiPlus,
   FiCheck,
   FiGrid,
@@ -26,7 +25,11 @@ import {
   FiRefreshCw,
   FiSearch,
   FiHash,
-  FiType
+  FiType,
+  FiRepeat,
+  FiChevronDown,
+  FiLayers,
+  FiFileText
 } from 'react-icons/fi';
 import './ImageRenamer.css';
 
@@ -59,7 +62,8 @@ function randomCaps4() {
  * @returns {string} e.g. "BDO-482951-XKQM.jpg"
  */
 function generateBdoName(ext) {
-  return `BDO-${randomDigits6()}-${randomCaps4()}${ext}`;
+  const cleanExt = ext && ext.startsWith('.') ? ext : `.${ext || 'jpg'}`;
+  return `BDO-${randomDigits6()}-${randomCaps4()}${cleanExt}`;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -75,7 +79,8 @@ export function ImageRenamer() {
     renameImage,
     batchRenameImages,
     resetAllNamesToOriginal,
-    isProcessingUpload
+    isProcessingUpload,
+    uploadStatus
   } = useImageFiles();
 
   // Source folder: auto-delete originals after rename & download
@@ -97,7 +102,7 @@ export function ImageRenamer() {
     } catch {}
   };
 
-  // Batch rename tool tab: 'sequence' | 'prefix-suffix' | 'replace' | 'casing'
+  // Batch rename tool tab: 'sequence' | 'prefix-suffix' | 'replace' | 'casing' | 'format'
   const [activeTab, setActiveTab] = useState('sequence');
 
   // Sequence state — default to BDO pattern
@@ -107,6 +112,7 @@ export function ImageRenamer() {
   const [separator, setSeparator] = useState('-');
   const [seqPrefix, setSeqPrefix] = useState('BDO-');
   const [seqSuffix, setSeqSuffix] = useState('');
+  const [seqExt, setSeqExt] = useState('original');
 
   // BDO mode: auto-generate a unique random name per image (true = BDO, false = sequential numbering)
   const [bdoMode, setBdoMode] = useState(true);
@@ -122,10 +128,15 @@ export function ImageRenamer() {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [matchCase, setMatchCase] = useState(false);
+  const [includeExt, setIncludeExt] = useState(false);
 
-  // Text Casing state
+  // Text Casing & Extension formatting state
   const [textCase, setTextCase] = useState('lowercase');
   const [spaceHandling, setSpaceHandling] = useState('underscore');
+  const [extCase, setExtCase] = useState('lowercase');
+
+  // Format & Extension Converter state
+  const [batchTargetExt, setBatchTargetExt] = useState('.png');
 
   // Download & processing state
   const [isDownloading, setIsDownloading] = useState(false);
@@ -159,7 +170,8 @@ export function ImageRenamer() {
       const nameMap = {};
       images.forEach((img) => {
         const { ext } = parseFilename(img.name);
-        nameMap[img.id] = generateBdoName(ext);
+        const effectiveExt = seqExt !== 'original' ? seqExt : ext;
+        nameMap[img.id] = generateBdoName(effectiveExt);
       });
       batchRenameImages(nameMap);
     }
@@ -170,9 +182,14 @@ export function ImageRenamer() {
   const handleFilesSelected = async (fileList) => {
     try {
       const added = await addImages(fileList);
+      const heicCount = added.filter((i) => i.isHeic).length;
+      let msg = `Added ${added.length} image${added.length > 1 ? 's' : ''}.`;
+      if (heicCount > 0) {
+        msg += ` (${heicCount} HEIC file${heicCount > 1 ? 's' : ''} decoded and ready).`;
+      }
       setToast({
         type: 'success',
-        message: `Added ${added.length} image${added.length > 1 ? 's' : ''}.`
+        message: msg
       });
     } catch (err) {
       setToast({ type: 'error', message: err.message || 'Failed to upload images.' });
@@ -200,14 +217,14 @@ export function ImageRenamer() {
     }
   };
 
-  // Direct Sequential Download All
+  // Direct Sequential Download All with real format conversion
   const handleDownloadAllDirect = useCallback(async () => {
     if (images.length === 0 || isDownloading || isZipping) return;
 
     setIsDownloading(true);
     isCancelledRef.current = false;
     const total = images.length;
-    setProgress({ current: 0, total, percentage: 0, currentFilename: '' });
+    setProgress({ current: 0, total, percentage: 0, currentFilename: 'Preparing download...' });
 
     try {
       for (let i = 0; i < total; i++) {
@@ -222,19 +239,22 @@ export function ImageRenamer() {
           current: i + 1,
           total,
           percentage: Math.round(((i + 1) / total) * 100),
-          currentFilename: filename
+          currentFilename: `Processing & Converting: ${filename}`
         });
 
+        // Convert file data to real target format (PNG, JPG, WEBP, or original HEIC)
+        const processedBlob = await getProcessedImageBlob(item, filename);
+
         // Trigger direct browser download
-        triggerDownload(item.file, filename);
+        triggerDownload(processedBlob, filename);
 
         // Stagger browser downloads to prevent throttling
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 350));
       }
 
       setToast({
         type: 'success',
-        message: `Downloaded all ${total} images! Workspace cleared.`
+        message: `Processed and downloaded all ${total} images! Workspace cleared.`
       });
       // Auto-delete originals from source folder
       const originals = images.map((img) => img.originalName || img.name);
@@ -254,17 +274,43 @@ export function ImageRenamer() {
     } finally {
       setIsDownloading(false);
     }
-  }, [images, isDownloading, isZipping, clearAllImages]);
+  }, [images, isDownloading, isZipping, clearAllImages, sourceFolder]);
 
-  // ZIP Archive Download All
+  // ZIP Archive Download All with real format conversion
   const handleDownloadZip = useCallback(async () => {
     if (images.length === 0 || isDownloading || isZipping) return;
 
     setIsZipping(true);
+    isCancelledRef.current = false;
+    const total = images.length;
+    setProgress({ current: 0, total, percentage: 0, currentFilename: 'Converting files for ZIP...' });
+
     try {
       const zip = new JSZip();
-      images.forEach((img) => {
-        zip.file(img.name, img.file);
+
+      for (let i = 0; i < total; i++) {
+        if (isCancelledRef.current) {
+          throw new Error('Export cancelled by user.');
+        }
+
+        const img = images[i];
+        setProgress({
+          current: i + 1,
+          total,
+          percentage: Math.round(((i + 1) / total) * 85),
+          currentFilename: `Converting & Archiving: ${img.name}`
+        });
+
+        // Convert to genuine target format Blob
+        const processedBlob = await getProcessedImageBlob(img, img.name);
+        zip.file(img.name, processedBlob);
+      }
+
+      setProgress({
+        current: total,
+        total,
+        percentage: 92,
+        currentFilename: 'Generating ZIP package...'
       });
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -272,41 +318,100 @@ export function ImageRenamer() {
 
       setToast({
         type: 'success',
-        message: `Exported ${images.length} images to ZIP! Workspace cleared.`
+        message: `Processed and exported ${images.length} images to ZIP! Workspace cleared.`
       });
       // Auto-clear uploaded images after successful ZIP export
       clearAllImages();
     } catch (err) {
-      console.error('Failed to generate ZIP:', err);
-      setToast({ type: 'error', message: 'Failed to generate ZIP archive.' });
+      if (!isCancelledRef.current) {
+        console.error('Failed to generate ZIP:', err);
+        setToast({ type: 'error', message: err.message || 'Failed to generate ZIP archive.' });
+      }
     } finally {
       setIsZipping(false);
     }
   }, [images, isDownloading, isZipping, clearAllImages]);
 
-  // Cancel sequential download
+  // Cancel sequential download or ZIP
   const handleCancelDownload = () => {
     isCancelledRef.current = true;
     setIsDownloading(false);
-    setToast({ type: 'info', message: 'Download cancelled.' });
+    setIsZipping(false);
+    setToast({ type: 'info', message: 'Download / Export cancelled.' });
   };
 
-  // Download single image
-  const handleDownloadSingle = (item) => {
+  // Download single image with format processing
+  const handleDownloadSingle = async (item) => {
     try {
-      triggerDownload(item.file, item.name);
-      setToast({ type: 'success', message: `Downloaded: ${item.name}` });
+      setToast({ type: 'info', message: `Processing ${item.name}...` });
+      const processedBlob = await getProcessedImageBlob(item, item.name);
+      triggerDownload(processedBlob, item.name);
+      const { ext } = parseFilename(item.name);
+      setToast({
+        type: 'success',
+        message: `Downloaded: ${item.name}${ext ? ` (${ext.toUpperCase()} converted)` : ''}`
+      });
     } catch (err) {
-      setToast({ type: 'error', message: 'Failed to download image.' });
+      console.error('Failed to download single image:', err);
+      setToast({ type: 'error', message: `Download failed: ${err.message}` });
     }
   };
 
-  // Inline rename single image
-  const handleInlineBaseRename = (id, newBase, ext) => {
-    // Sanitize illegal filename characters
+  // Inline rename single image base
+  const handleInlineBaseRename = (id, newBase, currentExt) => {
     const cleanBase = newBase.replace(/[/\\?%*:|"<>]/g, '');
-    const newFullName = cleanBase ? `${cleanBase}${ext}` : `image${ext}`;
+    // If user accidentally typed an extension into the input (e.g. "my_photo.png")
+    const parsed = parseFilename(cleanBase);
+    const knownExts = ['.png', '.jpg', '.jpeg', '.webp', '.heic', '.heif'];
+    let finalBase = cleanBase;
+    let finalExt = currentExt;
+
+    if (parsed.ext && knownExts.includes(parsed.ext.toLowerCase())) {
+      finalBase = parsed.base;
+      finalExt = parsed.ext.toLowerCase();
+    }
+
+    const newFullName = finalBase ? `${finalBase}${finalExt}` : `image${finalExt}`;
     renameImage(id, newFullName);
+  };
+
+  // Inline change single image extension
+  const handleInlineExtChange = (id, currentBase, newExt) => {
+    const cleanBase = (currentBase || 'image').replace(/[/\\?%*:|"<>]/g, '');
+    const targetExt = newExt.toLowerCase();
+    renameImage(id, `${cleanBase}${targetExt}`);
+  };
+
+  // Batch: Change all file extensions to specified extension (e.g. .png, .jpg, .webp)
+  const handleBatchChangeExtension = (newExt) => {
+    if (images.length === 0) return;
+    const cleanExt = newExt.toLowerCase().startsWith('.') ? newExt.toLowerCase() : `.${newExt.toLowerCase()}`;
+    const nameMap = {};
+    images.forEach((img) => {
+      const { base } = parseFilename(img.name);
+      nameMap[img.id] = `${base}${cleanExt}`;
+    });
+    batchRenameImages(nameMap);
+    setToast({
+      type: 'success',
+      message: `Changed all ${images.length} images to ${cleanExt.toUpperCase()}. Files will be converted on download.`
+    });
+  };
+
+  // Batch: Revert all extensions back to original uploaded format
+  const handleRevertExtensionsToOriginal = () => {
+    if (images.length === 0) return;
+    const nameMap = {};
+    images.forEach((img) => {
+      const { base } = parseFilename(img.name);
+      const origExt = parseFilename(img.originalName || img.file?.name || '').ext || '.jpg';
+      nameMap[img.id] = `${base}${origExt}`;
+    });
+    batchRenameImages(nameMap);
+    setToast({
+      type: 'info',
+      message: 'Reverted all file extensions to original uploaded format.'
+    });
   };
 
   // Batch: Apply BDO or Sequential Renaming
@@ -317,20 +422,26 @@ export function ImageRenamer() {
       // Generate a fresh unique BDO name per image
       const nameMap = {};
       images.forEach((img) => {
-        const { ext } = parseFilename(img.name);
+        let { ext } = parseFilename(img.name);
+        if (seqExt !== 'original') {
+          ext = seqExt;
+        }
         nameMap[img.id] = generateBdoName(ext);
       });
       batchRenameImages(nameMap);
       setToast({
         type: 'success',
-        message: `Applied BDO naming to ${images.length} images.`
+        message: `Applied BDO naming to ${images.length} images${seqExt !== 'original' ? ` as ${seqExt.toUpperCase()}` : ''}.`
       });
     } else {
       const start = parseInt(startNum, 10) || 1;
       const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
       const nameMap = {};
       images.forEach((img, index) => {
-        const { ext } = parseFilename(img.name);
+        let { ext } = parseFilename(img.name);
+        if (seqExt !== 'original') {
+          ext = seqExt;
+        }
         const numStr = String(start + index).padStart(pad, '0');
         const middle = baseName.trim() ? `${baseName.trim()}${separator}${numStr}` : numStr;
         const finalBase = `${seqPrefix.trim()}${middle}${seqSuffix.trim()}`;
@@ -339,7 +450,7 @@ export function ImageRenamer() {
       batchRenameImages(nameMap);
       setToast({
         type: 'success',
-        message: `Applied sequential numbering to ${images.length} images.`
+        message: `Applied sequential numbering to ${images.length} images${seqExt !== 'original' ? ` as ${seqExt.toUpperCase()}` : ''}.`
       });
     }
   };
@@ -365,7 +476,7 @@ export function ImageRenamer() {
     });
   };
 
-  // Batch: Apply Find & Replace
+  // Batch: Apply Find & Replace (optionally across full filename including extension)
   const handleApplyFindReplace = () => {
     if (images.length === 0) return;
     if (!findText) {
@@ -377,21 +488,38 @@ export function ImageRenamer() {
     const nameMap = {};
 
     images.forEach((img) => {
-      const { base, ext } = parseFilename(img.name);
-      let newBase = base;
-      if (matchCase) {
-        if (newBase.includes(findText)) {
-          newBase = newBase.replaceAll(findText, replaceText);
-          modifiedCount++;
+      if (includeExt) {
+        let fullName = img.name;
+        if (matchCase) {
+          if (fullName.includes(findText)) {
+            fullName = fullName.replaceAll(findText, replaceText);
+            modifiedCount++;
+          }
+        } else {
+          const regex = new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          if (regex.test(fullName)) {
+            fullName = fullName.replace(regex, replaceText);
+            modifiedCount++;
+          }
         }
+        nameMap[img.id] = fullName;
       } else {
-        const regex = new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        if (regex.test(newBase)) {
-          newBase = newBase.replace(regex, replaceText);
-          modifiedCount++;
+        const { base, ext } = parseFilename(img.name);
+        let newBase = base;
+        if (matchCase) {
+          if (newBase.includes(findText)) {
+            newBase = newBase.replaceAll(findText, replaceText);
+            modifiedCount++;
+          }
+        } else {
+          const regex = new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          if (regex.test(newBase)) {
+            newBase = newBase.replace(regex, replaceText);
+            modifiedCount++;
+          }
         }
+        nameMap[img.id] = `${newBase}${ext}`;
       }
-      nameMap[img.id] = `${newBase}${ext}`;
     });
 
     batchRenameImages(nameMap);
@@ -401,7 +529,7 @@ export function ImageRenamer() {
     });
   };
 
-  // Batch: Apply Case / Space Transform
+  // Batch: Apply Case / Space / Extension Transform
   const handleApplyCasing = () => {
     if (images.length === 0) return;
 
@@ -412,12 +540,17 @@ export function ImageRenamer() {
       // Casing
       if (textCase === 'lowercase') {
         base = base.toLowerCase();
-        ext = ext.toLowerCase();
       } else if (textCase === 'uppercase') {
         base = base.toUpperCase();
-        ext = ext.toUpperCase();
       } else if (textCase === 'titlecase') {
         base = base.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+      }
+
+      // Extension casing
+      if (extCase === 'lowercase') {
+        ext = ext.toLowerCase();
+      } else if (extCase === 'uppercase') {
+        ext = ext.toUpperCase();
       }
 
       // Space handling
@@ -439,6 +572,16 @@ export function ImageRenamer() {
     });
   };
 
+  // Batch: Apply Format & Extension from dedicated tab
+  const handleApplyBatchFormat = () => {
+    if (images.length === 0) return;
+    if (batchTargetExt === 'original') {
+      handleRevertExtensionsToOriginal();
+    } else {
+      handleBatchChangeExtension(batchTargetExt);
+    }
+  };
+
   // Batch: Restore original uploaded names
   const handleRestoreOriginalNames = () => {
     resetAllNamesToOriginal();
@@ -450,7 +593,10 @@ export function ImageRenamer() {
 
   // Sequential / BDO preview string
   const sequencePreview = useMemo(() => {
-    const sampleExt = images.length > 0 ? parseFilename(images[0].name).ext || '.jpg' : '.jpg';
+    let sampleExt = images.length > 0 ? parseFilename(images[0].name).ext || '.jpg' : '.jpg';
+    if (seqExt !== 'original') {
+      sampleExt = seqExt;
+    }
     if (bdoMode) {
       return `BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}, BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}...`;
     }
@@ -461,18 +607,32 @@ export function ImageRenamer() {
     const mid1 = baseName.trim() ? `${baseName.trim()}${separator}${num1}` : num1;
     const mid2 = baseName.trim() ? `${baseName.trim()}${separator}${num2}` : num2;
     return `${seqPrefix.trim()}${mid1}${seqSuffix.trim()}${sampleExt}, ${seqPrefix.trim()}${mid2}${seqSuffix.trim()}${sampleExt}...`;
-  }, [bdoMode, baseName, startNum, paddingDigits, separator, seqPrefix, seqSuffix, images]);
+  }, [bdoMode, baseName, startNum, paddingDigits, separator, seqPrefix, seqSuffix, images, seqExt]);
 
   // Find & Replace match count
   const matchCount = useMemo(() => {
     if (!findText || images.length === 0) return 0;
     return images.filter((img) => {
-      const { base } = parseFilename(img.name);
+      const textToSearch = includeExt ? img.name : parseFilename(img.name).base;
       return matchCase
-        ? base.includes(findText)
-        : base.toLowerCase().includes(findText.toLowerCase());
+        ? textToSearch.includes(findText)
+        : textToSearch.toLowerCase().includes(findText.toLowerCase());
     }).length;
-  }, [findText, matchCase, images]);
+  }, [findText, matchCase, images, includeExt]);
+
+  // Check overall extension status across all items
+  const allArePng = images.length > 0 && images.every((img) => parseFilename(img.name).ext.toLowerCase() === '.png');
+  const allAreJpg = images.length > 0 && images.every((img) => {
+    const ext = parseFilename(img.name).ext.toLowerCase();
+    return ext === '.jpg' || ext === '.jpeg';
+  });
+  const allAreWebp = images.length > 0 && images.every((img) => parseFilename(img.name).ext.toLowerCase() === '.webp');
+
+  // Check if an item's extension was modified from original
+  const isExtConverted = (currentExt, originalExt) => {
+    if (!currentExt || !originalExt) return false;
+    return currentExt.toLowerCase() !== originalExt.toLowerCase();
+  };
 
   // Connect Top Header Actions
   useEffect(() => {
@@ -488,7 +648,7 @@ export function ImageRenamer() {
           disabled={images.length === 0 || isDownloading || isZipping}
           loading={isZipping}
           onClick={handleDownloadZip}
-          title="Download all images as a single ZIP archive"
+          title="Process and package all images into a single ZIP archive"
         >
           Download ZIP
         </Button>
@@ -501,7 +661,7 @@ export function ImageRenamer() {
           disabled={images.length === 0 || isDownloading || isZipping}
           loading={isDownloading}
           onClick={handleDownloadAllDirect}
-          title="Download all renamed images directly"
+          title="Process and download all renamed images directly"
         >
           {isDownloading ? 'Downloading...' : `Download All (${images.length})`}
         </Button>
@@ -545,9 +705,9 @@ export function ImageRenamer() {
         />
       )}
 
-      {/* Sequential Download Progress Modal */}
+      {/* Sequential & ZIP Download Progress Modal */}
       <ProcessingModal
-        isOpen={isDownloading}
+        isOpen={isDownloading || isZipping}
         progress={progress}
         onCancel={handleCancelDownload}
       />
@@ -654,6 +814,11 @@ export function ImageRenamer() {
                   images.reduce((acc, img) => acc + (img.size || 0), 0)
                 )}
               </span>
+              {uploadStatus && (
+                <span className="renamer-upload-status">
+                  {uploadStatus}
+                </span>
+              )}
             </div>
 
             <div className="renamer-topbar-right">
@@ -663,7 +828,7 @@ export function ImageRenamer() {
                 size="sm"
                 iconLeft={<FiPlus size={14} />}
                 onClick={() => addMoreInputRef.current?.click()}
-                title="Add more images to this batch"
+                title="Add more images to this batch (JPG, PNG, WEBP, HEIC)"
               >
                 Add Images
               </Button>
@@ -696,7 +861,7 @@ export function ImageRenamer() {
                 loading={isZipping}
                 disabled={isDownloading}
                 onClick={handleDownloadZip}
-                title="Download all images packaged into a single ZIP file"
+                title="Process & package all images into a single ZIP file"
               >
                 ZIP
               </Button>
@@ -710,10 +875,61 @@ export function ImageRenamer() {
                 loading={isDownloading}
                 disabled={isZipping}
                 onClick={handleDownloadAllDirect}
-                title="Download all renamed images directly to your browser"
+                title="Process and download all renamed images directly to your browser"
               >
                 {isDownloading ? 'Downloading...' : `Download All (${images.length})`}
               </Button>
+            </div>
+          </div>
+
+          {/* Quick Format & Extension Bar */}
+          <div className="renamer-quick-format-bar">
+            <div className="quick-format-left">
+              <span className="quick-format-label">
+                <FiRepeat size={13} /> Convert All Formats:
+              </span>
+              <div className="quick-format-pills">
+                <button
+                  type="button"
+                  className={`quick-format-pill ${allArePng ? 'active' : ''}`}
+                  onClick={() => handleBatchChangeExtension('.png')}
+                  title="Change all filenames to .png and process conversion on download"
+                >
+                  <span className="pill-dot" />
+                  All to .PNG
+                </button>
+                <button
+                  type="button"
+                  className={`quick-format-pill ${allAreJpg ? 'active' : ''}`}
+                  onClick={() => handleBatchChangeExtension('.jpg')}
+                  title="Change all filenames to .jpg and process conversion on download"
+                >
+                  <span className="pill-dot" />
+                  All to .JPG
+                </button>
+                <button
+                  type="button"
+                  className={`quick-format-pill ${allAreWebp ? 'active' : ''}`}
+                  onClick={() => handleBatchChangeExtension('.webp')}
+                  title="Change all filenames to .webp and process conversion on download"
+                >
+                  <span className="pill-dot" />
+                  All to .WEBP
+                </button>
+                <button
+                  type="button"
+                  className="quick-format-pill revert"
+                  onClick={handleRevertExtensionsToOriginal}
+                  title="Revert all extensions back to original uploaded format"
+                >
+                  <FiRotateCcw size={11} />
+                  Original Formats
+                </button>
+              </div>
+            </div>
+
+            <div className="quick-format-hint">
+              Images are automatically converted to target format upon download
             </div>
           </div>
 
@@ -752,6 +968,14 @@ export function ImageRenamer() {
                 >
                   <FiType size={13} />
                   <span>Case & Format</span>
+                </button>
+                <button
+                  type="button"
+                  className={`tools-tab ${activeTab === 'format' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('format')}
+                >
+                  <FiRepeat size={13} />
+                  <span>Extension & Convert</span>
                 </button>
               </div>
 
@@ -798,60 +1022,77 @@ export function ImageRenamer() {
                     </button>
                   </div>
 
-                  {/* Manual fields — only show in sequential mode */}
-                  {!bdoMode && (
-                    <div className="tool-form-grid">
-                      <div className="tool-field">
-                        <label>Base Name</label>
-                        <input
-                          type="text"
-                          className="tool-input"
-                          placeholder="e.g. Photo or Villa"
-                          value={baseName}
-                          onChange={(e) => setBaseName(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="tool-field">
-                        <label>Start From</label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="tool-input"
-                          value={startNum}
-                          onChange={(e) => setStartNum(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="tool-field">
-                        <label>Padding Digits</label>
-                        <select
-                          className="tool-select"
-                          value={paddingDigits}
-                          onChange={(e) => setPaddingDigits(Number(e.target.value))}
-                        >
-                          <option value="1">1 (1, 2, 3)</option>
-                          <option value="2">2 (01, 02, 03)</option>
-                          <option value="3">3 (001, 002, 003)</option>
-                          <option value="4">4 (0001, 0002)</option>
-                        </select>
-                      </div>
-
-                      <div className="tool-field">
-                        <label>Separator</label>
-                        <select
-                          className="tool-select"
-                          value={separator}
-                          onChange={(e) => setSeparator(e.target.value)}
-                        >
-                          <option value="_">Underscore ( _ )</option>
-                          <option value="-">Hyphen ( - )</option>
-                          <option value=" ">Space ( )</option>
-                          <option value="">None</option>
-                        </select>
-                      </div>
+                  {/* Format extension selector for sequence / BDO */}
+                  <div className="tool-form-grid" style={{ gridTemplateColumns: bdoMode ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+                    <div className="tool-field">
+                      <label>Output File Extension</label>
+                      <select
+                        className="tool-select"
+                        value={seqExt}
+                        onChange={(e) => setSeqExt(e.target.value)}
+                      >
+                        <option value="original">Keep Original Extension (.HEIC, .jpg, etc.)</option>
+                        <option value=".png">.png (PNG Image · Lossless, converted on export)</option>
+                        <option value=".jpg">.jpg (JPEG Photo · Universal compatibility)</option>
+                        <option value=".webp">.webp (WebP Modern · Optimized)</option>
+                      </select>
                     </div>
-                  )}
+
+                    {/* Manual fields — only show in sequential mode */}
+                    {!bdoMode && (
+                      <>
+                        <div className="tool-field">
+                          <label>Base Name</label>
+                          <input
+                            type="text"
+                            className="tool-input"
+                            placeholder="e.g. Photo or Villa"
+                            value={baseName}
+                            onChange={(e) => setBaseName(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="tool-field">
+                          <label>Start From</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="tool-input"
+                            value={startNum}
+                            onChange={(e) => setStartNum(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="tool-field">
+                          <label>Padding Digits</label>
+                          <select
+                            className="tool-select"
+                            value={paddingDigits}
+                            onChange={(e) => setPaddingDigits(Number(e.target.value))}
+                          >
+                            <option value="1">1 (1, 2, 3)</option>
+                            <option value="2">2 (01, 02, 03)</option>
+                            <option value="3">3 (001, 002, 003)</option>
+                            <option value="4">4 (0001, 0002)</option>
+                          </select>
+                        </div>
+
+                        <div className="tool-field">
+                          <label>Separator</label>
+                          <select
+                            className="tool-select"
+                            value={separator}
+                            onChange={(e) => setSeparator(e.target.value)}
+                          >
+                            <option value="_">Underscore ( _ )</option>
+                            <option value="-">Hyphen ( - )</option>
+                            <option value=" ">Space ( )</option>
+                            <option value="">None</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <div className="tool-bottom-row">
                     <div className="tool-preview-pill">
@@ -921,13 +1162,13 @@ export function ImageRenamer() {
               {/* Tab 3: Find & Replace */}
               {activeTab === 'replace' && (
                 <div className="tool-panel">
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1.2fr 1.2fr auto' }}>
+                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1.2fr 1.2fr auto auto' }}>
                     <div className="tool-field">
                       <label>Find Text</label>
                       <input
                         type="text"
                         className="tool-input"
-                        placeholder="Text to replace..."
+                        placeholder="Text to replace (e.g. .HEIC)..."
                         value={findText}
                         onChange={(e) => setFindText(e.target.value)}
                       />
@@ -938,7 +1179,7 @@ export function ImageRenamer() {
                       <input
                         type="text"
                         className="tool-input"
-                        placeholder="Replacement text (leave empty to remove)"
+                        placeholder="Replacement text (e.g. .png)..."
                         value={replaceText}
                         onChange={(e) => setReplaceText(e.target.value)}
                       />
@@ -952,6 +1193,17 @@ export function ImageRenamer() {
                           onChange={(e) => setMatchCase(e.target.checked)}
                         />
                         <span>Match Case</span>
+                      </label>
+                    </div>
+
+                    <div className="tool-field" style={{ justifyContent: 'flex-end' }}>
+                      <label className="tool-checkbox-label" title="Search and replace across entire filename including .extension">
+                        <input
+                          type="checkbox"
+                          checked={includeExt}
+                          onChange={(e) => setIncludeExt(e.target.checked)}
+                        />
+                        <span>Include Extension</span>
                       </label>
                     </div>
                   </div>
@@ -980,7 +1232,7 @@ export function ImageRenamer() {
               {/* Tab 4: Case & Format */}
               {activeTab === 'casing' && (
                 <div className="tool-panel">
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                     <div className="tool-field">
                       <label>Letter Casing</label>
                       <select
@@ -988,9 +1240,22 @@ export function ImageRenamer() {
                         value={textCase}
                         onChange={(e) => setTextCase(e.target.value)}
                       >
-                        <option value="lowercase">lowercase (photo_01.jpg)</option>
-                        <option value="uppercase">UPPERCASE (PHOTO_01.JPG)</option>
-                        <option value="titlecase">Title Case (Photo_01.jpg)</option>
+                        <option value="lowercase">lowercase (photo_01)</option>
+                        <option value="uppercase">UPPERCASE (PHOTO_01)</option>
+                        <option value="titlecase">Title Case (Photo_01)</option>
+                      </select>
+                    </div>
+
+                    <div className="tool-field">
+                      <label>Extension Casing</label>
+                      <select
+                        className="tool-select"
+                        value={extCase}
+                        onChange={(e) => setExtCase(e.target.value)}
+                      >
+                        <option value="lowercase">lowercase (.png, .jpg)</option>
+                        <option value="uppercase">UPPERCASE (.PNG, .JPG)</option>
+                        <option value="keep">Keep Current (.png / .PNG)</option>
                       </select>
                     </div>
 
@@ -1013,7 +1278,7 @@ export function ImageRenamer() {
                     <div className="tool-preview-pill">
                       <span className="preview-label">Preset:</span>
                       <span className="preview-val">
-                        Standardizes file naming across all systems
+                        Standardizes file naming and extensions across all operating systems
                       </span>
                     </div>
 
@@ -1028,6 +1293,86 @@ export function ImageRenamer() {
                   </div>
                 </div>
               )}
+
+              {/* Tab 5: Extension & Format Converter */}
+              {activeTab === 'format' && (
+                <div className="tool-panel">
+                  <div className="format-tab-intro">
+                    <div className="format-tab-info">
+                      <span className="format-title">Batch Extension & Image Format Converter</span>
+                      <span className="format-desc">
+                        Select a target image format. All image files will be decoded from HEIC/original and rendered to real PNG, JPG, or WEBP files when you download.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="format-card-grid">
+                    <div
+                      className={`format-card ${batchTargetExt === '.png' ? 'active' : ''}`}
+                      onClick={() => setBatchTargetExt('.png')}
+                    >
+                      <div className="format-card-badge">PNG</div>
+                      <div className="format-card-details">
+                        <div className="format-name">.PNG (Portable Network Graphics)</div>
+                        <div className="format-info">Lossless quality · Supports transparency · Clean crisp graphics</div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`format-card ${batchTargetExt === '.jpg' ? 'active' : ''}`}
+                      onClick={() => setBatchTargetExt('.jpg')}
+                    >
+                      <div className="format-card-badge">JPG</div>
+                      <div className="format-card-details">
+                        <div className="format-name">.JPG (JPEG Photo)</div>
+                        <div className="format-info">Universal compatibility · Optimized photo file size · Real estate listing standard</div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`format-card ${batchTargetExt === '.webp' ? 'active' : ''}`}
+                      onClick={() => setBatchTargetExt('.webp')}
+                    >
+                      <div className="format-card-badge">WEBP</div>
+                      <div className="format-card-details">
+                        <div className="format-name">.WEBP (Modern Web Format)</div>
+                        <div className="format-info">High compression efficiency · Fast web loading · Modern browser standard</div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`format-card ${batchTargetExt === 'original' ? 'active' : ''}`}
+                      onClick={() => setBatchTargetExt('original')}
+                    >
+                      <div className="format-card-badge">ORIG</div>
+                      <div className="format-card-details">
+                        <div className="format-name">Keep Original Format</div>
+                        <div className="format-info">Retains original uploaded extensions (.HEIC, .jpg, .png)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tool-bottom-row">
+                    <div className="tool-preview-pill">
+                      <span className="preview-label">Process Preview:</span>
+                      <span className="preview-val">
+                        {images.length > 0
+                          ? `${parseFilename(images[0].name).base}${batchTargetExt === 'original' ? (images[0].originalExt || '.jpg') : batchTargetExt} · Converted on download`
+                          : 'Select format to preview'}
+                      </span>
+                    </div>
+
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleApplyBatchFormat}
+                      iconLeft={<FiCheck size={13} />}
+                    >
+                      {batchTargetExt === 'original' ? 'Restore Original Extensions' : `Convert All to ${batchTargetExt.toUpperCase()}`}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1038,7 +1383,7 @@ export function ImageRenamer() {
               <div className="renamer-list-container">
                 <div className="renamer-list-header">
                   <span className="col-thumb">Preview</span>
-                  <span className="col-name">Image Name (Editable)</span>
+                  <span className="col-name">Image Name & Format (Editable)</span>
                   <span className="col-orig">Original Filename</span>
                   <span className="col-meta">Dimensions & Size</span>
                   <span className="col-actions">Actions</span>
@@ -1047,6 +1392,8 @@ export function ImageRenamer() {
                 <div className="renamer-list-rows">
                   {images.map((item, index) => {
                     const { base, ext } = parseFilename(item.name);
+                    const converted = isExtConverted(ext, item.originalExt);
+
                     return (
                       <div key={item.id} className="renamer-list-row">
                         {/* Thumbnail */}
@@ -1057,7 +1404,7 @@ export function ImageRenamer() {
                           </div>
                         </div>
 
-                        {/* Editable Name */}
+                        {/* Editable Name & Extension */}
                         <div className="col-name">
                           <div className="name-input-group">
                             <input
@@ -1068,7 +1415,25 @@ export function ImageRenamer() {
                               placeholder="Filename..."
                               title="Edit image filename"
                             />
-                            <span className="ext-badge">{ext}</span>
+                            <div
+                              className={`ext-selector-wrap ${converted ? 'converted' : ''}`}
+                              title={converted ? `Format changed from ${item.originalExt} to ${ext.toUpperCase()}` : 'Change format / extension'}
+                            >
+                              <select
+                                className="ext-selector-select"
+                                value={ext.toLowerCase()}
+                                onChange={(e) => handleInlineExtChange(item.id, base, e.target.value)}
+                              >
+                                <option value=".png">.PNG</option>
+                                <option value=".jpg">.JPG</option>
+                                <option value=".jpeg">.JPEG</option>
+                                <option value=".webp">.WEBP</option>
+                                {item.originalExt && !['.png', '.jpg', '.jpeg', '.webp'].includes(item.originalExt.toLowerCase()) && (
+                                  <option value={item.originalExt.toLowerCase()}>{item.originalExt.toUpperCase()}</option>
+                                )}
+                              </select>
+                              <FiChevronDown className="ext-selector-arrow" />
+                            </div>
                           </div>
                         </div>
 
@@ -1094,7 +1459,7 @@ export function ImageRenamer() {
                             size="sm"
                             className="item-action-btn download"
                             onClick={() => handleDownloadSingle(item)}
-                            title={`Download ${item.name}`}
+                            title={`Download and convert ${item.name}`}
                             aria-label={`Download ${item.name}`}
                           />
                           <IconButton
@@ -1116,6 +1481,8 @@ export function ImageRenamer() {
               <div className="renamer-grid-container">
                 {images.map((item, index) => {
                   const { base, ext } = parseFilename(item.name);
+                  const converted = isExtConverted(ext, item.originalExt);
+
                   return (
                     <div key={item.id} className="renamer-grid-card">
                       <div className="grid-card-thumb-wrap">
@@ -1127,7 +1494,7 @@ export function ImageRenamer() {
                             size="sm"
                             className="grid-overlay-btn"
                             onClick={() => handleDownloadSingle(item)}
-                            title={`Download ${item.name}`}
+                            title={`Download and convert ${item.name}`}
                           />
                           <IconButton
                             icon={<FiTrash2 size={14} />}
@@ -1149,7 +1516,25 @@ export function ImageRenamer() {
                             placeholder="Filename..."
                             title="Edit image filename"
                           />
-                          <span className="ext-badge">{ext}</span>
+                          <div
+                            className={`ext-selector-wrap ${converted ? 'converted' : ''}`}
+                            title={converted ? `Format changed from ${item.originalExt} to ${ext.toUpperCase()}` : 'Change format / extension'}
+                          >
+                            <select
+                              className="ext-selector-select"
+                              value={ext.toLowerCase()}
+                              onChange={(e) => handleInlineExtChange(item.id, base, e.target.value)}
+                            >
+                              <option value=".png">.PNG</option>
+                              <option value=".jpg">.JPG</option>
+                              <option value=".jpeg">.JPEG</option>
+                              <option value=".webp">.WEBP</option>
+                              {item.originalExt && !['.png', '.jpg', '.jpeg', '.webp'].includes(item.originalExt.toLowerCase()) && (
+                                <option value={item.originalExt.toLowerCase()}>{item.originalExt.toUpperCase()}</option>
+                              )}
+                            </select>
+                            <FiChevronDown className="ext-selector-arrow" />
+                          </div>
                         </div>
 
                         <div className="grid-card-footer-meta">
@@ -1189,6 +1574,7 @@ export function ImageRenamer() {
             <div className="bottom-bar-left">
               <span className="bottom-bar-text">
                 {images.length} {images.length === 1 ? 'file' : 'files'} ready to download
+                {allArePng ? ' (all converting to .PNG)' : allAreJpg ? ' (all converting to .JPG)' : allAreWebp ? ' (all converting to .WEBP)' : ''}
               </span>
             </div>
 

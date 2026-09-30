@@ -132,8 +132,8 @@ export function ImageUploader({
       </div>
       <span className="uploader-formats">
         {isSingleImageMode
-          ? 'Supported formats: JPG, PNG, WEBP. Ready for social grid slicing.'
-          : 'Supported formats: JPG, PNG, WEBP. No batch limit.'}
+          ? 'Supported formats: JPG, PNG, WEBP, HEIC. Ready for social grid slicing.'
+          : 'Supported formats: JPG, PNG, WEBP, HEIC (Auto-converted for preview & export).'}
       </span>
     </div>
   );

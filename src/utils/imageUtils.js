@@ -1,3 +1,7 @@
+import { isHeicFile, convertHeicBlob, replaceExtension, getProcessedImageBlob } from './heicUtils';
+
+export { isHeicFile, convertHeicBlob, replaceExtension, getProcessedImageBlob };
+
 /**
  * Validates whether a file is an accepted image type
  * @param {File} file 
@@ -37,7 +41,7 @@ export function isValidImageFile(file) {
  * @param {HTMLImageElement|File|Blob|string} source 
  * @returns {Promise<HTMLImageElement>}
  */
-export function loadImage(source) {
+export async function loadImage(source) {
   if (!source) {
     return Promise.reject(new Error('No image source provided.'));
   }
@@ -53,16 +57,27 @@ export function loadImage(source) {
     });
   }
 
+  let finalSource = source;
+
+  // Auto-convert HEIC/HEIF files or blobs so they can load in any browser
+  if (isHeicFile(finalSource)) {
+    try {
+      finalSource = await convertHeicBlob(finalSource, 'image/jpeg', 0.95);
+    } catch (err) {
+      console.warn('HEIC conversion in loadImage failed:', err);
+    }
+  }
+
   let url = '';
   let needRevoke = false;
 
-  if (typeof source === 'string') {
-    url = source;
-  } else if ((typeof Blob !== 'undefined' && source instanceof Blob) || (typeof File !== 'undefined' && source instanceof File)) {
-    url = URL.createObjectURL(source);
+  if (typeof finalSource === 'string') {
+    url = finalSource;
+  } else if ((typeof Blob !== 'undefined' && finalSource instanceof Blob) || (typeof File !== 'undefined' && finalSource instanceof File)) {
+    url = URL.createObjectURL(finalSource);
     needRevoke = true;
   } else {
-    return Promise.reject(new Error(`Invalid image source type: ${typeof source}`));
+    return Promise.reject(new Error(`Invalid image source type: ${typeof finalSource}`));
   }
 
   return new Promise((resolve, reject) => {

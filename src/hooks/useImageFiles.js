@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { isValidImageFile, getImageDimensions } from '../utils/imageUtils';
+import { isValidImageFile, getImageDimensions, isHeicFile, convertHeicBlob, parseFilename } from '../utils/imageUtils';
 
 export function useImageFiles() {
   const [images, setImages] = useState([]);
   const [activeImageId, setActiveImageId] = useState(null);
   const [isProcessingUpload, setIsProcessingUpload] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const urlsRef = useRef(new Map());
 
   // Cleanup helper to revoke object URLs
@@ -27,11 +28,13 @@ export function useImageFiles() {
   const addImages = useCallback(async (fileList) => {
     if (!fileList || fileList.length === 0) return [];
     setIsProcessingUpload(true);
+    setUploadStatus('Loading images...');
 
     const validFiles = Array.from(fileList).filter(isValidImageFile);
     if (validFiles.length === 0) {
       setIsProcessingUpload(false);
-      throw new Error('No supported image files found (supported: JPG, PNG, WEBP).');
+      setUploadStatus('');
+      throw new Error('No supported image files found (supported: JPG, PNG, WEBP, HEIC).');
     }
 
     const newItems = [];
@@ -39,21 +42,39 @@ export function useImageFiles() {
     for (let i = 0; i < validFiles.length; i++) {
       const file = validFiles[i];
       const id = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${i}`;
-      const previewUrl = URL.createObjectURL(file);
+      const isHeic = isHeicFile(file);
+      let previewBlob = file;
+
+      if (isHeic) {
+        setUploadStatus(`Converting HEIC ${i + 1} of ${validFiles.length}...`);
+        try {
+          previewBlob = await convertHeicBlob(file, 'image/jpeg', 0.95);
+        } catch (heicErr) {
+          console.warn(`HEIC decoding failed for ${file.name}:`, heicErr);
+          previewBlob = file;
+        }
+      }
+
+      const previewUrl = URL.createObjectURL(previewBlob);
       urlsRef.current.set(id, previewUrl);
+      const parsed = parseFilename(file.name);
 
       try {
         const dims = await getImageDimensions(previewUrl);
         newItems.push({
           id,
           file,
+          originalFile: file,
+          previewBlob,
           name: file.name,
           originalName: file.name,
+          originalExt: parsed.ext,
           size: file.size,
           width: dims.width,
           height: dims.height,
           aspectRatio: dims.aspectRatio,
           previewUrl,
+          isHeic,
           isGridTile: Boolean(file.isGridTile),
           tileIndex: file.tileIndex,
           totalTiles: file.totalTiles,
@@ -65,13 +86,17 @@ export function useImageFiles() {
         newItems.push({
           id,
           file,
+          originalFile: file,
+          previewBlob,
           name: file.name,
           originalName: file.name,
+          originalExt: parsed.ext,
           size: file.size,
           width: 1200,
           height: 800,
           aspectRatio: 1.5,
           previewUrl,
+          isHeic,
           isGridTile: Boolean(file.isGridTile),
           tileIndex: file.tileIndex,
           totalTiles: file.totalTiles,
@@ -93,6 +118,7 @@ export function useImageFiles() {
       return prevActive;
     });
 
+    setUploadStatus('');
     setIsProcessingUpload(false);
     return newItems;
   }, []);
@@ -319,7 +345,8 @@ export function useImageFiles() {
     updateImageBorderSetting,
     updateImageCropSetting,
     clearImageCustomOverrides,
-    isProcessingUpload
+    isProcessingUpload,
+    uploadStatus
   };
 }
 
