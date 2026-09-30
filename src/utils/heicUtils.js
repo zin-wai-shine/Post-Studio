@@ -1,20 +1,26 @@
 /**
- * HEIC / HEIF image decoding and format conversion utilities.
- * Enables in-browser decoding of HEIC/HEIF files (e.g. iPhone photos)
+ * HEIC / HEIF image decoding and format conversion utilities using libheif-js.
+ * Enables fast in-browser WebAssembly decoding of HEIC/HEIF files (e.g. iPhone photos)
  * and seamless conversion to PNG, JPEG, WEBP on export.
  */
 
-let heic2anyModule = null;
+let libheifInstance = null;
+let libheifPromise = null;
 
-async function getHeic2Any() {
-  if (!heic2anyModule) {
-    if (typeof window === 'undefined') {
-      throw new Error('HEIC conversion is only available in the browser.');
-    }
-    const mod = await import('heic2any');
-    heic2anyModule = mod.default || mod;
+async function getLibheif() {
+  if (libheifInstance) return libheifInstance;
+  if (!libheifPromise) {
+    libheifPromise = (async () => {
+      if (typeof window === 'undefined') {
+        throw new Error('HEIC conversion is only available in the browser.');
+      }
+      const mod = await import('libheif-js/libheif-wasm/libheif-bundle.mjs');
+      const init = mod.default || mod;
+      libheifInstance = await init();
+      return libheifInstance;
+    })();
   }
-  return heic2anyModule;
+  return libheifPromise;
 }
 
 /**
@@ -37,9 +43,9 @@ export function isHeicFile(file) {
 }
 
 /**
- * Converts a HEIC/HEIF Blob or File to a JPEG or PNG Blob in the browser
+ * Converts a HEIC/HEIF Blob or File to a JPEG, PNG, or WEBP Blob in the browser using libheif
  * @param {Blob|File} blobOrFile
- * @param {'image/jpeg'|'image/png'} targetMime
+ * @param {'image/jpeg'|'image/png'|'image/webp'} targetMime
  * @param {number} quality (0 to 1)
  * @returns {Promise<Blob>}
  */
@@ -48,15 +54,81 @@ export async function convertHeicBlob(blobOrFile, targetMime = 'image/jpeg', qua
     throw new Error('No HEIC blob or file provided.');
   }
 
-  const heic2any = await getHeic2Any();
-  const result = await heic2any({
-    blob: blobOrFile,
-    toType: targetMime,
-    quality: quality
+  const libheif = await getLibheif();
+  const buffer = await blobOrFile.arrayBuffer();
+  const decoder = new libheif.HeifDecoder();
+  const data = decoder.decode(buffer);
+
+  if (!data || data.length === 0) {
+    throw new Error('No readable image frames found in HEIC file.');
+  }
+
+  const image = data[0];
+  const width = image.get_width();
+  const height = image.get_height();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(width, height);
+
+  await new Promise((resolve, reject) => {
+    image.display(imageData, (displayData) => {
+      if (!displayData) {
+        return reject(new Error('HEIF pixel display failed'));
+      }
+      resolve();
+    });
   });
 
-  const blob = Array.isArray(result) ? result[0] : result;
-  return blob;
+  ctx.putImageData(imageData, 0, 0);
+
+  // If converting to JPEG, ensure white background
+  if (targetMime === 'image/jpeg') {
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = width;
+    compositeCanvas.height = height;
+    const compCtx = compositeCanvas.getContext('2d');
+    compCtx.fillStyle = '#FFFFFF';
+    compCtx.fillRect(0, 0, width, height);
+    compCtx.drawImage(canvas, 0, 0);
+
+    return new Promise((resolve, reject) => {
+      compositeCanvas.toBlob(
+        (blob) => {
+          try {
+            canvas.width = 0;
+            canvas.height = 0;
+            compositeCanvas.width = 0;
+            compositeCanvas.height = 0;
+          } catch (e) {}
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to encode JPEG Blob'));
+        },
+        'image/jpeg',
+        quality
+      );
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        try {
+          canvas.width = 0;
+          canvas.height = 0;
+        } catch (e) {}
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error(`Failed to encode ${targetMime} Blob`));
+        }
+      },
+      targetMime,
+      quality
+    );
+  });
 }
 
 /**
@@ -87,7 +159,7 @@ export function replaceExtension(filename, newExt) {
 /**
  * Processes and converts an image item to match the requested targetFilename extension.
  * If target filename has a different format (e.g. .png, .jpg, .webp) or source was HEIC,
- * it renders via canvas to create a 100% genuine image file of that format.
+ * it renders via libheif / canvas to create a 100% genuine image file of that format.
  *
  * @param {Object} item - { file, originalFile, previewBlob, previewUrl, width, height, isHeic }
  * @param {string} targetFilename - e.g. "BDO-123456-ABCD.png"
@@ -114,13 +186,13 @@ export async function getProcessedImageBlob(item, targetFilename, quality = 0.95
   }
 
   // Determine target MIME type
-  let targetMime = null;
-  if (targetExt === '.png') {
-    targetMime = 'image/png';
-  } else if (targetExt === '.jpg' || targetExt === '.jpeg') {
+  let targetMime = 'image/png';
+  if (targetExt === '.jpg' || targetExt === '.jpeg') {
     targetMime = 'image/jpeg';
   } else if (targetExt === '.webp') {
     targetMime = 'image/webp';
+  } else if (targetExt === '.png') {
+    targetMime = 'image/png';
   }
 
   // If target format matches original file type and NOT HEIC, return original file directly
@@ -128,24 +200,16 @@ export async function getProcessedImageBlob(item, targetFilename, quality = 0.95
     return item.file;
   }
 
-  // Fallback target MIME if unknown extension
-  if (!targetMime) {
-    targetMime = isOrigHeic ? 'image/jpeg' : (item.file?.type || 'image/jpeg');
-  }
-
-  // Source element / blob to load into Canvas
-  let sourceToLoad = item.previewBlob || item.previewUrl || item.file || item.originalFile;
-
-  // If source is still raw HEIC without previewBlob, convert it first
-  if (isHeicFile(sourceToLoad)) {
-    try {
-      sourceToLoad = await convertHeicBlob(sourceToLoad, 'image/jpeg', 0.95);
-    } catch (err) {
-      console.warn('HEIC fallback conversion failed in getProcessedImageBlob:', err);
+  // If source was HEIC, convert directly via libheif
+  if (isOrigHeic) {
+    const rawHeic = item.originalFile || item.file;
+    if (rawHeic) {
+      return await convertHeicBlob(rawHeic, targetMime, quality);
     }
   }
 
-  // Load into HTMLImageElement
+  // Non-HEIC conversion (e.g. JPG -> PNG, PNG -> JPG)
+  const sourceToLoad = item.previewBlob || item.previewUrl || item.file || item.originalFile;
   const img = await new Promise((resolve, reject) => {
     let url = '';
     let needRevoke = false;
@@ -191,7 +255,6 @@ export async function getProcessedImageBlob(item, targetFilename, quality = 0.95
   const ctx = canvas.getContext('2d');
 
   if (targetMime === 'image/jpeg') {
-    // Fill white background for JPEG so any transparency in PNG doesn't become black
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, naturalWidth, naturalHeight);
   }
