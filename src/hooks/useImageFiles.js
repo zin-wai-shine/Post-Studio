@@ -30,12 +30,11 @@ export function useImageFiles() {
     setIsProcessingUpload(true);
     setUploadStatus('Loading images...');
 
-    const validFiles = Array.from(fileList).filter(isValidImageFile);
-    if (validFiles.length === 0) {
-      setIsProcessingUpload(false);
-      setUploadStatus('');
-      throw new Error('No supported image files found (supported: JPG, PNG, WEBP, HEIC).');
-    }
+    try {
+      const validFiles = Array.from(fileList).filter(isValidImageFile);
+      if (validFiles.length === 0) {
+        throw new Error('No supported image files found (supported: JPG, PNG, WEBP, HEIC).');
+      }
 
     const newItems = [];
 
@@ -118,10 +117,12 @@ export function useImageFiles() {
       return prevActive;
     });
 
+    return newItems;
+  } finally {
     setUploadStatus('');
     setIsProcessingUpload(false);
-    return newItems;
-  }, []);
+  }
+}, []);
 
   const removeImage = useCallback((id) => {
     cleanupUrl(id);

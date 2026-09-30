@@ -10,7 +10,7 @@ import { IconButton } from '../components/common/IconButton';
 import { Toast } from '../components/common/Toast';
 import { SourcePathControls } from '../components/common/SourcePathControls';
 import { triggerDownload } from '../utils/downloadUtils';
-import { parseFilename, formatBytes, getProcessedImageBlob, isHeicFile } from '../utils/imageUtils';
+import { parseFilename, formatBytes, getProcessedImageBlob } from '../utils/imageUtils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import {
@@ -26,27 +26,18 @@ import {
   FiSearch,
   FiHash,
   FiType,
-  FiRepeat,
   FiChevronDown,
-  FiLayers,
-  FiFileText
+  FiSliders,
+  FiCheckCircle
 } from 'react-icons/fi';
 import './ImageRenamer.css';
 
 // ─── BDO Naming Helpers ───────────────────────────────────────────────────────
 
-/**
- * Generates a 6-digit random number string, zero-padded.
- * @returns {string} e.g. "482951"
- */
 function randomDigits6() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-/**
- * Generates a 4-character random UPPERCASE letter string.
- * @returns {string} e.g. "XKQM"
- */
 function randomCaps4() {
   const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   let result = '';
@@ -56,11 +47,6 @@ function randomCaps4() {
   return result;
 }
 
-/**
- * Generates a unique BDO filename: BDO-{6digits}-{4CAPS}{ext}
- * @param {string} ext  e.g. ".jpg"
- * @returns {string} e.g. "BDO-482951-XKQM.jpg"
- */
 function generateBdoName(ext) {
   const cleanExt = ext && ext.startsWith('.') ? ext : `.${ext || 'jpg'}`;
   return `BDO-${randomDigits6()}-${randomCaps4()}${cleanExt}`;
@@ -102,22 +88,24 @@ export function ImageRenamer() {
     } catch {}
   };
 
-  // Batch rename tool tab: 'sequence' | 'prefix-suffix' | 'replace' | 'casing' | 'format'
-  const [activeTab, setActiveTab] = useState('sequence');
+  // Collapsible rename rules panel (closed by default for a clean, distraction-free view)
+  const [showTools, setShowTools] = useState(false);
 
-  // Sequence state — default to BDO pattern
+  // Batch rename tool tab: 'bdo' | 'sequence' | 'prefix-suffix' | 'replace' | 'casing'
+  const [activeTab, setActiveTab] = useState('bdo');
+
+  // Sequence state
   const [baseName, setBaseName] = useState('');
   const [startNum, setStartNum] = useState(1);
-  const [paddingDigits, setPaddingDigits] = useState(6);
-  const [separator, setSeparator] = useState('-');
-  const [seqPrefix, setSeqPrefix] = useState('BDO-');
+  const [paddingDigits, setPaddingDigits] = useState(4);
+  const [separator, setSeparator] = useState('_');
+  const [seqPrefix, setSeqPrefix] = useState('');
   const [seqSuffix, setSeqSuffix] = useState('');
-  const [seqExt, setSeqExt] = useState('original');
 
-  // BDO mode: auto-generate a unique random name per image (true = BDO, false = sequential numbering)
+  // BDO mode: auto-generate a unique random name per image
   const [bdoMode, setBdoMode] = useState(true);
 
-  // Track the last count of images so we only auto-apply on new additions
+  // Track image count to auto-apply BDO naming on newly added images
   const prevImageCountRef = useRef(0);
 
   // Prefix & Suffix state
@@ -130,13 +118,9 @@ export function ImageRenamer() {
   const [matchCase, setMatchCase] = useState(false);
   const [includeExt, setIncludeExt] = useState(false);
 
-  // Text Casing & Extension formatting state
+  // Text Casing & formatting state
   const [textCase, setTextCase] = useState('lowercase');
   const [spaceHandling, setSpaceHandling] = useState('underscore');
-  const [extCase, setExtCase] = useState('lowercase');
-
-  // Format & Extension Converter state
-  const [batchTargetExt, setBatchTargetExt] = useState('.png');
 
   // Download & processing state
   const [isDownloading, setIsDownloading] = useState(false);
@@ -163,33 +147,26 @@ export function ImageRenamer() {
     }
   }, [registerResetHandler, images.length]);
 
-  // Auto-apply BDO naming whenever images are added (count increases)
+  // Auto-apply BDO naming when images are added
   useEffect(() => {
-    if (images.length > prevImageCountRef.current) {
-      // New images were added — apply BDO names to ALL current images
+    if (images.length > prevImageCountRef.current && bdoMode) {
       const nameMap = {};
       images.forEach((img) => {
         const { ext } = parseFilename(img.name);
-        const effectiveExt = seqExt !== 'original' ? seqExt : ext;
-        nameMap[img.id] = generateBdoName(effectiveExt);
+        nameMap[img.id] = generateBdoName(ext);
       });
       batchRenameImages(nameMap);
     }
     prevImageCountRef.current = images.length;
-  }, [images.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [images.length, bdoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle uploading files
   const handleFilesSelected = async (fileList) => {
     try {
       const added = await addImages(fileList);
-      const heicCount = added.filter((i) => i.isHeic).length;
-      let msg = `Added ${added.length} image${added.length > 1 ? 's' : ''}.`;
-      if (heicCount > 0) {
-        msg += ` (${heicCount} HEIC file${heicCount > 1 ? 's' : ''} decoded and ready).`;
-      }
       setToast({
         type: 'success',
-        message: msg
+        message: `Added ${added.length} image${added.length > 1 ? 's' : ''}.`
       });
     } catch (err) {
       setToast({ type: 'error', message: err.message || 'Failed to upload images.' });
@@ -217,7 +194,7 @@ export function ImageRenamer() {
     }
   };
 
-  // Direct Sequential Download All with real format conversion
+  // Direct Sequential Download All with genuine format conversion
   const handleDownloadAllDirect = useCallback(async () => {
     if (images.length === 0 || isDownloading || isZipping) return;
 
@@ -265,7 +242,6 @@ export function ImageRenamer() {
           message: `Downloaded all ${total} images! ${deleteResult.deleted.length} original(s) deleted from "${deleteResult.folderPath || sourceFolder.folderPath}". Workspace cleared.`
         });
       }
-      // Auto-clear uploaded images after successful download
       clearAllImages();
     } catch (err) {
       if (!isCancelledRef.current) {
@@ -276,7 +252,7 @@ export function ImageRenamer() {
     }
   }, [images, isDownloading, isZipping, clearAllImages, sourceFolder]);
 
-  // ZIP Archive Download All with real format conversion
+  // ZIP Archive Download All with genuine format conversion
   const handleDownloadZip = useCallback(async () => {
     if (images.length === 0 || isDownloading || isZipping) return;
 
@@ -309,7 +285,7 @@ export function ImageRenamer() {
       setProgress({
         current: total,
         total,
-        percentage: 92,
+        percentage: 95,
         currentFilename: 'Generating ZIP package...'
       });
 
@@ -318,9 +294,8 @@ export function ImageRenamer() {
 
       setToast({
         type: 'success',
-        message: `Processed and exported ${images.length} images to ZIP! Workspace cleared.`
+        message: `Exported ${images.length} images to ZIP! Workspace cleared.`
       });
-      // Auto-clear uploaded images after successful ZIP export
       clearAllImages();
     } catch (err) {
       if (!isCancelledRef.current) {
@@ -332,7 +307,6 @@ export function ImageRenamer() {
     }
   }, [images, isDownloading, isZipping, clearAllImages]);
 
-  // Cancel sequential download or ZIP
   const handleCancelDownload = () => {
     isCancelledRef.current = true;
     setIsDownloading(false);
@@ -360,7 +334,6 @@ export function ImageRenamer() {
   // Inline rename single image base
   const handleInlineBaseRename = (id, newBase, currentExt) => {
     const cleanBase = newBase.replace(/[/\\?%*:|"<>]/g, '');
-    // If user accidentally typed an extension into the input (e.g. "my_photo.png")
     const parsed = parseFilename(cleanBase);
     const knownExts = ['.png', '.jpg', '.jpeg', '.webp', '.heic', '.heif'];
     let finalBase = cleanBase;
@@ -382,7 +355,7 @@ export function ImageRenamer() {
     renameImage(id, `${cleanBase}${targetExt}`);
   };
 
-  // Batch: Change all file extensions to specified extension (e.g. .png, .jpg, .webp)
+  // Batch: Change all file extensions with 1 click
   const handleBatchChangeExtension = (newExt) => {
     if (images.length === 0) return;
     const cleanExt = newExt.toLowerCase().startsWith('.') ? newExt.toLowerCase() : `.${newExt.toLowerCase()}`;
@@ -394,7 +367,7 @@ export function ImageRenamer() {
     batchRenameImages(nameMap);
     setToast({
       type: 'success',
-      message: `Changed all ${images.length} images to ${cleanExt.toUpperCase()}. Files will be converted on download.`
+      message: `All images set to ${cleanExt.toUpperCase()} (will convert on download).`
     });
   };
 
@@ -410,49 +383,45 @@ export function ImageRenamer() {
     batchRenameImages(nameMap);
     setToast({
       type: 'info',
-      message: 'Reverted all file extensions to original uploaded format.'
+      message: 'Reverted all extensions to original uploaded format.'
     });
   };
 
-  // Batch: Apply BDO or Sequential Renaming
+  // Regenerate BDO names for all images
+  const handleRegenerateBDO = () => {
+    if (images.length === 0) return;
+    setBdoMode(true);
+    const nameMap = {};
+    images.forEach((img) => {
+      const { ext } = parseFilename(img.name);
+      nameMap[img.id] = generateBdoName(ext);
+    });
+    batchRenameImages(nameMap);
+    setToast({
+      type: 'success',
+      message: `Generated fresh BDO names for ${images.length} images.`
+    });
+  };
+
+  // Batch: Apply Sequential Numbering
   const handleApplySequence = () => {
     if (images.length === 0) return;
-
-    if (bdoMode) {
-      // Generate a fresh unique BDO name per image
-      const nameMap = {};
-      images.forEach((img) => {
-        let { ext } = parseFilename(img.name);
-        if (seqExt !== 'original') {
-          ext = seqExt;
-        }
-        nameMap[img.id] = generateBdoName(ext);
-      });
-      batchRenameImages(nameMap);
-      setToast({
-        type: 'success',
-        message: `Applied BDO naming to ${images.length} images${seqExt !== 'original' ? ` as ${seqExt.toUpperCase()}` : ''}.`
-      });
-    } else {
-      const start = parseInt(startNum, 10) || 1;
-      const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
-      const nameMap = {};
-      images.forEach((img, index) => {
-        let { ext } = parseFilename(img.name);
-        if (seqExt !== 'original') {
-          ext = seqExt;
-        }
-        const numStr = String(start + index).padStart(pad, '0');
-        const middle = baseName.trim() ? `${baseName.trim()}${separator}${numStr}` : numStr;
-        const finalBase = `${seqPrefix.trim()}${middle}${seqSuffix.trim()}`;
-        nameMap[img.id] = `${finalBase}${ext}`;
-      });
-      batchRenameImages(nameMap);
-      setToast({
-        type: 'success',
-        message: `Applied sequential numbering to ${images.length} images${seqExt !== 'original' ? ` as ${seqExt.toUpperCase()}` : ''}.`
-      });
-    }
+    setBdoMode(false);
+    const start = parseInt(startNum, 10) || 1;
+    const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
+    const nameMap = {};
+    images.forEach((img, index) => {
+      const { ext } = parseFilename(img.name);
+      const numStr = String(start + index).padStart(pad, '0');
+      const middle = baseName.trim() ? `${baseName.trim()}${separator}${numStr}` : numStr;
+      const finalBase = `${seqPrefix.trim()}${middle}${seqSuffix.trim()}`;
+      nameMap[img.id] = `${finalBase}${ext}`;
+    });
+    batchRenameImages(nameMap);
+    setToast({
+      type: 'success',
+      message: `Applied sequential numbering to ${images.length} images.`
+    });
   };
 
   // Batch: Apply Prefix & Suffix
@@ -476,7 +445,7 @@ export function ImageRenamer() {
     });
   };
 
-  // Batch: Apply Find & Replace (optionally across full filename including extension)
+  // Batch: Apply Find & Replace
   const handleApplyFindReplace = () => {
     if (images.length === 0) return;
     if (!findText) {
@@ -529,7 +498,7 @@ export function ImageRenamer() {
     });
   };
 
-  // Batch: Apply Case / Space / Extension Transform
+  // Batch: Apply Case & Space Transform
   const handleApplyCasing = () => {
     if (images.length === 0) return;
 
@@ -537,23 +506,16 @@ export function ImageRenamer() {
     images.forEach((img) => {
       let { base, ext } = parseFilename(img.name);
 
-      // Casing
       if (textCase === 'lowercase') {
         base = base.toLowerCase();
+        ext = ext.toLowerCase();
       } else if (textCase === 'uppercase') {
         base = base.toUpperCase();
+        ext = ext.toUpperCase();
       } else if (textCase === 'titlecase') {
         base = base.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
       }
 
-      // Extension casing
-      if (extCase === 'lowercase') {
-        ext = ext.toLowerCase();
-      } else if (extCase === 'uppercase') {
-        ext = ext.toUpperCase();
-      }
-
-      // Space handling
       if (spaceHandling === 'underscore') {
         base = base.replace(/\s+/g, '_');
       } else if (spaceHandling === 'hyphen') {
@@ -572,54 +534,6 @@ export function ImageRenamer() {
     });
   };
 
-  // Batch: Apply Format & Extension from dedicated tab
-  const handleApplyBatchFormat = () => {
-    if (images.length === 0) return;
-    if (batchTargetExt === 'original') {
-      handleRevertExtensionsToOriginal();
-    } else {
-      handleBatchChangeExtension(batchTargetExt);
-    }
-  };
-
-  // Batch: Restore original uploaded names
-  const handleRestoreOriginalNames = () => {
-    resetAllNamesToOriginal();
-    setToast({
-      type: 'info',
-      message: 'Restored all images to their original filenames.'
-    });
-  };
-
-  // Sequential / BDO preview string
-  const sequencePreview = useMemo(() => {
-    let sampleExt = images.length > 0 ? parseFilename(images[0].name).ext || '.jpg' : '.jpg';
-    if (seqExt !== 'original') {
-      sampleExt = seqExt;
-    }
-    if (bdoMode) {
-      return `BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}, BDO-${randomDigits6()}-${randomCaps4()}${sampleExt}...`;
-    }
-    const pad = Math.max(1, parseInt(paddingDigits, 10) || 1);
-    const start = parseInt(startNum, 10) || 1;
-    const num1 = String(start).padStart(pad, '0');
-    const num2 = String(start + 1).padStart(pad, '0');
-    const mid1 = baseName.trim() ? `${baseName.trim()}${separator}${num1}` : num1;
-    const mid2 = baseName.trim() ? `${baseName.trim()}${separator}${num2}` : num2;
-    return `${seqPrefix.trim()}${mid1}${seqSuffix.trim()}${sampleExt}, ${seqPrefix.trim()}${mid2}${seqSuffix.trim()}${sampleExt}...`;
-  }, [bdoMode, baseName, startNum, paddingDigits, separator, seqPrefix, seqSuffix, images, seqExt]);
-
-  // Find & Replace match count
-  const matchCount = useMemo(() => {
-    if (!findText || images.length === 0) return 0;
-    return images.filter((img) => {
-      const textToSearch = includeExt ? img.name : parseFilename(img.name).base;
-      return matchCase
-        ? textToSearch.includes(findText)
-        : textToSearch.toLowerCase().includes(findText.toLowerCase());
-    }).length;
-  }, [findText, matchCase, images, includeExt]);
-
   // Check overall extension status across all items
   const allArePng = images.length > 0 && images.every((img) => parseFilename(img.name).ext.toLowerCase() === '.png');
   const allAreJpg = images.length > 0 && images.every((img) => {
@@ -628,7 +542,6 @@ export function ImageRenamer() {
   });
   const allAreWebp = images.length > 0 && images.every((img) => parseFilename(img.name).ext.toLowerCase() === '.webp');
 
-  // Check if an item's extension was modified from original
   const isExtConverted = (currentExt, originalExt) => {
     if (!currentExt || !originalExt) return false;
     return currentExt.toLowerCase() !== originalExt.toLowerCase();
@@ -648,7 +561,7 @@ export function ImageRenamer() {
           disabled={images.length === 0 || isDownloading || isZipping}
           loading={isZipping}
           onClick={handleDownloadZip}
-          title="Process and package all images into a single ZIP archive"
+          title="Download all images as a ZIP archive"
         >
           Download ZIP
         </Button>
@@ -661,7 +574,7 @@ export function ImageRenamer() {
           disabled={images.length === 0 || isDownloading || isZipping}
           loading={isDownloading}
           onClick={handleDownloadAllDirect}
-          title="Process and download all renamed images directly"
+          title="Download all renamed images directly"
         >
           {isDownloading ? 'Downloading...' : `Download All (${images.length})`}
         </Button>
@@ -802,38 +715,92 @@ export function ImageRenamer() {
       ) : (
         /* Workspace when images are loaded */
         <div className="renamer-content-container">
-          {/* Top Quick Actions Bar */}
-          <div className="renamer-topbar">
-            <div className="renamer-topbar-left">
-              <span className="renamer-badge-count">
-                {images.length} {images.length === 1 ? 'Image' : 'Images'}
-              </span>
-              <span className="renamer-badge-size">
-                Total:{' '}
-                {formatBytes(
-                  images.reduce((acc, img) => acc + (img.size || 0), 0)
-                )}
-              </span>
-              {uploadStatus && (
-                <span className="renamer-upload-status">
-                  {uploadStatus}
+
+          {/* Clean, Unified Control Bar */}
+          <div className="renamer-unified-bar">
+            {/* Left: Summary & Format Pills */}
+            <div className="unified-bar-left">
+              <div className="unified-stats">
+                <span className="stats-count">{images.length} {images.length === 1 ? 'image' : 'images'}</span>
+                <span className="stats-dot">·</span>
+                <span className="stats-size">
+                  {formatBytes(images.reduce((acc, img) => acc + (img.size || 0), 0))}
                 </span>
-              )}
+                {uploadStatus && (
+                  <span className="unified-upload-status">{uploadStatus}</span>
+                )}
+              </div>
+
+              <div className="unified-divider" />
+
+              {/* Instant 1-Click Format Converter Segment */}
+              <div className="unified-format-group" title="Convert all file formats on download">
+                <span className="unified-format-label">Format:</span>
+                <div className="unified-format-pills">
+                  <button
+                    type="button"
+                    className={`format-pill ${allArePng ? 'active' : ''}`}
+                    onClick={() => handleBatchChangeExtension('.png')}
+                    title="Change all to .png"
+                  >
+                    PNG
+                  </button>
+                  <button
+                    type="button"
+                    className={`format-pill ${allAreJpg ? 'active' : ''}`}
+                    onClick={() => handleBatchChangeExtension('.jpg')}
+                    title="Change all to .jpg"
+                  >
+                    JPG
+                  </button>
+                  <button
+                    type="button"
+                    className={`format-pill ${allAreWebp ? 'active' : ''}`}
+                    onClick={() => handleBatchChangeExtension('.webp')}
+                    title="Change all to .webp"
+                  >
+                    WEBP
+                  </button>
+                  <button
+                    type="button"
+                    className={`format-pill revert ${!allArePng && !allAreJpg && !allAreWebp ? 'active' : ''}`}
+                    onClick={handleRevertExtensionsToOriginal}
+                    title="Keep original uploaded extensions"
+                  >
+                    Original
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="renamer-topbar-right">
-              {/* Add more button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                iconLeft={<FiPlus size={14} />}
-                onClick={() => addMoreInputRef.current?.click()}
-                title="Add more images to this batch (JPG, PNG, WEBP, HEIC)"
+            {/* Right: Tools & Actions */}
+            <div className="unified-bar-right">
+              {/* BDO Quick Status indicator */}
+              <button
+                type="button"
+                className={`bdo-status-pill ${bdoMode ? 'on' : 'off'}`}
+                onClick={handleRegenerateBDO}
+                title="BDO Auto-naming active · Click to regenerate new BDO names"
               >
-                Add Images
-              </Button>
+                <span className="bdo-dot" />
+                <span>BDO Auto</span>
+              </button>
 
-              {/* View mode toggle */}
+              {/* Toggle Advanced Rename Rules */}
+              <button
+                type="button"
+                className={`rename-rules-toggle ${showTools ? 'active' : ''}`}
+                onClick={() => setShowTools((v) => !v)}
+                title="Open naming patterns, sequential numbering, prefix/suffix, find & replace"
+              >
+                <FiSliders size={13} />
+                <span>Rename Rules</span>
+                <FiChevronDown size={12} className={`chevron-arrow ${showTools ? 'open' : ''}`} />
+              </button>
+
+              <div className="unified-divider" />
+
+              {/* View Toggle */}
               <div className="renamer-view-toggle">
                 <button
                   type="button"
@@ -841,7 +808,7 @@ export function ImageRenamer() {
                   onClick={() => handleToggleViewMode('list')}
                   title="List view"
                 >
-                  <FiList size={14} />
+                  <FiList size={13} />
                 </button>
                 <button
                   type="button"
@@ -849,394 +816,283 @@ export function ImageRenamer() {
                   onClick={() => handleToggleViewMode('grid')}
                   title="Grid view"
                 >
-                  <FiGrid size={14} />
+                  <FiGrid size={13} />
                 </button>
               </div>
 
-              {/* Download ZIP button */}
+              {/* Add Images */}
               <Button
                 variant="secondary"
                 size="sm"
-                iconLeft={<FiArchive size={14} />}
+                iconLeft={<FiPlus size={13} />}
+                onClick={() => addMoreInputRef.current?.click()}
+              >
+                Add
+              </Button>
+
+              {/* Download ZIP */}
+              <Button
+                variant="secondary"
+                size="sm"
+                iconLeft={<FiArchive size={13} />}
                 loading={isZipping}
                 disabled={isDownloading}
                 onClick={handleDownloadZip}
-                title="Process & package all images into a single ZIP file"
               >
                 ZIP
               </Button>
 
-              {/* Download All Button */}
+              {/* Download All */}
               <Button
                 variant="primary"
                 size="sm"
-                className="renamer-download-all-btn"
-                iconLeft={<FiDownload size={14} />}
+                className="unified-download-btn"
+                iconLeft={<FiDownload size={13} />}
                 loading={isDownloading}
                 disabled={isZipping}
                 onClick={handleDownloadAllDirect}
-                title="Process and download all renamed images directly to your browser"
               >
                 {isDownloading ? 'Downloading...' : `Download All (${images.length})`}
               </Button>
             </div>
           </div>
 
-          {/* Quick Format & Extension Bar */}
-          <div className="renamer-quick-format-bar">
-            <div className="quick-format-left">
-              <span className="quick-format-label">
-                <FiRepeat size={13} /> Convert All Formats:
-              </span>
-              <div className="quick-format-pills">
-                <button
-                  type="button"
-                  className={`quick-format-pill ${allArePng ? 'active' : ''}`}
-                  onClick={() => handleBatchChangeExtension('.png')}
-                  title="Change all filenames to .png and process conversion on download"
-                >
-                  <span className="pill-dot" />
-                  All to .PNG
-                </button>
-                <button
-                  type="button"
-                  className={`quick-format-pill ${allAreJpg ? 'active' : ''}`}
-                  onClick={() => handleBatchChangeExtension('.jpg')}
-                  title="Change all filenames to .jpg and process conversion on download"
-                >
-                  <span className="pill-dot" />
-                  All to .JPG
-                </button>
-                <button
-                  type="button"
-                  className={`quick-format-pill ${allAreWebp ? 'active' : ''}`}
-                  onClick={() => handleBatchChangeExtension('.webp')}
-                  title="Change all filenames to .webp and process conversion on download"
-                >
-                  <span className="pill-dot" />
-                  All to .WEBP
-                </button>
-                <button
-                  type="button"
-                  className="quick-format-pill revert"
-                  onClick={handleRevertExtensionsToOriginal}
-                  title="Revert all extensions back to original uploaded format"
-                >
-                  <FiRotateCcw size={11} />
-                  Original Formats
-                </button>
-              </div>
-            </div>
-
-            <div className="quick-format-hint">
-              Images are automatically converted to target format upon download
-            </div>
-          </div>
-
-          {/* Batch Renaming Control Card */}
-          <div className="renamer-tools-card">
-            <div className="tools-card-header">
-              <div className="tools-tabs">
-                <button
-                  type="button"
-                  className={`tools-tab ${activeTab === 'sequence' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('sequence')}
-                >
-                  <FiHash size={13} />
-                  <span>Numbering Sequence</span>
-                </button>
-                <button
-                  type="button"
-                  className={`tools-tab ${activeTab === 'prefix-suffix' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('prefix-suffix')}
-                >
-                  <FiPlus size={13} />
-                  <span>Prefix & Suffix</span>
-                </button>
-                <button
-                  type="button"
-                  className={`tools-tab ${activeTab === 'replace' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('replace')}
-                >
-                  <FiSearch size={13} />
-                  <span>Find & Replace</span>
-                </button>
-                <button
-                  type="button"
-                  className={`tools-tab ${activeTab === 'casing' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('casing')}
-                >
-                  <FiType size={13} />
-                  <span>Case & Format</span>
-                </button>
-                <button
-                  type="button"
-                  className={`tools-tab ${activeTab === 'format' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('format')}
-                >
-                  <FiRepeat size={13} />
-                  <span>Extension & Convert</span>
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="tools-restore-btn"
-                onClick={handleRestoreOriginalNames}
-                title="Revert all images back to their original uploaded filenames"
-              >
-                <FiRefreshCw size={12} />
-                <span>Revert to Original</span>
-              </button>
-            </div>
-
-            <div className="tools-card-body">
-              {/* Tab 1: BDO / Sequential Numbering */}
-              {activeTab === 'sequence' && (
-                <div className="tool-panel">
-
-                  {/* BDO mode toggle row */}
-                  <div className="bdo-mode-toggle-row">
-                    <div className="bdo-mode-left">
-                      <div className={`bdo-mode-badge ${bdoMode ? 'on' : 'off'}`}>
-                        {bdoMode ? 'BDO' : 'SEQ'}
-                      </div>
-                      <div className="bdo-mode-info">
-                        <span className="bdo-mode-title">
-                          {bdoMode ? 'BDO Auto-Naming' : 'Sequential Numbering'}
-                        </span>
-                        <span className="bdo-mode-desc">
-                          {bdoMode
-                            ? 'Each image gets a unique BDO-{6digit}-{4CAPS} name · Auto-applied on upload'
-                            : 'Images named in order: Prefix + BaseName + Number + Suffix'}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className={`bdo-toggle-switch ${bdoMode ? 'active' : ''}`}
-                      onClick={() => setBdoMode((v) => !v)}
-                      title={bdoMode ? 'Switch to custom sequential numbering' : 'Switch to BDO auto-naming'}
-                    >
-                      <span className="bdo-toggle-thumb" />
-                    </button>
-                  </div>
-
-                  {/* Format extension selector for sequence / BDO */}
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: bdoMode ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-                    <div className="tool-field">
-                      <label>Output File Extension</label>
-                      <select
-                        className="tool-select"
-                        value={seqExt}
-                        onChange={(e) => setSeqExt(e.target.value)}
-                      >
-                        <option value="original">Keep Original Extension (.HEIC, .jpg, etc.)</option>
-                        <option value=".png">.png (PNG Image · Lossless, converted on export)</option>
-                        <option value=".jpg">.jpg (JPEG Photo · Universal compatibility)</option>
-                        <option value=".webp">.webp (WebP Modern · Optimized)</option>
-                      </select>
-                    </div>
-
-                    {/* Manual fields — only show in sequential mode */}
-                    {!bdoMode && (
-                      <>
-                        <div className="tool-field">
-                          <label>Base Name</label>
-                          <input
-                            type="text"
-                            className="tool-input"
-                            placeholder="e.g. Photo or Villa"
-                            value={baseName}
-                            onChange={(e) => setBaseName(e.target.value)}
-                          />
-                        </div>
-
-                        <div className="tool-field">
-                          <label>Start From</label>
-                          <input
-                            type="number"
-                            min="0"
-                            className="tool-input"
-                            value={startNum}
-                            onChange={(e) => setStartNum(e.target.value)}
-                          />
-                        </div>
-
-                        <div className="tool-field">
-                          <label>Padding Digits</label>
-                          <select
-                            className="tool-select"
-                            value={paddingDigits}
-                            onChange={(e) => setPaddingDigits(Number(e.target.value))}
-                          >
-                            <option value="1">1 (1, 2, 3)</option>
-                            <option value="2">2 (01, 02, 03)</option>
-                            <option value="3">3 (001, 002, 003)</option>
-                            <option value="4">4 (0001, 0002)</option>
-                          </select>
-                        </div>
-
-                        <div className="tool-field">
-                          <label>Separator</label>
-                          <select
-                            className="tool-select"
-                            value={separator}
-                            onChange={(e) => setSeparator(e.target.value)}
-                          >
-                            <option value="_">Underscore ( _ )</option>
-                            <option value="-">Hyphen ( - )</option>
-                            <option value=" ">Space ( )</option>
-                            <option value="">None</option>
-                          </select>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="tool-bottom-row">
-                    <div className="tool-preview-pill">
-                      <span className="preview-label">Pattern Preview:</span>
-                      <span className="preview-val">{sequencePreview}</span>
-                    </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleApplySequence}
-                      iconLeft={<FiCheck size={13} />}
-                    >
-                      {bdoMode ? 'Regenerate BDO Names' : 'Apply Numbering to All'}
-                    </Button>
-                  </div>
+          {/* Clean, Collapsible Rename Rules Panel */}
+          {showTools && (
+            <div className="renamer-compact-rules-card">
+              <div className="rules-tabs-bar">
+                <div className="rules-tabs">
+                  <button
+                    type="button"
+                    className={`rules-tab ${activeTab === 'bdo' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('bdo')}
+                  >
+                    <span>⚡ BDO Auto</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`rules-tab ${activeTab === 'sequence' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('sequence')}
+                  >
+                    <FiHash size={12} />
+                    <span>Numbering</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`rules-tab ${activeTab === 'prefix-suffix' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('prefix-suffix')}
+                  >
+                    <FiPlus size={12} />
+                    <span>Prefix / Suffix</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`rules-tab ${activeTab === 'replace' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('replace')}
+                  >
+                    <FiSearch size={12} />
+                    <span>Find & Replace</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`rules-tab ${activeTab === 'casing' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('casing')}
+                  >
+                    <FiType size={12} />
+                    <span>Case & Space</span>
+                  </button>
                 </div>
-              )}
 
-              {/* Tab 2: Prefix & Suffix */}
-              {activeTab === 'prefix-suffix' && (
-                <div className="tool-panel">
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                    <div className="tool-field">
-                      <label>Add Prefix</label>
+                <button
+                  type="button"
+                  className="rules-revert-btn"
+                  onClick={handleRestoreOriginalNames}
+                  title="Revert to original uploaded filenames"
+                >
+                  <FiRefreshCw size={11} />
+                  <span>Revert to Original</span>
+                </button>
+              </div>
+
+              <div className="rules-content-body">
+                {/* Tab 1: BDO Auto-Naming */}
+                {activeTab === 'bdo' && (
+                  <div className="rules-inline-row">
+                    <span className="rules-hint-text">
+                      Random unique code: <strong>BDO-{'{6 digits}'}-{'{4 CAPS}'}</strong>
+                    </span>
+                    <div className="rules-actions-right">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        iconLeft={<FiCheck size={13} />}
+                        onClick={handleRegenerateBDO}
+                      >
+                        Regenerate BDO Names
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: Sequential Numbering */}
+                {activeTab === 'sequence' && (
+                  <div className="rules-form-row">
+                    <div className="rules-input-item">
+                      <label>Base Name</label>
                       <input
                         type="text"
-                        className="tool-input"
-                        placeholder="e.g. New_ or Draft_"
+                        className="rules-input"
+                        placeholder="Photo"
+                        value={baseName}
+                        onChange={(e) => setBaseName(e.target.value)}
+                      />
+                    </div>
+                    <div className="rules-input-item" style={{ maxWidth: '100px' }}>
+                      <label>Start From</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="rules-input"
+                        value={startNum}
+                        onChange={(e) => setStartNum(e.target.value)}
+                      />
+                    </div>
+                    <div className="rules-input-item" style={{ maxWidth: '110px' }}>
+                      <label>Padding</label>
+                      <select
+                        className="rules-select"
+                        value={paddingDigits}
+                        onChange={(e) => setPaddingDigits(Number(e.target.value))}
+                      >
+                        <option value="1">1 (1, 2)</option>
+                        <option value="2">2 (01, 02)</option>
+                        <option value="3">3 (001)</option>
+                        <option value="4">4 (0001)</option>
+                        <option value="6">6 (000001)</option>
+                      </select>
+                    </div>
+                    <div className="rules-input-item" style={{ maxWidth: '110px' }}>
+                      <label>Separator</label>
+                      <select
+                        className="rules-select"
+                        value={separator}
+                        onChange={(e) => setSeparator(e.target.value)}
+                      >
+                        <option value="_">Underscore (_)</option>
+                        <option value="-">Hyphen (-)</option>
+                        <option value=" ">Space ( )</option>
+                        <option value="">None</option>
+                      </select>
+                    </div>
+                    <div className="rules-actions-right">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        iconLeft={<FiCheck size={13} />}
+                        onClick={handleApplySequence}
+                      >
+                        Apply Sequence
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3: Prefix & Suffix */}
+                {activeTab === 'prefix-suffix' && (
+                  <div className="rules-form-row">
+                    <div className="rules-input-item">
+                      <label>Prefix</label>
+                      <input
+                        type="text"
+                        className="rules-input"
+                        placeholder="e.g. Villa_"
                         value={customPrefix}
                         onChange={(e) => setCustomPrefix(e.target.value)}
                       />
                     </div>
-
-                    <div className="tool-field">
-                      <label>Add Suffix</label>
+                    <div className="rules-input-item">
+                      <label>Suffix</label>
                       <input
                         type="text"
-                        className="tool-input"
-                        placeholder="e.g. _v1 or _HD"
+                        className="rules-input"
+                        placeholder="e.g. _HD"
                         value={customSuffix}
                         onChange={(e) => setCustomSuffix(e.target.value)}
                       />
                     </div>
-                  </div>
-
-                  <div className="tool-bottom-row">
-                    <div className="tool-preview-pill">
-                      <span className="preview-label">Result:</span>
-                      <span className="preview-val">
-                        {customPrefix || ''}filename{customSuffix || ''}.jpg
-                      </span>
+                    <div className="rules-actions-right">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        iconLeft={<FiCheck size={13} />}
+                        onClick={handleApplyPrefixSuffix}
+                      >
+                        Apply to All
+                      </Button>
                     </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleApplyPrefixSuffix}
-                      iconLeft={<FiCheck size={13} />}
-                    >
-                      Apply to All
-                    </Button>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Tab 3: Find & Replace */}
-              {activeTab === 'replace' && (
-                <div className="tool-panel">
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1.2fr 1.2fr auto auto' }}>
-                    <div className="tool-field">
+                {/* Tab 4: Find & Replace */}
+                {activeTab === 'replace' && (
+                  <div className="rules-form-row">
+                    <div className="rules-input-item">
                       <label>Find Text</label>
                       <input
                         type="text"
-                        className="tool-input"
-                        placeholder="Text to replace (e.g. .HEIC)..."
+                        className="rules-input"
+                        placeholder="Text to find..."
                         value={findText}
                         onChange={(e) => setFindText(e.target.value)}
                       />
                     </div>
-
-                    <div className="tool-field">
+                    <div className="rules-input-item">
                       <label>Replace With</label>
                       <input
                         type="text"
-                        className="tool-input"
-                        placeholder="Replacement text (e.g. .png)..."
+                        className="rules-input"
+                        placeholder="Replacement text..."
                         value={replaceText}
                         onChange={(e) => setReplaceText(e.target.value)}
                       />
                     </div>
-
-                    <div className="tool-field" style={{ justifyContent: 'flex-end' }}>
-                      <label className="tool-checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={matchCase}
-                          onChange={(e) => setMatchCase(e.target.checked)}
-                        />
-                        <span>Match Case</span>
-                      </label>
-                    </div>
-
-                    <div className="tool-field" style={{ justifyContent: 'flex-end' }}>
-                      <label className="tool-checkbox-label" title="Search and replace across entire filename including .extension">
-                        <input
-                          type="checkbox"
-                          checked={includeExt}
-                          onChange={(e) => setIncludeExt(e.target.checked)}
-                        />
-                        <span>Include Extension</span>
-                      </label>
+                    <label className="rules-check-label">
+                      <input
+                        type="checkbox"
+                        checked={matchCase}
+                        onChange={(e) => setMatchCase(e.target.checked)}
+                      />
+                      <span>Match Case</span>
+                    </label>
+                    <label className="rules-check-label">
+                      <input
+                        type="checkbox"
+                        checked={includeExt}
+                        onChange={(e) => setIncludeExt(e.target.checked)}
+                      />
+                      <span>In Extension</span>
+                    </label>
+                    <div className="rules-actions-right">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        disabled={!findText}
+                        iconLeft={<FiCheck size={13} />}
+                        onClick={handleApplyFindReplace}
+                      >
+                        Replace All
+                      </Button>
                     </div>
                   </div>
+                )}
 
-                  <div className="tool-bottom-row">
-                    <div className="tool-preview-pill">
-                      <span className="preview-label">Matched:</span>
-                      <span className="preview-val">
-                        {findText ? `${matchCount} image${matchCount !== 1 ? 's' : ''}` : 'Enter text to find'}
-                      </span>
-                    </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleApplyFindReplace}
-                      disabled={!findText || matchCount === 0}
-                      iconLeft={<FiCheck size={13} />}
-                    >
-                      Replace in All
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 4: Case & Format */}
-              {activeTab === 'casing' && (
-                <div className="tool-panel">
-                  <div className="tool-form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                    <div className="tool-field">
+                {/* Tab 5: Case & Space */}
+                {activeTab === 'casing' && (
+                  <div className="rules-form-row">
+                    <div className="rules-input-item">
                       <label>Letter Casing</label>
                       <select
-                        className="tool-select"
+                        className="rules-select"
                         value={textCase}
                         onChange={(e) => setTextCase(e.target.value)}
                       >
@@ -1245,145 +1101,43 @@ export function ImageRenamer() {
                         <option value="titlecase">Title Case (Photo_01)</option>
                       </select>
                     </div>
-
-                    <div className="tool-field">
-                      <label>Extension Casing</label>
+                    <div className="rules-input-item">
+                      <label>Spaces</label>
                       <select
-                        className="tool-select"
-                        value={extCase}
-                        onChange={(e) => setExtCase(e.target.value)}
-                      >
-                        <option value="lowercase">lowercase (.png, .jpg)</option>
-                        <option value="uppercase">UPPERCASE (.PNG, .JPG)</option>
-                        <option value="keep">Keep Current (.png / .PNG)</option>
-                      </select>
-                    </div>
-
-                    <div className="tool-field">
-                      <label>Spaces Handling</label>
-                      <select
-                        className="tool-select"
+                        className="rules-select"
                         value={spaceHandling}
                         onChange={(e) => setSpaceHandling(e.target.value)}
                       >
-                        <option value="underscore">Replace spaces with underscores (_)</option>
-                        <option value="hyphen">Replace spaces with hyphens (-)</option>
+                        <option value="underscore">Replace spaces with _</option>
+                        <option value="hyphen">Replace spaces with -</option>
                         <option value="remove">Remove all spaces</option>
-                        <option value="none">Keep spaces unchanged</option>
+                        <option value="none">Keep spaces</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="tool-bottom-row">
-                    <div className="tool-preview-pill">
-                      <span className="preview-label">Preset:</span>
-                      <span className="preview-val">
-                        Standardizes file naming and extensions across all operating systems
-                      </span>
-                    </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleApplyCasing}
-                      iconLeft={<FiCheck size={13} />}
-                    >
-                      Apply Format
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 5: Extension & Format Converter */}
-              {activeTab === 'format' && (
-                <div className="tool-panel">
-                  <div className="format-tab-intro">
-                    <div className="format-tab-info">
-                      <span className="format-title">Batch Extension & Image Format Converter</span>
-                      <span className="format-desc">
-                        Select a target image format. All image files will be decoded from HEIC/original and rendered to real PNG, JPG, or WEBP files when you download.
-                      </span>
+                    <div className="rules-actions-right">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        iconLeft={<FiCheck size={13} />}
+                        onClick={handleApplyCasing}
+                      >
+                        Apply Format
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="format-card-grid">
-                    <div
-                      className={`format-card ${batchTargetExt === '.png' ? 'active' : ''}`}
-                      onClick={() => setBatchTargetExt('.png')}
-                    >
-                      <div className="format-card-badge">PNG</div>
-                      <div className="format-card-details">
-                        <div className="format-name">.PNG (Portable Network Graphics)</div>
-                        <div className="format-info">Lossless quality · Supports transparency · Clean crisp graphics</div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`format-card ${batchTargetExt === '.jpg' ? 'active' : ''}`}
-                      onClick={() => setBatchTargetExt('.jpg')}
-                    >
-                      <div className="format-card-badge">JPG</div>
-                      <div className="format-card-details">
-                        <div className="format-name">.JPG (JPEG Photo)</div>
-                        <div className="format-info">Universal compatibility · Optimized photo file size · Real estate listing standard</div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`format-card ${batchTargetExt === '.webp' ? 'active' : ''}`}
-                      onClick={() => setBatchTargetExt('.webp')}
-                    >
-                      <div className="format-card-badge">WEBP</div>
-                      <div className="format-card-details">
-                        <div className="format-name">.WEBP (Modern Web Format)</div>
-                        <div className="format-info">High compression efficiency · Fast web loading · Modern browser standard</div>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`format-card ${batchTargetExt === 'original' ? 'active' : ''}`}
-                      onClick={() => setBatchTargetExt('original')}
-                    >
-                      <div className="format-card-badge">ORIG</div>
-                      <div className="format-card-details">
-                        <div className="format-name">Keep Original Format</div>
-                        <div className="format-info">Retains original uploaded extensions (.HEIC, .jpg, .png)</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="tool-bottom-row">
-                    <div className="tool-preview-pill">
-                      <span className="preview-label">Process Preview:</span>
-                      <span className="preview-val">
-                        {images.length > 0
-                          ? `${parseFilename(images[0].name).base}${batchTargetExt === 'original' ? (images[0].originalExt || '.jpg') : batchTargetExt} · Converted on download`
-                          : 'Select format to preview'}
-                      </span>
-                    </div>
-
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleApplyBatchFormat}
-                      iconLeft={<FiCheck size={13} />}
-                    >
-                      {batchTargetExt === 'original' ? 'Restore Original Extensions' : `Convert All to ${batchTargetExt.toUpperCase()}`}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Image List / Grid View */}
+          {/* Clean, Focused Image Table / Grid */}
           <div className="renamer-items-section">
             {viewMode === 'list' ? (
-              /* Table / List View */
+              /* Table View */
               <div className="renamer-list-container">
                 <div className="renamer-list-header">
                   <span className="col-thumb">Preview</span>
-                  <span className="col-name">Image Name & Format (Editable)</span>
+                  <span className="col-name">Image Name & Format</span>
                   <span className="col-orig">Original Filename</span>
                   <span className="col-meta">Dimensions & Size</span>
                   <span className="col-actions">Actions</span>
@@ -1417,7 +1171,7 @@ export function ImageRenamer() {
                             />
                             <div
                               className={`ext-selector-wrap ${converted ? 'converted' : ''}`}
-                              title={converted ? `Format changed from ${item.originalExt} to ${ext.toUpperCase()}` : 'Change format / extension'}
+                              title={converted ? `Format changed to ${ext.toUpperCase()}` : 'Change format / extension'}
                             >
                               <select
                                 className="ext-selector-select"
@@ -1459,16 +1213,14 @@ export function ImageRenamer() {
                             size="sm"
                             className="item-action-btn download"
                             onClick={() => handleDownloadSingle(item)}
-                            title={`Download and convert ${item.name}`}
-                            aria-label={`Download ${item.name}`}
+                            title={`Download ${item.name}`}
                           />
                           <IconButton
                             icon={<FiTrash2 size={14} />}
                             size="sm"
                             className="item-action-btn delete"
                             onClick={() => setItemToDelete(item)}
-                            title="Remove from batch"
-                            aria-label="Remove image"
+                            title="Remove"
                           />
                         </div>
                       </div>
@@ -1494,7 +1246,7 @@ export function ImageRenamer() {
                             size="sm"
                             className="grid-overlay-btn"
                             onClick={() => handleDownloadSingle(item)}
-                            title={`Download and convert ${item.name}`}
+                            title={`Download ${item.name}`}
                           />
                           <IconButton
                             icon={<FiTrash2 size={14} />}
@@ -1514,12 +1266,8 @@ export function ImageRenamer() {
                             value={base}
                             onChange={(e) => handleInlineBaseRename(item.id, e.target.value, ext)}
                             placeholder="Filename..."
-                            title="Edit image filename"
                           />
-                          <div
-                            className={`ext-selector-wrap ${converted ? 'converted' : ''}`}
-                            title={converted ? `Format changed from ${item.originalExt} to ${ext.toUpperCase()}` : 'Change format / extension'}
-                          >
+                          <div className={`ext-selector-wrap ${converted ? 'converted' : ''}`}>
                             <select
                               className="ext-selector-select"
                               value={ext.toLowerCase()}
@@ -1539,7 +1287,7 @@ export function ImageRenamer() {
 
                         <div className="grid-card-footer-meta">
                           <span className="grid-orig-name" title={item.originalName || item.name}>
-                            Orig: {item.originalName || item.name}
+                            {item.originalName || item.name}
                           </span>
                           <span className="grid-size-text">
                             {formatBytes(item.size)}
@@ -1553,8 +1301,8 @@ export function ImageRenamer() {
             )}
           </div>
 
-          {/* Auto-Delete Source Path Controls */}
-          <div style={{ padding: '0 0 8px' }}>
+          {/* Compact Source Folder Drawer */}
+          <div className="renamer-source-path-wrap">
             <SourcePathControls
               folderPath={sourceFolder.folderPath}
               onSetFolderPath={sourceFolder.setFolderPath}
@@ -1569,12 +1317,12 @@ export function ImageRenamer() {
             />
           </div>
 
-          {/* Sticky Bottom Bar for instant access to Download All */}
+          {/* Sticky Bottom Bar */}
           <div className="renamer-bottom-bar">
             <div className="bottom-bar-left">
               <span className="bottom-bar-text">
                 {images.length} {images.length === 1 ? 'file' : 'files'} ready to download
-                {allArePng ? ' (all converting to .PNG)' : allAreJpg ? ' (all converting to .JPG)' : allAreWebp ? ' (all converting to .WEBP)' : ''}
+                {allArePng ? ' (converting to .PNG)' : allAreJpg ? ' (converting to .JPG)' : allAreWebp ? ' (converting to .WEBP)' : ''}
               </span>
             </div>
 
