@@ -387,6 +387,21 @@ export function ImageRenamer() {
     });
   };
 
+  // Batch: Revert all filenames back to original uploaded names
+  const handleRestoreOriginalNames = () => {
+    if (images.length === 0) return;
+    const nameMap = {};
+    images.forEach((img) => {
+      nameMap[img.id] = img.originalName || img.file?.name || img.name;
+    });
+    batchRenameImages(nameMap);
+    setBdoMode(false);
+    setToast({
+      type: 'info',
+      message: 'Reverted all filenames back to original uploaded names.'
+    });
+  };
+
   // Regenerate BDO names for all images
   const handleRegenerateBDO = () => {
     if (images.length === 0) return;

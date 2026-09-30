@@ -75,6 +75,62 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+/* Compact Modal Trigger Pill */
+.source-path-modal-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  font-family: inherit;
+  margin-left: 4px;
+}
+
+.source-path-modal-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--color-text-primary, #ffffff);
+}
+
+.trigger-path-text {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+.trigger-edit-icon {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.source-path-modal-trigger:hover .trigger-edit-icon {
+  opacity: 1;
+}
+
+.source-path-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.source-path-modal-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary, #9ca3af);
+  line-height: 1.5;
+  margin: 0 0 6px 0;
+}
+
 /* Switch Toggle */
 .source-path-toggle-label {
   position: relative;

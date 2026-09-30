@@ -725,17 +725,19 @@
    -------------------------------------------------------------------------- */
 .renamer-grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 200px));
+  gap: 14px;
+  justify-content: flex-start;
 }
 
 .renamer-grid-card {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-width: 200px;
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
@@ -745,7 +747,7 @@
 
 .grid-card-thumb-wrap {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: 120px;
   background-color: #0a0a0a;
   position: relative;
   overflow: hidden;
@@ -760,23 +762,23 @@
 
 .grid-card-badge-index {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 6px;
+  left: 6px;
   background-color: rgba(0, 0, 0, 0.7);
   color: #fff;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
   backdrop-filter: blur(4px);
 }
 
 .grid-card-overlay-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   display: flex;
-  gap: 4px;
+  gap: 3px;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -790,6 +792,9 @@
   color: #fff !important;
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  width: 26px !important;
+  height: 26px !important;
+  padding: 0 !important;
 }
 
 .grid-overlay-btn:hover {
@@ -802,17 +807,31 @@
 }
 
 .grid-card-body {
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+}
+
+.grid-card-body .name-input-group {
+  border-radius: 4px;
+}
+
+.grid-card-body .name-input {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.grid-card-body .ext-selector-select {
+  padding: 4px 16px 4px 6px;
+  font-size: 10px;
 }
 
 .grid-card-footer-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 
@@ -820,7 +839,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 105px;
+}
+
+.grid-size-text {
+  font-size: 10px;
 }
 
 /* --------------------------------------------------------------------------
