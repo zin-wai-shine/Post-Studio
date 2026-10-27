@@ -68,16 +68,7 @@ export function Presets() {
   // Selected presets IDs to apply & compare side-by-side
   const [selectedPresetIds, setSelectedPresetIds] = useState([]);
 
-  // Auto-select first two presets when presets load if none selected yet
-  useEffect(() => {
-    if (presets.length > 0 && selectedPresetIds.length === 0) {
-      if (presets.length >= 2) {
-        setSelectedPresetIds([presets[0].id, presets[1].id]);
-      } else {
-        setSelectedPresetIds([presets[0].id]);
-      }
-    }
-  }, [presets, selectedPresetIds.length]);
+  // No styles are selected by default; the user picks which to apply
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -757,6 +748,15 @@ export function Presets() {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+        ) : selectedPresets.length === 0 ? (
+          <div className="presets-empty-container">
+            <div className="preset-card-no-img" style={{ minHeight: '240px' }}>
+              <span>No style selected</span>
+              <span style={{ fontSize: '11px', opacity: 0.7 }}>
+                Select one or more styles above to preview and export
+              </span>
             </div>
           </div>
         ) : (
