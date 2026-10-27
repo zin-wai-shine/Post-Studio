@@ -157,6 +157,52 @@ export async function exportDirectlyToDownloads({
   return { totalOps, mode: 'direct' };
 }
 
+const HANDLE_DB = 'pofix_fs_handles';
+const HANDLE_STORE = 'handles';
+const HANDLE_KEY = 'export_root';
+
+function openHandleDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(HANDLE_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(HANDLE_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveRootHandle(handle) {
+  try {
+    const db = await openHandleDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(HANDLE_STORE, 'readwrite');
+      tx.objectStore(HANDLE_STORE).put(handle, HANDLE_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn('Could not persist folder handle:', e);
+  }
+}
+
+async function loadSavedRootHandle() {
+  try {
+    const db = await openHandleDb();
+    const handle = await new Promise((resolve, reject) => {
+      const req = db.transaction(HANDLE_STORE).objectStore(HANDLE_STORE).get(HANDLE_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+    if (!handle) return null;
+    const opts = { mode: 'readwrite' };
+    if ((await handle.queryPermission(opts)) === 'granted') return handle;
+    // Called from a user click, so this can be granted without re-picking the folder
+    if ((await handle.requestPermission(opts)) === 'granted') return handle;
+  } catch (e) {
+    console.warn('Could not reuse saved folder handle:', e);
+  }
+  return null;
+}
+
 /**
  * 2. CREATE FOLDERS IN DOWNLOADS:
  * In the Downloads folder, creates folders with each selected preset's name
@@ -237,19 +283,22 @@ export async function exportToFoldersInDownloads({
 
   // Step B: If local API not reachable (e.g. running on Netlify), check File System Access API
   if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-    let rootDirHandle;
-    try {
-      rootDirHandle = await window.showDirectoryPicker({
-        id: 'pofix_downloads_export',
-        startIn: 'downloads',
-        mode: 'readwrite'
-      });
-    } catch (pickerErr) {
-      if (pickerErr.name === 'AbortError') {
-        throw new Error('Folder selection cancelled.');
+    let rootDirHandle = await loadSavedRootHandle();
+    if (!rootDirHandle) {
+      try {
+        rootDirHandle = await window.showDirectoryPicker({
+          id: 'pofix_downloads_export',
+          startIn: 'downloads',
+          mode: 'readwrite'
+        });
+        await saveRootHandle(rootDirHandle);
+      } catch (pickerErr) {
+        if (pickerErr.name === 'AbortError') {
+          throw new Error('Folder selection cancelled.');
+        }
+        console.warn('Directory picker failed, falling back to ZIP:', pickerErr);
+        rootDirHandle = null;
       }
-      console.warn('Directory picker failed, falling back to ZIP:', pickerErr);
-      rootDirHandle = null;
     }
 
     if (rootDirHandle) {
