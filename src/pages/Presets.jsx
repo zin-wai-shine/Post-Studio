@@ -12,12 +12,18 @@ import { Button } from '../components/common/Button';
 import { IconButton } from '../components/common/IconButton';
 import { Toast } from '../components/common/Toast';
 import { SourcePathControls } from '../components/common/SourcePathControls';
+import { PresetDownloadDropdown } from '../components/presets/PresetDownloadDropdown';
 import {
   exportPresetImage,
   batchExportPresetImages,
   generatePresetFilename,
   resolvePresetExtension
 } from '../utils/presetUtils';
+import {
+  exportDirectlyToDownloads,
+  exportToFoldersInDownloads,
+  exportToZipWithFolders
+} from '../utils/presetFolderExport';
 import {
   FiLayers,
   FiPlus,
@@ -268,7 +274,7 @@ export function Presets() {
   };
 
   // Download All Images for One Preset
-  const handleDownloadAllForPreset = async (preset) => {
+  const handleDownloadAllForPreset = async (preset, mode = 'folders') => {
     if (images.length === 0) return;
     isCancelledRef.current = false;
     setIsProcessingBatch(true);
@@ -276,25 +282,38 @@ export function Presets() {
       current: 0,
       total: images.length,
       percentage: 0,
-      currentFilename: `Starting ${preset.prefix || 'BOL'} export...`
+      currentFilename: `Starting ${preset.name} (${preset.prefix || 'BOL'}) export...`
     });
 
     try {
-      const watermarkSource = resolveWatermarkForPreset(preset);
-      await batchExportPresetImages({
-        images,
-        preset,
-        watermarkSource,
-        onProgress: (prog) => {
-          setBatchProgress({
-            current: prog.current,
-            total: prog.total,
-            percentage: prog.percentage,
-            currentFilename: `[${preset.prefix}] ${prog.currentFilename}`
-          });
-        },
-        isCancelledRef
-      });
+      if (mode === 'direct') {
+        await exportDirectlyToDownloads({
+          images,
+          presets: [preset],
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
+          isCancelledRef
+        });
+      } else if (mode === 'zip') {
+        await exportToZipWithFolders({
+          images,
+          presets: [preset],
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
+          isCancelledRef,
+          zipFilename: `${preset.name.replace(/[^a-zA-Z0-9_-]+/g, '_')}-${images.length}photos.zip`
+        });
+      } else {
+        // mode === 'folders'
+        await exportToFoldersInDownloads({
+          images,
+          presets: [preset],
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
+          isCancelledRef,
+          targetFolder: sourceFolder.folderPath || '~/Downloads'
+        });
+      }
 
       // Auto-delete originals from source folder
       let deleteNote = '';
@@ -306,16 +325,22 @@ export function Presets() {
         }
       }
 
+      const modeMessage = mode === 'folders'
+        ? `Saved into folder "${preset.name}" in Downloads`
+        : mode === 'zip'
+        ? `Exported ZIP archive for ${preset.name}`
+        : `Downloaded directly to Downloads`;
+
       if (autoClearAfterDownload) {
         clearAllImages();
         setToast({
           type: 'success',
-          message: `Downloaded ${images.length} images for ${preset.name}.${deleteNote} Workspace auto-cleared.`
+          message: `${modeMessage} (${images.length} images)!${deleteNote} Workspace auto-cleared.`
         });
       } else {
         setToast({
           type: 'success',
-          message: `Successfully downloaded ${images.length} images for ${preset.name}!${deleteNote}`
+          message: `${modeMessage} (${images.length} images)!${deleteNote}`
         });
       }
     } catch (err) {
@@ -329,7 +354,7 @@ export function Presets() {
   };
 
   // Download All Images for ALL Selected Presets
-  const handleDownloadAllSelectedPresets = async () => {
+  const handleExportSelectedPresets = async (mode = 'folders') => {
     if (images.length === 0 || selectedPresets.length === 0) return;
     isCancelledRef.current = false;
     setIsProcessingBatch(true);
@@ -340,35 +365,36 @@ export function Presets() {
       current: 0,
       total: totalOps,
       percentage: 0,
-      currentFilename: `Starting download of ${totalOps} images (${selectedPresets.length} styles × ${images.length} photos)...`
+      currentFilename: `Starting export of ${totalOps} images across ${selectedPresets.length} styles...`
     });
 
     try {
-      for (let pIdx = 0; pIdx < selectedPresets.length; pIdx++) {
-        if (isCancelledRef.current) break;
-        const preset = selectedPresets[pIdx];
-        const watermarkSource = resolveWatermarkForPreset(preset);
-
-        await batchExportPresetImages({
+      if (mode === 'direct') {
+        await exportDirectlyToDownloads({
           images,
-          preset,
-          watermarkSource,
-          onProgress: (prog) => {
-            const currentTotal = pIdx * images.length + prog.current;
-            setBatchProgress({
-              current: currentTotal,
-              total: totalOps,
-              percentage: Math.round((currentTotal / totalOps) * 100),
-              currentFilename: `[${preset.prefix} • Style ${pIdx + 1}/${selectedPresets.length}] ${prog.currentFilename}`
-            });
-          },
+          presets: selectedPresets,
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
           isCancelledRef
         });
-
-        // Small pause between preset style batches so browser download manager queues smoothly
-        if (!isCancelledRef.current && pIdx < selectedPresets.length - 1) {
-          await new Promise((res) => setTimeout(res, 450));
-        }
+      } else if (mode === 'zip') {
+        await exportToZipWithFolders({
+          images,
+          presets: selectedPresets,
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
+          isCancelledRef
+        });
+      } else {
+        // mode === 'folders'
+        await exportToFoldersInDownloads({
+          images,
+          presets: selectedPresets,
+          resolveWatermarkForPreset,
+          onProgress: setBatchProgress,
+          isCancelledRef,
+          targetFolder: sourceFolder.folderPath || '~/Downloads'
+        });
       }
 
       if (!isCancelledRef.current) {
@@ -382,16 +408,25 @@ export function Presets() {
           }
         }
 
+        let modeSummary = '';
+        if (mode === 'folders') {
+          modeSummary = `Created folders in Downloads (${selectedPresets.map((p) => p.name).join(', ')}) and saved all`;
+        } else if (mode === 'zip') {
+          modeSummary = `Exported ZIP archive containing style folders for all`;
+        } else {
+          modeSummary = `Downloaded directly to Downloads for all`;
+        }
+
         if (autoClearAfterDownload) {
           clearAllImages();
           setToast({
             type: 'success',
-            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles!${deleteNote} Workspace auto-cleared.`
+            message: `${modeSummary} ${totalOps} images!${deleteNote} Workspace auto-cleared.`
           });
         } else {
           setToast({
             type: 'success',
-            message: `Downloaded all ${totalOps} images across ${selectedPresets.length} styles!${deleteNote}`
+            message: `${modeSummary} ${totalOps} images!${deleteNote}`
           });
         }
       }
@@ -418,15 +453,13 @@ export function Presets() {
       setHeaderActions(
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {images.length > 0 && selectedPresets.length > 0 && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleDownloadAllSelectedPresets}
-              icon={<FiDownload size={14} />}
-              disabled={isProcessingBatch}
-            >
-              Download All ({selectedPresets.length} Styles × {images.length})
-            </Button>
+            <PresetDownloadDropdown
+              selectedPresets={selectedPresets}
+              imagesCount={images.length}
+              isProcessing={isProcessingBatch}
+              onSelectMode={handleExportSelectedPresets}
+              sourceFolderPath={sourceFolder.folderPath || '~/Downloads'}
+            />
           )}
 
           <Button
@@ -443,7 +476,7 @@ export function Presets() {
     return () => {
       if (setHeaderActions) setHeaderActions(null);
     };
-  }, [setHeaderActions, images.length, selectedPresets, isProcessingBatch]);
+  }, [setHeaderActions, images.length, selectedPresets, isProcessingBatch, sourceFolder.folderPath]);
 
   return (
     <div className="presets-page">
@@ -736,12 +769,18 @@ export function Presets() {
                 activeImage={activeImage}
                 images={images}
                 selectedStylesCount={selectedPresets.length}
+                selectedPresets={selectedPresets}
+                sourceFolderPath={sourceFolder.folderPath || '~/Downloads'}
                 watermarkSource={resolveWatermarkForPreset(preset)}
                 onEditPreset={handleEditPreset}
                 onUpdatePresetSettings={handleUpdatePresetSettings}
                 onDownloadSingle={handleDownloadSingle}
-                onDownloadAll={selectedPresets.length > 1 ? handleDownloadAllSelectedPresets : () => handleDownloadAllForPreset(preset)}
-                onDownloadThisPreset={() => handleDownloadAllForPreset(preset)}
+                onDownloadAll={(p, mode) =>
+                  selectedPresets.length > 1
+                    ? handleExportSelectedPresets(mode || 'folders')
+                    : handleDownloadAllForPreset(p || preset, mode || 'folders')
+                }
+                onDownloadThisPreset={(p, mode) => handleDownloadAllForPreset(p || preset, mode || 'folders')}
                 isDownloading={isProcessingBatch}
                 downloadProgress={batchProgress}
               />

@@ -190,6 +190,55 @@ export function localFsPlugin() {
           return;
         }
 
+        // POST /api/save-file
+        if (url === '/api/save-file' && req.method === 'POST') {
+          const chunks = [];
+          req.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          req.on('end', () => {
+            try {
+              const bodyStr = Buffer.concat(chunks).toString('utf8');
+              const { folderPath, subfolder = '', filename, base64Data } = JSON.parse(bodyStr || '{}');
+              if (!filename || !base64Data) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                return res.end(JSON.stringify({ success: false, error: 'Missing filename or base64Data' }));
+              }
+
+              const base = resolveFolderPath(folderPath || '~/Downloads');
+              const cleanSubfolder = (subfolder || '')
+                .replace(/[<>:"/\\|?*]+/g, '-')
+                .trim();
+              const targetDir = cleanSubfolder ? path.join(base, cleanSubfolder) : base;
+
+              if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+              }
+
+              const cleanFilename = path.basename(filename);
+              const targetPath = path.join(targetDir, cleanFilename);
+              const cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');
+
+              fs.writeFileSync(targetPath, Buffer.from(cleanBase64, 'base64'));
+
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(
+                JSON.stringify({
+                  success: true,
+                  targetPath,
+                  folderPath: targetDir
+                })
+              );
+            } catch (err) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     }

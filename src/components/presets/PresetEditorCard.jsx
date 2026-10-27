@@ -3,6 +3,7 @@ import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { ImagePreview } from '../watermark/ImagePreview';
 import { generatePresetFilename, resolvePresetExtension } from '../../utils/presetUtils';
+import { PresetDownloadDropdown } from './PresetDownloadDropdown';
 import { FiDownload, FiEdit2, FiCheck, FiSliders } from 'react-icons/fi';
 import './PresetEditorCard.css';
 
@@ -11,6 +12,8 @@ export function PresetEditorCard({
   activeImage,
   images = [],
   selectedStylesCount = 1,
+  selectedPresets = [],
+  sourceFolderPath = '~/Downloads',
   watermarkSource = null,
   onEditPreset,
   onUpdatePresetSettings,
@@ -168,25 +171,26 @@ export function PresetEditorCard({
             Download Image
           </Button>
 
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => onDownloadAll(preset)}
-            disabled={images.length === 0 || isDownloading}
-            icon={<FiDownload size={14} />}
-          >
-            {selectedStylesCount > 1
-              ? `Download All (${selectedStylesCount} Styles × ${images.length})`
-              : `Download All (${images.length})`}
-          </Button>
+          <PresetDownloadDropdown
+            selectedPresets={selectedStylesCount > 1 && selectedPresets.length > 0 ? selectedPresets : [preset]}
+            imagesCount={images.length}
+            isProcessing={isDownloading}
+            onSelectMode={(mode) => onDownloadAll(preset, mode)}
+            sourceFolderPath={sourceFolderPath}
+            customTriggerLabel={
+              selectedStylesCount > 1
+                ? `Download All (${selectedStylesCount} Styles × ${images.length})`
+                : `Download All (${images.length})`
+            }
+          />
 
           {selectedStylesCount > 1 && onDownloadThisPreset && (
             <Button
               variant="ghost"
               size="xs"
-              onClick={() => onDownloadThisPreset(preset)}
+              onClick={() => onDownloadThisPreset(preset, 'folders')}
               disabled={images.length === 0 || isDownloading}
-              title={`Download only ${preset.prefix} (${images.length} images)`}
+              title={`Download only ${preset.name} (${images.length} images into folder)`}
             >
               Only {preset.prefix} ({images.length})
             </Button>

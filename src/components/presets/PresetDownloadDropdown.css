@@ -1,0 +1,100 @@
+.preset-download-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.preset-download-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.15s ease;
+}
+
+.preset-download-trigger-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.preset-download-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 260px;
+  max-width: calc(100vw - 24px);
+  background-color: #181817;
+  border: 1px solid #333332;
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  overflow: hidden;
+  animation: presetDropdownSlide 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes presetDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.preset-download-menu-options {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.preset-download-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  color: #EDEDED;
+  width: 100%;
+}
+
+.preset-download-option:hover {
+  background-color: #272726;
+  border-color: #383837;
+  color: #FFFFFF;
+}
+
+.preset-download-option-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #222221;
+  color: #A0A09D;
+  transition: all 0.12s ease;
+}
+
+.preset-download-option:hover .preset-download-option-icon {
+  background-color: #EDEDED;
+  color: #121212;
+}
+
+.preset-download-option-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: inherit;
+  line-height: 1.2;
+}
